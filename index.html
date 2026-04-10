@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Checklist de Fracionado - Centrosucar</title>
+    <title>Checklist Sucar - Padronizado</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -56,7 +56,6 @@
         .campo label { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 5px; }
         .campo input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
         
-        /* Destaque visual de erros (Texto e Fotos) */
         .erro-input { border: 2px solid red !important; background: #ffe6e6 !important; }
 
         .volume-box {
@@ -66,7 +65,6 @@
         .header-volume { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
         .header-volume h4 { color: #2E7D32; text-transform: uppercase; }
         
-        /* Botão de apagar volume */
         .btn-remover { background: #ffe6e6; color: #d32f2f; border: 1px solid #d32f2f; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px;}
         
         .foto-wrapper { display: flex; justify-content: space-between; gap: 15px; }
@@ -90,6 +88,9 @@
         .btn { padding: 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 14px;}
         .btn-add { background: white; color: #2E7D32; border: 2px solid #2E7D32; }
         .btn-save { background: #2E7D32; color: white; }
+
+        /* Nova tela de carregamento (porque gerar o arquivo para compartilhar demora 1-2 segundos) */
+        #loading { display: none; text-align: center; color: #2E7D32; font-weight: bold; padding: 10px; }
 
         @media (max-width: 600px) {
             .foto-wrapper { flex-direction: column; }
@@ -119,7 +120,7 @@
                 <div class="volume-box">
                     <div class="header-volume">
                         <h4>Volume 1</h4>
-                        </div>
+                    </div>
                     <div class="foto-wrapper">
                         <div class="foto-col">
                             <label>Foto da Etiqueta *</label>
@@ -147,11 +148,11 @@
 
     <div class="botoes-fixos">
         <button class="btn btn-add" onclick="novoV()" data-html2canvas-ignore="true">+ Adicionar Próximo Volume</button>
-        <button class="btn btn-save" onclick="gerar()" data-html2canvas-ignore="true">Validar e Baixar PDF</button>
+        <button id="btn-gerar" class="btn btn-save" onclick="gerar()" data-html2canvas-ignore="true">Validar e Compartilhar</button>
+        <div id="loading" data-html2canvas-ignore="true">Preparando o arquivo para envio... Aguarde.</div>
     </div>
 
     <script>
-        // Função que lê a imagem, mostra na caixa e remove a borda de erro se houver
         function ver(i) {
             if (i.files && i.files[0]) {
                 const r = new FileReader();
@@ -162,9 +163,9 @@
                     
                     img.src = e.target.result;
                     img.style.display = 'block';
-                    aviso.style.display = 'block'; // Mostra o aviso que pode trocar
-                    box.classList.remove('erro-input'); // Remove borda vermelha se a foto for tirada
-                    box.style.border = "2px solid #2E7D32"; // Borda verde de sucesso
+                    aviso.style.display = 'block'; 
+                    box.classList.remove('erro-input'); 
+                    box.style.border = "2px solid #2E7D32"; 
                 };
                 r.readAsDataURL(i.files[0]);
             }
@@ -172,7 +173,6 @@
 
         let vols = 1;
 
-        // Função para adicionar volume
         function novoV() {
             vols++;
             let pags = Math.ceil(vols / 2); 
@@ -216,7 +216,6 @@
             target.insertAdjacentHTML('beforeend', html);
         }
 
-        // Função para remover um volume específico
         function removerV(botao) {
             const caixaVolume = botao.closest('.volume-box');
             caixaVolume.remove();
@@ -232,7 +231,6 @@
             let temErroTextos = false;
             let temErroFotos = false;
 
-            // 1. Validação de Textos
             const campos = ['c', 't', 'm', 'p'];
             campos.forEach(id => {
                 const el = document.getElementById(id);
@@ -242,25 +240,26 @@
                 }
             });
 
-            // 2. Validação de Fotos OBRIGATÓRIAS
             const inputsFoto = document.querySelectorAll('.input-foto');
             inputsFoto.forEach(input => {
                 const box = input.closest('.box-imagem');
-                // Se o input não tem nenhum arquivo carregado, acusa erro
                 if (input.files.length === 0) {
                     box.classList.add('erro-input');
                     temErroFotos = true;
                 }
             });
 
-            // 3. Checa se teve algum erro
             if (temErroTextos || temErroFotos) {
                 let msg = "Atenção!\n";
                 if (temErroTextos) msg += "- Preencha todos os campos do cabeçalho.\n";
                 if (temErroFotos) msg += "- Você esqueceu de tirar algumas fotos! (Verifique as caixas vermelhas).";
                 alert(msg);
-                return; // Bloqueia a criação do PDF
+                return; 
             }
+
+            // Exibe mensagem de carregamento e esconde o botão temporariamente
+            document.getElementById('btn-gerar').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
 
             const c = document.getElementById('c').value.trim();
             const agora = new Date();
@@ -272,17 +271,43 @@
             dataHoraDiv.style.display = 'block'; 
 
             const element = document.getElementById('render-area');
+            const nomeArquivo = `Checklist_${c}_${dataStr.replace(/\//g, '-')}.pdf`;
             
             const opt = {
                 margin: [15, 10, 10, 10], 
-                filename: `Checklist_${c}_${dataStr.replace(/\//g, '-')}.pdf`,
+                filename: nomeArquivo,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['css', 'legacy'], avoid: '.volume-box' } 
             };
 
-            html2pdf().set(opt).from(element).save();
+            // LÓGICA DE COMPARTILHAMENTO (Nativa do Celular)
+            html2pdf().set(opt).from(element).output('blob').then(function(pdfBlob) {
+                // Prepara o arquivo PDF
+                const file = new File([pdfBlob], nomeArquivo, { type: 'application/pdf' });
+
+                // Retorna a interface ao normal
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('btn-gerar').style.display = 'block';
+
+                // Verifica se o aparelho suporta a aba nativa de compartilhamento
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    navigator.share({
+                        title: 'Checklist de Carga',
+                        text: `Checklist do cliente ${c} finalizado.`,
+                        files: [file]
+                    }).catch((error) => {
+                        console.log('Compartilhamento cancelado.', error);
+                    });
+                } else {
+                    // Fallback: se o dispositivo não suportar (ex: PC), faz o download direto
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(pdfBlob);
+                    link.download = nomeArquivo;
+                    link.click();
+                }
+            });
         }
     </script>
 </body>
