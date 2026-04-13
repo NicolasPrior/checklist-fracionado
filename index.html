@@ -186,6 +186,27 @@ body { background: #F4F7F6; padding: 20px 10px; display: flex; flex-direction: c
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
+
+/* --- REGRA PARA FORÇAR LAYOUT DE COMPUTADOR NO PDF --- */
+.modo-pdf {
+    width: 794px !important; /* Largura exata de uma folha A4 em pixels */
+    max-width: 794px !important;
+    padding: 20px 30px !important;
+}
+.modo-pdf .dados-container {
+    grid-template-columns: 1fr 1fr !important; /* Força dados lado a lado */
+}
+.modo-pdf .foto-wrapper {
+    flex-direction: row !important; /* Força as duas fotos lado a lado */
+    gap: 15px !important;
+}
+.modo-pdf .box-imagem {
+    height: 280px !important; /* Define uma altura perfeita para as fotos na folha A4 */
+}
+.modo-pdf .box-imagem img {
+    object-fit: contain !important; /* Evita que a foto fique esticada ou cortada */
+}
+
     </style>
 </head>
 <body>
@@ -196,7 +217,7 @@ body { background: #F4F7F6; padding: 20px 10px; display: flex; flex-direction: c
             <h2>Checklist de Carga Fracionada</h2>
         </div>
         
-        <div id="data-hora-registro"></div>
+        <div id="data-hora-pdf" style="display: none; text-align: center; font-size: 13px; color: var(--texto-mutado); margin-bottom: 20px; font-weight: bold; background: var(--verde-fundo); padding: 8px; border-radius: 5px;"></div>
 
         <div class="dados-container">
             <div class="campo"><label>CLIENTE *</label><input type="text" id="c" placeholder="Nome do cliente"></div>
@@ -297,26 +318,25 @@ function gerarPDF() {
     const load = document.getElementById('loading');
     const msgErro = document.getElementById('mensagem-erro');
     const botoesRemover = document.querySelectorAll('.btn-remover');
+    const element = document.getElementById('render-area');
+    const dataHoraPdf = document.getElementById('data-hora-pdf'); // Puxa o campo da data
 
     let bloqueiaGeracao = false;
 
-    // 1. VALIDAÇÃO DE CAMPOS DE TEXTO
-    // Seleciona todos os inputs de texto da área de dados
+    // VALIDAÇÃO DE CAMPOS DE TEXTO
     document.querySelectorAll('.dados-container input').forEach(input => {
         if (!input.value.trim()) {
-            input.style.border = '2px solid red';
+            input.style.borderBottom = '2px solid red';
             input.style.backgroundColor = '#fff1f1';
             bloqueiaGeracao = true;
-            
-            // Remove o vermelho assim que a pessoa começar a digitar
             input.addEventListener('input', function() {
-                this.style.border = '1px solid #E0E4E8';
-                this.style.backgroundColor = '#FAFAFA';
+                this.style.borderBottom = '2px solid var(--borda)';
+                this.style.backgroundColor = '#F9FBFA';
             }, { once: true });
         }
     });
 
-    // 2. VALIDAÇÃO DE FOTOS
+    // VALIDAÇÃO DE FOTOS
     document.querySelectorAll('.box-imagem').forEach(box => {
         const img = box.querySelector('img');
         if (!img.src || img.style.display === 'none') {
@@ -329,35 +349,58 @@ function gerarPDF() {
         }
     });
 
-    // Se faltou texto ou foto, trava aqui e avisa
+    // Trava se tiver erro
     if (bloqueiaGeracao) {
-        msgErro.innerText = "⚠️ Atenção: Preencha todos os campos em vermelho e tire todas as fotos!";
+        msgErro.innerText = "⚠️ Atenção: Preencha os campos em vermelho e tire as fotos!";
         msgErro.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Sobe a tela para o topo
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         setTimeout(() => { msgErro.style.display = 'none'; }, 4000);
-        return; // O 'return' cancela o PDF
+        return; 
     }
 
-    // --- SE TUDO ESTIVER PREENCHIDO, GERA O PDF ---
+    // --- PREPARAÇÃO DO LAYOUT PARA O PDF ---
+    
+    // 1. Injeta Data e Hora atual
+    const agora = new Date();
+    dataHoraPdf.innerText = `Gerado em: ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR')}`;
+    dataHoraPdf.style.display = 'block';
+
+    // 2. Força o layout de desktop (A4) na tela do celular
+    element.classList.add('modo-pdf');
+
+    // 3. Esconde os botões e mostra carregamento
     btn.parentElement.style.display = 'none';
     botoesRemover.forEach(b => b.style.display = 'none');
     load.style.display = 'block';
 
-    const element = document.getElementById('render-area');
+    // Configurações do PDF ajustadas
     const opt = {
         margin: [10, 5, 10, 5],
         filename: 'Checklist_Centrosucar.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            scrollY: 0,
+            windowWidth: 800 // Garante que a foto tirada pelo código seja larga
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
+    // Gera o PDF
     html2pdf().set(opt).from(element).save().then(() => {
+        // --- LIMPEZA PÓS-GERAÇÃO ---
+        
+        // Remove a data e o modo desktop para o celular voltar ao normal
+        element.classList.remove('modo-pdf');
+        dataHoraPdf.style.display = 'none';
+        
+        // Volta os botões
         btn.parentElement.style.display = 'flex';
         botoesRemover.forEach(b => b.style.display = 'block');
         load.style.display = 'none';
     });
-}   
+}
 
  </script>
 </body>
