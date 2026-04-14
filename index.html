@@ -106,16 +106,27 @@
         #modal-pendentes { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; padding:20px; backdrop-filter: blur(5px);}
         .modal-conteudo { background:white; padding:30px; border-radius:16px; max-width:500px; margin: 60px auto; color: black; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
 
-        /* Regras do PDF */
-        .modo-pdf { width: 794px !important; padding: 30px 40px !important; }
-        .modo-pdf .box-imagem { height: 240px !important; border: 1px solid #E0E6E2 !important; }
-        .modo-pdf .volume-box { page-break-inside: avoid; break-inside: avoid; margin-bottom: 20px !important; padding: 15px !important; }
+        /* Regras do PDF Inteligente */
+        .modo-pdf { width: 794px !important; padding: 20px 30px !important; background: white; }
+        .modo-pdf .volume-box { page-break-inside: avoid !important; break-inside: avoid !important; margin-bottom: 15px !important; padding: 15px !important; }
+        .modo-pdf .campo { page-break-inside: avoid !important; break-inside: avoid !important; }
+        .modo-pdf .box-imagem { height: 260px !important; }
         
-        /* Classe mágica para forçar a quebra de página exata */
-        .quebra-pagina { page-break-before: always !important; }
-        
-        #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-weight: bold; color: var(--verde-centro); z-index: 10000; font-size: 18px; }
+        #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-weight: bold; color: var(--verde-centro); z-index: 10000; font-size: 18px; text-align: center; width: 80%; }
 
+        /* OTIMIZAÇÃO PARA CELULAR (Mobile First) */
+        @media (max-width: 768px) {
+            body { padding: 10px 5px 120px 5px; background: #FFFFFF; }
+            #render-area { padding: 15px; box-shadow: none; border-radius: 0; width: 100%; }
+            .dados-container { grid-template-columns: 1fr; gap: 15px; } /* Empilha tudo num formato de lista */
+            .foto-wrapper { flex-direction: column; gap: 15px; } /* Fotos uma embaixo da outra */
+            .box-imagem { height: 180px; } /* Ajusta altura da câmera para a tela do celular */
+            
+            /* Ajuste dos Botões no Rodapé do Celular */
+            .botoes-fixos { width: 100%; bottom: 10px; padding: 10px; flex-wrap: wrap; border-radius: 15px; }
+            .btn { font-size: 11px; padding: 12px; }
+            
+            #btn-abrir-pendentes { top: 10px; right: 10px; padding: 10px 12px; font-size: 11px; }
         }
     </style>
 </head>
