@@ -106,15 +106,23 @@
         #modal-pendentes { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; padding:20px; backdrop-filter: blur(5px);}
         .modal-conteudo { background:white; padding:30px; border-radius:16px; max-width:500px; margin: 60px auto; color: black; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
 
-/* Regras do PDF */
+/* REGRAS RÍGIDAS PARA O PDF */
         .modo-pdf { width: 794px !important; padding: 0 !important; margin: 0 !important; background: white !important; }
         .modo-pdf #secao-pagina-1 { height: 1050px !important; padding: 40px !important; page-break-after: always !important; }
-        .modo-pdf .volume-box { height: 480px !important; margin: 20px auto !important; width: 90% !important; border: 2px solid #eee !important; padding: 20px !important; page-break-inside: avoid !important; }
+        .modo-pdf .volume-box { 
+            height: 480px !important; margin: 20px auto !important; width: 90% !important;
+            border: 2px solid #eee !important; padding: 20px !important; page-break-inside: avoid !important;
+            display: flex !important; flex-direction: column !important; justify-content: center !important;
+        }
         .modo-pdf .box-imagem { height: 220px !important; }
-        /* Ajustes Finos PDF: Esconde o Remover e Trava a largura dos campos */
+        .quebra-temp { page-break-before: always !important; }
         .modo-pdf .btn-remover { display: none !important; }
-        .modo-pdf .dados-container { width: 100% !important; padding-right: 15px !important; box-sizing: border-box !important; }
+
+        /* A MÁGICA PARA O CELULAR: Força os itens a ficarem LADO A LADO no PDF */
+        .modo-pdf .dados-container { display: grid !important; grid-template-columns: 1fr 1fr !important; width: 100% !important; padding-right: 15px !important; box-sizing: border-box !important; }
         .modo-pdf .campo input, .modo-pdf .campo select { width: 100% !important; max-width: 100% !important; }
+        .modo-pdf .foto-wrapper { display: flex !important; flex-direction: row !important; }
+        .modo-pdf .foto-col { flex: 1 !important; width: 50% !important; }
 
         #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-weight: bold; color: var(--verde-centro); z-index: 10000; font-size: 18px; text-align: center; width: 80%; }
 
@@ -424,18 +432,19 @@ function addV() {
     });
 
     const opt = {
-        margin: [10, 0, 10, 0],
-        filename: `Checklist_NF_${nf}.pdf`,
-        image: { type: 'jpeg', quality: 1.0 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true,
-            logging: false,
-            scrollY: 0
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
-    };
+                margin: 0,
+                filename: `Checklist_NF_${nf}.pdf`,
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    scrollY: 0,
+                    windowWidth: 800 /* <-- ESSA LINHA ENGANA O PDF PARA USAR O LAYOUT DE PC */
+                },
+                jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
 
     // Esconde botões
     document.querySelector('.botoes-fixos').style.display = 'none';
