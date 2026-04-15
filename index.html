@@ -220,164 +220,103 @@
         </div>
     </div>
 
-    <script>
-    // Inicialização da variável global
+<script>
+    // Inicializa a lista de pendentes carregando do celular
     let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes') || '[]');
 
-    // 1. ATUALIZAR CONTADOR (Unificado)
+    // 1. ATUALIZAR O NÚMERO NO BOTÃO (Roda sempre que algo muda)
     function atualizarContador() {
         const span = document.getElementById('count-pendentes');
         if (span) {
             span.innerText = pendentes.length;
+            // Mostra o balão apenas se houver itens
             span.style.display = pendentes.length > 0 ? 'inline-block' : 'none';
         }
     }
 
-    // 2. MUDAR TIPO DE CARGA
-    function mudarTipoCarga() {
-        const tipo = document.getElementById('tipo-carga').value;
-        const secCam = document.getElementById('secao-caminhao');
-        const secVol = document.getElementById('container-volumes');
-        const btnAdd = document.getElementById('btn-add-vol');
-
-        secVol.innerHTML = ''; 
-
-        if (tipo === "") {
-            secCam.style.display = 'none';
-            btnAdd.style.display = 'none';
-            return;
-        }
-
-        secCam.style.display = 'block';
-        btnAdd.style.display = 'block';
-        addV(); // Adiciona o primeiro volume
-    }
-
-    // 3. ADICIONAR VOLUME
-    function addV() {
-        const container = document.getElementById('container-volumes');
-        const num = container.querySelectorAll('.volume-box').length + 1;
-        const tipoCarga = document.getElementById('tipo-carga').value;
-        const labelDinamico = (tipoCarga === "Bag in Box") ? "FOTO DA CARGA *" : "FOTO LACRE *";
-
-        const html = `
-            <div class="volume-box">
-                <div class="header-volume">
-                    <h4>Volume ${num}</h4>
-                    ${num > 1 ? `<button type="button" class="btn-remover" onclick="this.closest('.volume-box').remove(); reordenar();" style="color:red; background:none; border:none; font-weight:bold; cursor:pointer;">REMOVER</button>` : ''}
-                </div>
-                <div class="foto-wrapper">
-                    <div class="foto-col">
-                        <label>FOTO ETIQUETA *</label>
-                        <div class="box-imagem">
-                            <span class="msg-camera">📷 Tocar para Foto</span>
-                            <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
-                            <img style="display:none;">
-                        </div>
-                    </div>
-                    <div class="foto-col">
-                        <label class="label-lacre">${labelDinamico}</label>
-                        <div class="box-imagem">
-                            <span class="msg-camera">📷 Tocar para Foto</span>
-                            <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
-                            <img style="display:none;">
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        container.insertAdjacentHTML('beforeend', html);
-    }
-
-    function reordenar() {
-        document.querySelectorAll('#container-volumes h4').forEach((h, i) => h.innerText = `Volume ${i+1}`);
-    }
-
-    function preview(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const box = input.parentElement;
-                const img = box.querySelector('img');
-                img.src = e.target.result;
-                img.style.display = 'block';
-                box.querySelector('.msg-camera').style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    // 4. SALVAR STANDBY (Corrigido e Resetando)
-    function salvarParaDepois() {
-        const placa = document.getElementById('p').value;
-        if(!placa) {
-            document.getElementById('p').style.borderColor = 'red';
-            return alert("Digite ao menos a PLACA DO VEÍCULO antes de salvar.");
-        }
-        
-        const dados = {
-            p: placa, 
-            c: document.getElementById('c').value, 
-            t: document.getElementById('t').value,
-            m: document.getElementById('m').value, 
-            q: document.getElementById('qtd-volumes').value,
-            tp: document.getElementById('tipo-carga').value, 
-            dt: new Date().toLocaleString(),
-            htmlCam: document.getElementById('secao-caminhao').innerHTML,
-            htmlVol: document.getElementById('container-volumes').innerHTML
-        };
-        
-        pendentes.push(dados);
-        localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-        
-        alert("✅ Checklist em Standby!");
-
-        // RESET DA PÁGINA (Limpa tudo sem dar reload)
-        document.querySelectorAll('input').forEach(i => i.value = '');
+    // 2. LIMPAR A TELA (Manual, já que não usamos a tag <form>)
+    function limparTela() {
+        // Limpa todos os inputs de texto e número
+        document.querySelectorAll('input').forEach(input => input.value = '');
+        // Reseta o seletor de carga
         document.getElementById('tipo-carga').selectedIndex = 0;
-        document.getElementById('container-volumes').innerHTML = '';
+        // Esconde as seções e limpa os volumes
         document.getElementById('secao-caminhao').style.display = 'none';
+        document.getElementById('container-volumes').innerHTML = '';
         document.getElementById('btn-add-vol').style.display = 'none';
-        
-        // Limpar fotos da seção caminhão (se houver imagens carregadas no HTML salvo)
+        // Reseta as fotos do caminhão (visual)
         document.querySelectorAll('#secao-caminhao img').forEach(img => {
             img.src = '';
             img.style.display = 'none';
         });
-        document.querySelectorAll('#secao-caminhao .msg-camera').forEach(span => span.style.display = 'block');
-
-        atualizarContador();
+        document.querySelectorAll('#secao-caminhao .msg-camera').forEach(msg => msg.style.display = 'block');
+        
         window.scrollTo(0, 0);
     }
 
-    // 5. ABRIR PENDENTES
+    // 3. SALVAR EM STANDBY
+    function salvarParaDepois() {
+        const placa = document.getElementById('p').value;
+        if (!placa) {
+            document.getElementById('p').style.borderColor = 'red';
+            return alert("Para salvar, digite ao menos a PLACA.");
+        }
+
+        const dados = {
+            p: placa,
+            c: document.getElementById('c').value,
+            t: document.getElementById('t').value,
+            m: document.getElementById('m').value,
+            q: document.getElementById('qtd-volumes').value,
+            tp: document.getElementById('tipo-carga').value,
+            dt: new Date().toLocaleString(),
+            htmlCam: document.getElementById('secao-caminhao').innerHTML,
+            htmlVol: document.getElementById('container-volumes').innerHTML
+        };
+
+        pendentes.push(dados);
+        localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+        
+        alert("✅ Salvo em Standby!");
+        
+        atualizarContador();
+        limparTela(); // Limpa a página sem precisar dar reload
+    }
+
+    // 4. ABRIR O MODAL DE PENDENTES
     function abrirPendentes() {
         const corpo = document.getElementById('lista-pendentes-corpo');
-        corpo.innerHTML = pendentes.length ? '' : '<p style="text-align:center; color:gray;">Nenhuma carga em espera.</p>';
-        
-        pendentes.forEach((item, i) => {
-            corpo.innerHTML += `
-                <div style="background:#F9FBFA; border:1px solid #E0E6E2; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid var(--dourado);">
-                    <strong style="color:var(--verde-centro); font-size:16px;">Placa: ${item.p}</strong><br>
-                    <span style="font-size:12px; color:gray;">Salvo em: ${item.dt}</span><br>
-                    <div style="display:flex; gap:10px; margin-top:12px;">
-                        <button onclick="recuperar(${i})" style="flex:1; background:var(--verde-destaque); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">RETOMAR</button>
-                        <button onclick="excluir(${i})" style="background:#D32F2F; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">X</button>
-                    </div>
-                </div>`;
-        });
+        corpo.innerHTML = '';
+
+        if (pendentes.length === 0) {
+            corpo.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">Nenhuma carga em espera.</p>';
+        } else {
+            pendentes.forEach((item, i) => {
+                corpo.innerHTML += `
+                    <div style="background:#F9FBFA; border:1px solid #E0E6E2; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid var(--dourado);">
+                        <strong style="color:var(--verde-centro);">Placa: ${item.p}</strong><br>
+                        <small style="color:gray;">${item.dt}</small>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button onclick="recuperar(${i})" style="flex:1; background:var(--verde-destaque); color:white; border:none; padding:8px; border-radius:5px; font-weight:bold;">RETOMAR</button>
+                            <button onclick="excluirItem(${i})" style="background:#D32F2F; color:white; border:none; padding:8px 12px; border-radius:5px; font-weight:bold;">X</button>
+                        </div>
+                    </div>`;
+            });
+        }
         document.getElementById('modal-pendentes').style.display = 'block';
     }
 
-    // 6. EXCLUIR (Corrigido para sumir na hora)
-    function excluir(i) {
-        if (confirm("Deseja excluir este item?")) {
-            pendentes.splice(i, 1);
-            localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-            atualizarContador();
-            abrirPendentes(); // Re-renderiza a lista no modal
+    // 5. EXCLUIR ITEM (Corrigido para atualizar na hora)
+    function excluirItem(index) {
+        if (confirm("Deseja excluir permanentemente?")) {
+            pendentes.splice(index, 1); // Remove da lista
+            localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes)); // Salva no celular
+            atualizarContador(); // Atualiza o numerozinho
+            abrirPendentes(); // Atualiza a lista dentro do modal na hora
         }
     }
 
+    // 6. RECUPERAR ITEM
     function recuperar(i) {
         const item = pendentes[i];
         document.getElementById('p').value = item.p;
@@ -393,57 +332,95 @@
         document.getElementById('secao-caminhao').style.display = 'block';
         document.getElementById('btn-add-vol').style.display = 'block';
 
+        // Remove da lista de pendentes pois agora está na tela
         pendentes.splice(i, 1);
         localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+        
         document.getElementById('modal-pendentes').style.display = 'none';
         atualizarContador();
     }
 
-    // 7. GERAR PDF
+    // --- FUNÇÕES DE INTERFACE ---
+
+    function mudarTipoCarga() {
+        const tipo = document.getElementById('tipo-carga').value;
+        const secCam = document.getElementById('secao-caminhao');
+        const secVol = document.getElementById('container-volumes');
+        const btnAdd = document.getElementById('btn-add-vol');
+        secVol.innerHTML = ''; 
+        if (tipo === "") {
+            secCam.style.display = 'none';
+            btnAdd.style.display = 'none';
+            return;
+        }
+        secCam.style.display = 'block';
+        btnAdd.style.display = 'block';
+        addV();
+    }
+
+    function addV() {
+        const container = document.getElementById('container-volumes');
+        const num = container.querySelectorAll('.volume-box').length + 1;
+        const tipoCarga = document.getElementById('tipo-carga').value;
+        const labelDinamico = (tipoCarga === "Bag in Box") ? "FOTO DA CARGA *" : "FOTO LACRE *";
+        const html = `
+            <div class="volume-box">
+                <div class="header-volume"><h4>Volume ${num}</h4>
+                ${num > 1 ? `<button type="button" onclick="this.closest('.volume-box').remove(); reordenar();" style="color:red; background:none; border:none; font-weight:bold;">REMOVER</button>` : ''}
+                </div>
+                <div class="foto-wrapper">
+                    <div class="foto-col"><label>FOTO ETIQUETA *</label>
+                        <div class="box-imagem"><span class="msg-camera">📷 Tocar para Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
+                    </div>
+                    <div class="foto-col"><label class="label-lacre">${labelDinamico}</label>
+                        <div class="box-imagem"><span class="msg-camera">📷 Tocar para Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
+                    </div>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function reordenar() {
+        document.querySelectorAll('#container-volumes h4').forEach((h, i) => h.innerText = `Volume ${i+1}`);
+    }
+
+    function preview(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const box = input.parentElement;
+                const img = box.querySelector('img');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                box.querySelector('.msg-camera').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
     function gerarPDF() {
         const nf = document.getElementById('nota-fiscal').value;
-        if(!nf) return alert("Digite a NOTA FISCAL!");
-
-        document.querySelectorAll('input, select').forEach(el => el.setAttribute('value', el.value));
-        const element = document.getElementById('render-area');
-        const load = document.getElementById('loading');
+        if (!nf) return alert("Digite a NOTA FISCAL!");
         
-        load.style.display = 'block';
-        element.classList.add('modo-pdf');
-
-        const volumes = document.querySelectorAll('#container-volumes .volume-box');
-        const quebrasTemporarias = [];
-        volumes.forEach((vol, index) => {
-            if (index > 0 && index % 2 === 0) {
-                const divQuebra = document.createElement('div');
-                divQuebra.style.pageBreakBefore = 'always';
-                vol.parentNode.insertBefore(divQuebra, vol);
-                quebrasTemporarias.push(divQuebra);
-            }
-        });
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('render-area').classList.add('modo-pdf');
+        document.querySelectorAll('input, select').forEach(el => el.setAttribute('value', el.value));
 
         const opt = {
             margin: 0,
             filename: `Checklist_NF_${nf}.pdf`,
             image: { type: 'jpeg', quality: 1.0 },
             html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
-            jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
+            jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
         };
 
-        document.querySelector('.botoes-fixos').style.display = 'none';
-        document.getElementById('btn-abrir-pendentes').style.display = 'none';
-
-        html2pdf().set(opt).from(element).save().then(() => {
-            quebrasTemporarias.forEach(q => q.remove());
-            element.classList.remove('modo-pdf');
-            load.style.display = 'none';
-            document.querySelector('.botoes-fixos').style.display = 'flex';
-            document.getElementById('btn-abrir-pendentes').style.display = 'block';
+        html2pdf().set(opt).from(document.getElementById('render-area')).save().then(() => {
+            document.getElementById('render-area').classList.remove('modo-pdf');
+            document.getElementById('loading').style.display = 'none';
         });
     }
 
-    // Iniciar contador ao carregar
+    // Roda ao abrir a página
     window.onload = atualizarContador;
 </script>
 </body>
