@@ -108,62 +108,62 @@
 
 /* REGRAS EXCLUSIVAS PARA O PDF */
         .modo-pdf { 
-            width: 794px !important; /* Força largura de folha A4 */
-            padding: 30px !important; 
+            width: 700px !important; /* Largura ideal para centralizar no A4 */
+            margin: 0 auto !important; 
+            padding: 20px !important; 
             background: white !important; 
             box-shadow: none !important; 
+            display: block !important;
         }
 
-        /* 1. FORÇA O LAYOUT LADO A LADO (Ignora o celular) */
+        /* 1. CENTRALIZAÇÃO E ESCALA */
         .modo-pdf .dados-container { 
-            grid-template-columns: 1fr 1fr !important; 
-            gap: 15px !important; 
-        }
-        .modo-pdf .foto-wrapper { 
-            flex-direction: row !important; 
+            display: grid !important; 
+            grid-template-columns: 1fr 1fr !important; /* Dados ainda em 2 colunas para não ocupar muito espaço */
             gap: 10px !important; 
         }
 
-        /* 2. CAPA (Página 1: Cabeçalho, Dados e Caminhão) */
-        .modo-pdf .header, .modo-pdf .dados-container, .modo-pdf #secao-caminhao {
-            page-break-inside: avoid !important;
-        }
-        .modo-pdf #secao-caminhao { 
-            margin-bottom: 50px !important; 
-            page-break-after: always !important; /* Pula página DEPOIS do caminhão */
-        }
-        .modo-pdf #secao-caminhao .box-imagem {
-            height: 180px !important; /* Altura controlada para caber na Capa */
-        }
-
-        /* 3. VOLUMES (Página 2 em diante: Pares) */
+        /* 2. VOLUMES NA VERTICAL (UM ABAIXO DO OUTRO) */
         .modo-pdf #container-volumes { 
-            display: grid !important; 
-            grid-template-columns: 1fr 1fr !important; /* 2 Volumes por linha */
+            display: flex !important; 
+            flex-direction: column !important; /* Força um abaixo do outro */
             gap: 20px !important;
         }
+
         .modo-pdf .volume-box { 
+            width: 100% !important;
             border: 1px solid #ddd !important; 
-            height: 380px !important; /* Trava a altura para ficarem iguais */
-            page-break-inside: avoid !important;
-            margin-bottom: 0 !important;
+            page-break-inside: avoid !important; /* Impede que um volume seja cortado entre páginas */
+            margin-bottom: 20px !important;
             padding: 15px !important;
         }
-        .modo-pdf #container-volumes .box-imagem { 
-            height: 160px !important; 
+
+        /* 3. CAPA E QUEBRA DE PÁGINA */
+        .modo-pdf #secao-caminhao { 
+            page-break-after: always !important; /* A primeira página será só os dados e o caminhão */
+            margin-bottom: 0 !important;
         }
 
-        /* 4. LIMPEZA VISUAL DO PDF */
-        .modo-pdf .box-imagem { border: 1px solid #eee !important; background: #fff !important; }
-        .modo-pdf .box-imagem img { object-fit: contain !important; }
+        .modo-pdf .foto-wrapper { 
+            display: flex !important; 
+            flex-direction: row !important; /* Fotos do mesmo volume continuam lado a lado para economizar papel */
+            justify-content: space-around !important;
+        }
+
+        .modo-pdf .box-imagem { 
+            width: 45% !important; 
+            height: 200px !important; 
+            border: 1px solid #eee !important;
+        }
+
+        /* LIMPEZA VISUAL */
         .modo-pdf .btn-remover, .modo-pdf .msg-camera, 
         .modo-pdf input[type="file"], .modo-pdf #btn-abrir-pendentes { 
             display: none !important; 
         }
         .modo-pdf input, .modo-pdf select { 
             border: none !important; background: transparent !important; 
-            padding: 0 !important; font-weight: bold !important; 
-            color: #000 !important; appearance: none; 
+            font-weight: bold !important; color: #000 !important; 
         }
 
         #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-weight: bold; color: var(--verde-centro); z-index: 10000; font-size: 18px; text-align: center; width: 80%; }
@@ -441,23 +441,23 @@
         document.getElementById('loading').style.display = 'block';
         const area = document.getElementById('render-area');
         
-        // Ativa o visual de impressão
+        // Adiciona classe de impressão
         area.classList.add('modo-pdf');
 
-        // Congela os valores digitados
+        // Garante que os valores digitados apareçam no PDF
         const inputs = area.querySelectorAll('input, select');
         inputs.forEach(input => { 
             if (input.type !== 'file') input.setAttribute('value', input.value); 
         });
 
         const opt = {
-            margin: [10, 5, 10, 5],
+            margin: [10, 10, 10, 10],
             filename: `Checklist_NF_${nf}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { 
                 scale: 2, 
                 useCORS: true, 
-                windowWidth: 800 // ESSENCIAL: Impede que o celular quebre o layout
+                windowWidth: 750 // Força o gerador a ver o layout largo e centralizado
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
@@ -466,7 +466,7 @@
             area.classList.remove('modo-pdf');
             document.getElementById('loading').style.display = 'none';
         }).catch(err => {
-            console.error("Erro no PDF:", err);
+            console.error(err);
             area.classList.remove('modo-pdf');
             document.getElementById('loading').style.display = 'none';
         });
