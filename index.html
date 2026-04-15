@@ -107,78 +107,70 @@
         .modal-conteudo { background:white; padding:30px; border-radius:16px; max-width:500px; margin: 60px auto; color: black; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
 
 /* REGRAS EXCLUSIVAS PARA O PDF */
-        .modo-pdf { 
-            width: 700px !important; /* Largura ideal para centralizar no A4 */
-            margin: 0 auto !important; 
-            padding: 20px !important; 
-            background: white !important; 
-            box-shadow: none !important; 
-            display: block !important;
-        }
+.modo-pdf { 
+    width: 750px !important; 
+    margin: 0 auto !important; 
+    padding: 20px !important; 
+    background: white !important; 
+    display: block !important;
+}
 
-        /* 1. CENTRALIZAÇÃO E ESCALA */
-        .modo-pdf .dados-container { 
-            display: grid !important; 
-            grid-template-columns: 1fr 1fr !important; /* Dados ainda em 2 colunas para não ocupar muito espaço */
-            gap: 10px !important; 
-        }
+/* PAGINA 1: Ajuste para os dados ficarem LADO A LADO no PDF */
+.modo-pdf .header { margin-bottom: 15px !important; }
+.modo-pdf .dados-container { 
+    display: grid !important; 
+    grid-template-columns: 1fr 1fr !important; /* Força 2 colunas no PDF */
+    gap: 10px !important; 
+    margin-bottom: 15px !important;
+}
 
-        /* 2. VOLUMES NA VERTICAL (UM ABAIXO DO OUTRO) */
-        .modo-pdf #container-volumes { 
-            display: flex !important; 
-            flex-direction: column !important; /* Força um abaixo do outro */
-            gap: 20px !important;
-        }
+/* Fotos do veículo menores para caberem na Capa sem empurrar tudo */
+.modo-pdf #secao-caminhao .box-imagem { height: 160px !important; }
+.modo-pdf #secao-caminhao { 
+    page-break-after: always !important; /* Pula para pág 2 obrigatoriamente aqui */
+    margin-bottom: 0 !important;
+}
 
-        .modo-pdf .volume-box { 
-            width: 100% !important;
-            border: 1px solid #ddd !important; 
-            page-break-inside: avoid !important; /* Impede que um volume seja cortado entre páginas */
-            margin-bottom: 20px !important;
-            padding: 15px !important;
-        }
+/* VOLUMES: Vertical (Um abaixo do outro preenchendo a largura) */
+.modo-pdf #container-volumes { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    gap: 25px !important;
+}
 
-        /* 3. CAPA E QUEBRA DE PÁGINA */
-        .modo-pdf #secao-caminhao { 
-            page-break-after: always !important; /* A primeira página será só os dados e o caminhão */
-            margin-bottom: 0 !important;
-        }
+.modo-pdf .volume-box { 
+    width: 100% !important;
+    page-break-inside: avoid !important; /* Não corta o volume no meio da folha */
+    border: 1px solid #ddd !important;
+    padding: 20px !important;
+    margin-bottom: 10px !important;
+}
 
-        .modo-pdf .foto-wrapper { 
-            display: flex !important; 
-            flex-direction: row !important; /* Fotos do mesmo volume continuam lado a lado para economizar papel */
-            justify-content: space-around !important;
-        }
+.modo-pdf .foto-wrapper { 
+    display: flex !important; 
+    flex-direction: row !important; /* Fotos da etiqueta/carga lado a lado */
+    justify-content: space-between !important;
+}
 
-        .modo-pdf .box-imagem { 
-            width: 45% !important; 
-            height: 200px !important; 
-            border: 1px solid #eee !important;
-        }
+.modo-pdf .box-imagem { width: 48% !important; height: 230px !important; }
 
-        /* LIMPEZA VISUAL */
-        .modo-pdf .btn-remover, .modo-pdf .msg-camera, 
-        .modo-pdf input[type="file"], .modo-pdf #btn-abrir-pendentes { 
-            display: none !important; 
-        }
-        .modo-pdf input, .modo-pdf select { 
-            border: none !important; background: transparent !important; 
-            font-weight: bold !important; color: #000 !important; 
-        }
+/* LIMPEZA TOTAL */
+.modo-pdf .btn-remover, .modo-pdf button, .modo-pdf .msg-camera, 
+.modo-pdf input[type="file"], .modo-pdf #btn-abrir-pendentes { 
+    display: none !important; 
+}
 
-        #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-weight: bold; color: var(--verde-centro); z-index: 10000; font-size: 18px; text-align: center; width: 80%; }
-
-        @media (max-width: 768px) {
-            body { padding: 10px 5px 120px 5px; background: #FFFFFF; }
-            #render-area { padding: 15px; box-shadow: none; border-radius: 0; width: 100%; }
-            .dados-container { grid-template-columns: 1fr; gap: 15px; }
-            .foto-wrapper { flex-direction: column; gap: 15px; }
-            .box-imagem { height: 180px; }
-            .botoes-fixos { width: 100%; bottom: 10px; padding: 10px; flex-wrap: wrap; border-radius: 15px; }
-            .btn { font-size: 11px; padding: 12px; }
-            #btn-abrir-pendentes { top: 10px; right: 10px; padding: 10px 12px; font-size: 11px; }
-        }
-    </style>
+/* CSS DO SITE (Ajustado para não estragar o PDF) */
+@media (max-width: 768px) {
+    /* O :not(.modo-pdf) impede que o visual de celular estrague o PDF */
+    body:not(.modo-pdf) { padding: 10px 5px 120px 5px; background: #FFFFFF; }
+    #render-area:not(.modo-pdf) { padding: 15px; box-shadow: none; border-radius: 0; width: 100%; }
+    .dados-container:not(.modo-pdf) { grid-template-columns: 1fr; gap: 15px; }
+    .foto-wrapper:not(.modo-pdf) { flex-direction: column; gap: 15px; }
+    .box-imagem:not(.modo-pdf) { height: 180px; }
+}
+ 
+</style>
 </head>
 <body>
 
@@ -419,7 +411,7 @@
                 ${num > 1 ? `<button type="button" onclick="this.closest('.volume-box').remove(); reordenar();" style="color:red; background:none; border:none;">REMOVER</button>` : ''}
                 </div>
                 <div class="foto-wrapper">
-                    <div class="foto-col"><label>ETIQUETA</label>
+                    <div class="foto-col"><label>FOTO ETIQUETA</label>
                         <div class="box-imagem"><span class="msg-camera">📷 Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
                     </div>
                     <div class="foto-col"><label>${labelDinamico}</label>
@@ -434,43 +426,44 @@
         document.querySelectorAll('#container-volumes h4').forEach((h, i) => h.innerText = `Volume ${i+1}`);
     }
 
-    function gerarPDF() {
-        const nf = document.getElementById('nota-fiscal').value;
-        if (!nf) return alert("Digite a NF!");
-        
-        document.getElementById('loading').style.display = 'block';
-        const area = document.getElementById('render-area');
-        
-        // Adiciona classe de impressão
-        area.classList.add('modo-pdf');
+function gerarPDF() {
+    const nf = document.getElementById('nota-fiscal').value;
+    if (!nf) return alert("Digite a NF!");
+    
+    document.getElementById('loading').style.display = 'block';
+    const area = document.getElementById('render-area');
+    
+    // Ativa modo PDF
+    area.classList.add('modo-pdf');
 
-        // Garante que os valores digitados apareçam no PDF
-        const inputs = area.querySelectorAll('input, select');
-        inputs.forEach(input => { 
-            if (input.type !== 'file') input.setAttribute('value', input.value); 
-        });
+    // Sincroniza os textos para o PDF
+    const inputs = area.querySelectorAll('input, select');
+    inputs.forEach(input => { 
+        if (input.type !== 'file') input.setAttribute('value', input.value); 
+    });
 
-        const opt = {
-            margin: [10, 10, 10, 10],
-            filename: `Checklist_NF_${nf}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
-                windowWidth: 750 // Força o gerador a ver o layout largo e centralizado
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+    const opt = {
+        margin: [10, 5, 10, 5],
+        filename: `Checklist_NF_${nf}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            windowWidth: 800 // Aumentado para garantir layout de "desktop"
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] } // Removido avoid-all para evitar pulos indesejados
+    };
 
-        html2pdf().set(opt).from(area).save().then(() => {
-            area.classList.remove('modo-pdf');
-            document.getElementById('loading').style.display = 'none';
-        }).catch(err => {
-            console.error(err);
-            area.classList.remove('modo-pdf');
-            document.getElementById('loading').style.display = 'none';
-        });
-    }
+    html2pdf().set(opt).from(area).save().then(() => {
+        area.classList.remove('modo-pdf');
+        document.getElementById('loading').style.display = 'none';
+    }).catch(err => {
+        console.error(err);
+        area.classList.remove('modo-pdf');
+        document.getElementById('loading').style.display = 'none';
+    });
+}
 
     window.onload = atualizarContador;
 </script>
