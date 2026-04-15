@@ -221,277 +221,230 @@
     </div>
 
     <script>
-       let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes') || '[]');
+    // Inicialização da variável global
+    let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes') || '[]');
 
-function atualizarLabelsLacre() {
-    const tipoCarga = document.getElementById('tipo-carga').value;
-    const novoTexto = (tipoCarga === "Bag in Box") ? "FOTO DA CARGA *" : "FOTO LACRE *";
-    
-    // Isso aqui muda o texto de todos os volumes que já estão abertos na tela
-    document.querySelectorAll('.label-lacre').forEach(label => {
-        label.innerText = novoTexto;
-    });
-}
-
-        // 1. Função para atualizar o número no balãozinho vermelho
-function atualizarContadorPendentes() {
-    const pendentes = JSON.parse(localStorage.getItem('checklists_pendentes')) || [];
-    const contador = document.getElementById('contador-pendentes'); // Certifique-se que o ID do span é este
-    if (contador) {
-        contador.innerText = pendentes.length;
-        contador.style.display = pendentes.length > 0 ? 'block' : 'none';
+    // 1. ATUALIZAR CONTADOR (Unificado)
+    function atualizarContador() {
+        const span = document.getElementById('count-pendentes');
+        if (span) {
+            span.innerText = pendentes.length;
+            span.style.display = pendentes.length > 0 ? 'inline-block' : 'none';
+        }
     }
-}
 
-// 3. Função de Excluir (Ajustada para atualizar a tela na hora)
-function excluirPendente(index) {
-    if (confirm("Deseja realmente excluir este checklist?")) {
-        let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes')) || [];
-        pendentes.splice(index, 1); // Remove o item
+    // 2. MUDAR TIPO DE CARGA
+    function mudarTipoCarga() {
+        const tipo = document.getElementById('tipo-carga').value;
+        const secCam = document.getElementById('secao-caminhao');
+        const secVol = document.getElementById('container-volumes');
+        const btnAdd = document.getElementById('btn-add-vol');
+
+        secVol.innerHTML = ''; 
+
+        if (tipo === "") {
+            secCam.style.display = 'none';
+            btnAdd.style.display = 'none';
+            return;
+        }
+
+        secCam.style.display = 'block';
+        btnAdd.style.display = 'block';
+        addV(); // Adiciona o primeiro volume
+    }
+
+    // 3. ADICIONAR VOLUME
+    function addV() {
+        const container = document.getElementById('container-volumes');
+        const num = container.querySelectorAll('.volume-box').length + 1;
+        const tipoCarga = document.getElementById('tipo-carga').value;
+        const labelDinamico = (tipoCarga === "Bag in Box") ? "FOTO DA CARGA *" : "FOTO LACRE *";
+
+        const html = `
+            <div class="volume-box">
+                <div class="header-volume">
+                    <h4>Volume ${num}</h4>
+                    ${num > 1 ? `<button type="button" class="btn-remover" onclick="this.closest('.volume-box').remove(); reordenar();" style="color:red; background:none; border:none; font-weight:bold; cursor:pointer;">REMOVER</button>` : ''}
+                </div>
+                <div class="foto-wrapper">
+                    <div class="foto-col">
+                        <label>FOTO ETIQUETA *</label>
+                        <div class="box-imagem">
+                            <span class="msg-camera">📷 Tocar para Foto</span>
+                            <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
+                            <img style="display:none;">
+                        </div>
+                    </div>
+                    <div class="foto-col">
+                        <label class="label-lacre">${labelDinamico}</label>
+                        <div class="box-imagem">
+                            <span class="msg-camera">📷 Tocar para Foto</span>
+                            <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
+                            <img style="display:none;">
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    function reordenar() {
+        document.querySelectorAll('#container-volumes h4').forEach((h, i) => h.innerText = `Volume ${i+1}`);
+    }
+
+    function preview(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const box = input.parentElement;
+                const img = box.querySelector('img');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                box.querySelector('.msg-camera').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // 4. SALVAR STANDBY (Corrigido e Resetando)
+    function salvarParaDepois() {
+        const placa = document.getElementById('p').value;
+        if(!placa) {
+            document.getElementById('p').style.borderColor = 'red';
+            return alert("Digite ao menos a PLACA DO VEÍCULO antes de salvar.");
+        }
+        
+        const dados = {
+            p: placa, 
+            c: document.getElementById('c').value, 
+            t: document.getElementById('t').value,
+            m: document.getElementById('m').value, 
+            q: document.getElementById('qtd-volumes').value,
+            tp: document.getElementById('tipo-carga').value, 
+            dt: new Date().toLocaleString(),
+            htmlCam: document.getElementById('secao-caminhao').innerHTML,
+            htmlVol: document.getElementById('container-volumes').innerHTML
+        };
+        
+        pendentes.push(dados);
         localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
         
-        // COMANDOS MÁGICOS PARA ATUALIZAR NA HORA:
-        atualizarContadorPendentes(); // Atualiza o número no menu
-        abrirPendentes(); // Recarrega a lista visual de pendentes imediatamente
-    }
-}
+        alert("✅ Checklist em Standby!");
 
-        // Chame a função assim que a página carregar
-        window.addEventListener('load', atualizarContador);
+        // RESET DA PÁGINA (Limpa tudo sem dar reload)
+        document.querySelectorAll('input').forEach(i => i.value = '');
+        document.getElementById('tipo-carga').selectedIndex = 0;
+        document.getElementById('container-volumes').innerHTML = '';
+        document.getElementById('secao-caminhao').style.display = 'none';
+        document.getElementById('btn-add-vol').style.display = 'none';
+        
+        // Limpar fotos da seção caminhão (se houver imagens carregadas no HTML salvo)
+        document.querySelectorAll('#secao-caminhao img').forEach(img => {
+            img.src = '';
+            img.style.display = 'none';
+        });
+        document.querySelectorAll('#secao-caminhao .msg-camera').forEach(span => span.style.display = 'block');
 
-        function mudarTipoCarga() {
-    const tipo = document.getElementById('tipo-carga').value;
-    const secCam = document.getElementById('secao-caminhao');
-    const secVol = document.getElementById('container-volumes');
-    const btnAdd = document.getElementById('btn-add-vol');
-
-    // Limpa os volumes ao trocar o tipo para evitar confusão
-    secVol.innerHTML = ''; 
-
-    if (tipo === "") {
-        secCam.style.display = 'none';
-        btnAdd.style.display = 'none';
-        return;
+        atualizarContador();
+        window.scrollTo(0, 0);
     }
 
-    secCam.style.display = 'block';
-    btnAdd.style.display = 'block';
-    addV(); // Adiciona o primeiro volume automaticamente
-}
-
-function addV() {
-    const container = document.getElementById('container-volumes');
-    const num = container.querySelectorAll('.volume-box').length + 1;
-    const tipoCarga = document.getElementById('tipo-carga').value;
-    
-    // Define o texto do label com base no tipo de carga
-    const labelDinamico = (tipoCarga === "Bag in Box") ? "FOTO DA CARGA *" : "FOTO LACRE *";
-
-    const html = `
-        <div class="volume-box">
-            <div class="header-volume">
-                <h4>Volume ${num}</h4>
-               ${num > 1 ? `<button type="button" class="btn-remover" onclick="this.closest('.volume-box').remove(); reordenar();" style="color:red; background:none; border:none; font-weight:bold; cursor:pointer;">REMOVER</button>` : ''}
-            </div>
-            <div class="foto-wrapper">
-                <div class="foto-col">
-                    <label>FOTO ETIQUETA *</label>
-                    <div class="box-imagem">
-                        <span class="msg-camera">📷 Tocar para Foto</span>
-                        <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
-                        <img style="display:none;">
+    // 5. ABRIR PENDENTES
+    function abrirPendentes() {
+        const corpo = document.getElementById('lista-pendentes-corpo');
+        corpo.innerHTML = pendentes.length ? '' : '<p style="text-align:center; color:gray;">Nenhuma carga em espera.</p>';
+        
+        pendentes.forEach((item, i) => {
+            corpo.innerHTML += `
+                <div style="background:#F9FBFA; border:1px solid #E0E6E2; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid var(--dourado);">
+                    <strong style="color:var(--verde-centro); font-size:16px;">Placa: ${item.p}</strong><br>
+                    <span style="font-size:12px; color:gray;">Salvo em: ${item.dt}</span><br>
+                    <div style="display:flex; gap:10px; margin-top:12px;">
+                        <button onclick="recuperar(${i})" style="flex:1; background:var(--verde-destaque); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">RETOMAR</button>
+                        <button onclick="excluir(${i})" style="background:#D32F2F; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">X</button>
                     </div>
-                </div>
-                <div class="foto-col">
-                    <label class="label-lacre">${labelDinamico}</label>
-                    <div class="box-imagem">
-                        <span class="msg-camera">📷 Tocar para Foto</span>
-                        <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
-                        <img style="display:none;">
-                    </div>
-                </div>
-            </div>
-        </div>`;
-    container.insertAdjacentHTML('beforeend', html);
-}
-        function reordenar() {
-            document.querySelectorAll('#container-volumes h4').forEach((h, i) => h.innerText = `Volume ${i+1}`);
-        }
+                </div>`;
+        });
+        document.getElementById('modal-pendentes').style.display = 'block';
+    }
 
-        function preview(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const box = input.parentElement;
-                    const img = box.querySelector('img');
-                    // Salva imagem na src
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                    box.querySelector('.msg-camera').style.display = 'none';
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function salvarParaDepois() {
-            const placa = document.getElementById('p').value;
-            if(!placa) {
-                document.getElementById('p').style.borderColor = 'red';
-                return alert("Digite ao menos a PLACA DO VEÍCULO antes de salvar.");
-
-            // 1. Reseta os campos de texto
-    document.getElementById('form-checklist').reset(); 
-    
-    // 2. Limpa a área de volumes (deixa só o primeiro ou nenhum)
-    const container = document.getElementById('volumes-container');
-    container.innerHTML = ''; 
-    volumeCount = 0;
-    addV(); // Adiciona o volume 1 limpo novamente
-
-    // 3. Limpa as prévias de fotos do cabeçalho (se houver)
-    document.querySelectorAll('.foto-preview').forEach(img => img.src = '');
-    
-    // 4. Atualiza o contador de pendentes que corrigimos acima
-    atualizarContadorPendentes();
-
-    // 5. Opcional: Rola a tela para o topo
-    window.scrollTo(0, 0);
-}
-            
-            const dados = {
-                p: placa, 
-                c: document.getElementById('c').value, 
-                t: document.getElementById('t').value,
-                m: document.getElementById('m').value, 
-                q: document.getElementById('qtd-volumes').value,
-                tp: document.getElementById('tipo-carga').value, 
-                dt: new Date().toLocaleString(),
-                // Salva HTML do caminhão E dos volumes
-                htmlCam: document.getElementById('secao-caminhao').innerHTML,
-                htmlVol: document.getElementById('container-volumes').innerHTML
-            };
-            
-            pendentes.push(dados);
-            localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-            alert("✅ Checklist salvo com sucesso! A tela será limpa para o próximo.");
-            location.reload();
-        }
-
-        function abrirPendentes() {
-            const corpo = document.getElementById('lista-pendentes-corpo');
-            corpo.innerHTML = pendentes.length ? '' : '<p style="text-align:center; color:gray;">Nenhuma carga em espera.</p>';
-            
-            pendentes.forEach((item, i) => {
-                corpo.innerHTML += `
-                    <div style="background:#F9FBFA; border:1px solid #E0E6E2; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid var(--dourado);">
-                        <strong style="color:var(--verde-centro); font-size:16px;">Placa: ${item.p}</strong><br>
-                        <span style="font-size:12px; color:gray;">Salvo em: ${item.dt}</span><br>
-                        <div style="display:flex; gap:10px; margin-top:12px;">
-                            <button onclick="recuperar(${i})" style="flex:1; background:var(--verde-destaque); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">RETOMAR</button>
-                            <button onclick="excluir(${i})" style="background:#D32F2F; color:white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">X</button>
-                        </div>
-                    </div>`;
-            });
-            document.getElementById('modal-pendentes').style.display = 'block';
-        }
-
-        function recuperar(i) {
-            const item = pendentes[i];
-            
-            // Restaura campos
-            document.getElementById('p').value = item.p;
-            document.getElementById('c').value = item.c;
-            document.getElementById('t').value = item.t;
-            document.getElementById('m').value = item.m;
-            document.getElementById('qtd-volumes').value = item.q;
-            document.getElementById('tipo-carga').value = item.tp;
-            
-            // Restaura as fotos (HTML completo)
-            document.getElementById('secao-caminhao').innerHTML = item.htmlCam;
-            document.getElementById('container-volumes').innerHTML = item.htmlVol;
-            
-            // Reabilita exibição do caminhão e botão de volume
-            document.getElementById('secao-caminhao').style.display = 'block';
-            document.getElementById('btn-add-vol').style.display = 'block';
-
+    // 6. EXCLUIR (Corrigido para sumir na hora)
+    function excluir(i) {
+        if (confirm("Deseja excluir este item?")) {
             pendentes.splice(i, 1);
             localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-            document.getElementById('modal-pendentes').style.display = 'none';
             atualizarContador();
+            abrirPendentes(); // Re-renderiza a lista no modal
         }
-
-        // 3. Função de Excluir (Ajustada para atualizar a tela na hora)
-function excluirPendente(index) {
-    if (confirm("Deseja realmente excluir este checklist?")) {
-        let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes')) || [];
-        pendentes.splice(index, 1); // Remove o item
-        localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-        
-        // COMANDOS MÁGICOS PARA ATUALIZAR NA HORA:
-        atualizarContadorPendentes(); // Atualiza o número no menu
-        abrirPendentes(); // Recarrega a lista visual de pendentes imediatamente
     }
-}
 
-        function atualizarContador() {
-            document.getElementById('count-pendentes').innerText = pendentes.length;
-        }
-
-        function gerarPDF() {
-    const nf = document.getElementById('nota-fiscal').value;
-    if(!nf) return alert("Digite a NOTA FISCAL!");
-
-    // Prepara valores e tela
-    document.querySelectorAll('input, select').forEach(el => el.setAttribute('value', el.value));
-    const element = document.getElementById('render-area');
-    const load = document.getElementById('loading');
-    
-    load.style.display = 'block';
-    element.classList.add('modo-pdf');
-
-// LÓGICA DE QUEBRA: Garante 2 volumes por folha
-    const volumes = document.querySelectorAll('#container-volumes .volume-box');
-    const quebrasTemporarias = [];
-
-    volumes.forEach((vol, index) => {
-        // Pula página a cada 2 volumes para ficarem centralizados
-        if (index > 0 && index % 2 === 0) {
-            const divQuebra = document.createElement('div');
-            divQuebra.style.pageBreakBefore = 'always';
-            vol.parentNode.insertBefore(divQuebra, vol);
-            quebrasTemporarias.push(divQuebra);
-        }
-    });
-
-    const opt = {
-                margin: 0,
-                filename: `Checklist_NF_${nf}.pdf`,
-                image: { type: 'jpeg', quality: 1.0 },
-                html2canvas: { 
-                    scale: 2, 
-                    useCORS: true,
-                    logging: false,
-                    scrollY: 0,
-                    windowWidth: 800 /* <-- ESSA LINHA ENGANA O PDF PARA USAR O LAYOUT DE PC */
-                },
-                jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'] }
-            };
-
-    // Esconde botões
-    document.querySelector('.botoes-fixos').style.display = 'none';
-    document.getElementById('btn-abrir-pendentes').style.display = 'none';
-
-    html2pdf().set(opt).from(element).save().then(() => {
-        // Limpa as quebras para não bugar o visual do app
-        quebrasTemporarias.forEach(q => q.remove());
+    function recuperar(i) {
+        const item = pendentes[i];
+        document.getElementById('p').value = item.p;
+        document.getElementById('c').value = item.c;
+        document.getElementById('t').value = item.t;
+        document.getElementById('m').value = item.m;
+        document.getElementById('qtd-volumes').value = item.q;
+        document.getElementById('tipo-carga').value = item.tp;
         
-        element.classList.remove('modo-pdf');
-        load.style.display = 'none';
-        document.querySelector('.botoes-fixos').style.display = 'flex';
-        document.getElementById('btn-abrir-pendentes').style.display = 'block';
-    });
-}
-    </script>
+        document.getElementById('secao-caminhao').innerHTML = item.htmlCam;
+        document.getElementById('container-volumes').innerHTML = item.htmlVol;
+        
+        document.getElementById('secao-caminhao').style.display = 'block';
+        document.getElementById('btn-add-vol').style.display = 'block';
+
+        pendentes.splice(i, 1);
+        localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+        document.getElementById('modal-pendentes').style.display = 'none';
+        atualizarContador();
+    }
+
+    // 7. GERAR PDF
+    function gerarPDF() {
+        const nf = document.getElementById('nota-fiscal').value;
+        if(!nf) return alert("Digite a NOTA FISCAL!");
+
+        document.querySelectorAll('input, select').forEach(el => el.setAttribute('value', el.value));
+        const element = document.getElementById('render-area');
+        const load = document.getElementById('loading');
+        
+        load.style.display = 'block';
+        element.classList.add('modo-pdf');
+
+        const volumes = document.querySelectorAll('#container-volumes .volume-box');
+        const quebrasTemporarias = [];
+        volumes.forEach((vol, index) => {
+            if (index > 0 && index % 2 === 0) {
+                const divQuebra = document.createElement('div');
+                divQuebra.style.pageBreakBefore = 'always';
+                vol.parentNode.insertBefore(divQuebra, vol);
+                quebrasTemporarias.push(divQuebra);
+            }
+        });
+
+        const opt = {
+            margin: 0,
+            filename: `Checklist_NF_${nf}.pdf`,
+            image: { type: 'jpeg', quality: 1.0 },
+            html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+            jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+        };
+
+        document.querySelector('.botoes-fixos').style.display = 'none';
+        document.getElementById('btn-abrir-pendentes').style.display = 'none';
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            quebrasTemporarias.forEach(q => q.remove());
+            element.classList.remove('modo-pdf');
+            load.style.display = 'none';
+            document.querySelector('.botoes-fixos').style.display = 'flex';
+            document.getElementById('btn-abrir-pendentes').style.display = 'block';
+        });
+    }
+
+    // Iniciar contador ao carregar
+    window.onload = atualizarContador;
+</script>
 </body>
 </html>
