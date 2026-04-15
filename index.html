@@ -233,18 +233,28 @@ function atualizarLabelsLacre() {
     });
 }
 
-        // FORÇA O CONTADOR A ATUALIZAR ASSIM QUE O CELULAR LER O APP
-        document.addEventListener('DOMContentLoaded', atualizarContador);
+        // 1. Função para atualizar o número no balãozinho vermelho
+function atualizarContadorPendentes() {
+    const pendentes = JSON.parse(localStorage.getItem('checklists_pendentes')) || [];
+    const contador = document.getElementById('contador-pendentes'); // Certifique-se que o ID do span é este
+    if (contador) {
+        contador.innerText = pendentes.length;
+        contador.style.display = pendentes.length > 0 ? 'block' : 'none';
+    }
+}
 
-        function atualizarContador() {
-            const lista = JSON.parse(localStorage.getItem('checklists_pendentes') || '[]');
-            const badge = document.getElementById('count-pendentes');
-            if(badge) {
-                badge.innerText = lista.length;
-                // Se tiver pendente, o círculo fica vermelho vibrante
-                badge.style.background = lista.length > 0 ? '#ff0000' : '#F9A825';
-            }
-        }
+// 3. Função de Excluir (Ajustada para atualizar a tela na hora)
+function excluirPendente(index) {
+    if (confirm("Deseja realmente excluir este checklist?")) {
+        let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes')) || [];
+        pendentes.splice(index, 1); // Remove o item
+        localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+        
+        // COMANDOS MÁGICOS PARA ATUALIZAR NA HORA:
+        atualizarContadorPendentes(); // Atualiza o número no menu
+        abrirPendentes(); // Recarrega a lista visual de pendentes imediatamente
+    }
+}
 
         // Chame a função assim que a página carregar
         window.addEventListener('load', atualizarContador);
@@ -328,7 +338,25 @@ function addV() {
             if(!placa) {
                 document.getElementById('p').style.borderColor = 'red';
                 return alert("Digite ao menos a PLACA DO VEÍCULO antes de salvar.");
-            }
+
+            // 1. Reseta os campos de texto
+    document.getElementById('form-checklist').reset(); 
+    
+    // 2. Limpa a área de volumes (deixa só o primeiro ou nenhum)
+    const container = document.getElementById('volumes-container');
+    container.innerHTML = ''; 
+    volumeCount = 0;
+    addV(); // Adiciona o volume 1 limpo novamente
+
+    // 3. Limpa as prévias de fotos do cabeçalho (se houver)
+    document.querySelectorAll('.foto-preview').forEach(img => img.src = '');
+    
+    // 4. Atualiza o contador de pendentes que corrigimos acima
+    atualizarContadorPendentes();
+
+    // 5. Opcional: Rola a tela para o topo
+    window.scrollTo(0, 0);
+}
             
             const dados = {
                 p: placa, 
@@ -392,14 +420,18 @@ function addV() {
             atualizarContador();
         }
 
-        function excluir(i) {
-            if(confirm("Tem certeza que deseja excluir esta carga?")) {
-                pendentes.splice(i, 1);
-                localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-                abrirPendentes();
-                atualizarContador();
-            }
-        }
+        // 3. Função de Excluir (Ajustada para atualizar a tela na hora)
+function excluirPendente(index) {
+    if (confirm("Deseja realmente excluir este checklist?")) {
+        let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes')) || [];
+        pendentes.splice(index, 1); // Remove o item
+        localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+        
+        // COMANDOS MÁGICOS PARA ATUALIZAR NA HORA:
+        atualizarContadorPendentes(); // Atualiza o número no menu
+        abrirPendentes(); // Recarrega a lista visual de pendentes imediatamente
+    }
+}
 
         function atualizarContador() {
             document.getElementById('count-pendentes').innerText = pendentes.length;
