@@ -221,45 +221,31 @@
     </div>
 
 <script>
-    // Inicializa a lista de pendentes carregando do celular
-    let pendentes = JSON.parse(localStorage.getItem('checklists_pendentes') || '[]');
+    // Carrega a lista com segurança
+    let pendentes = [];
+    try {
+        pendentes = JSON.parse(localStorage.getItem('checklists_pendentes') || '[]');
+    } catch (e) {
+        console.error("Erro ao carregar storage", e);
+        pendentes = [];
+    }
 
-    // 1. ATUALIZAR O NÚMERO NO BOTÃO (Roda sempre que algo muda)
+    // 1. ATUALIZAR O NÚMERO (Sempre visível para você saber que está funcionando)
     function atualizarContador() {
         const span = document.getElementById('count-pendentes');
         if (span) {
             span.innerText = pendentes.length;
-            // Mostra o balão apenas se houver itens
-            span.style.display = pendentes.length > 0 ? 'inline-block' : 'none';
+            // Se quiser que o 0 suma, mude para: pendentes.length > 0 ? 'inline-block' : 'none'
+            span.style.display = 'inline-block'; 
         }
     }
 
-    // 2. LIMPAR A TELA (Manual, já que não usamos a tag <form>)
-    function limparTela() {
-        // Limpa todos os inputs de texto e número
-        document.querySelectorAll('input').forEach(input => input.value = '');
-        // Reseta o seletor de carga
-        document.getElementById('tipo-carga').selectedIndex = 0;
-        // Esconde as seções e limpa os volumes
-        document.getElementById('secao-caminhao').style.display = 'none';
-        document.getElementById('container-volumes').innerHTML = '';
-        document.getElementById('btn-add-vol').style.display = 'none';
-        // Reseta as fotos do caminhão (visual)
-        document.querySelectorAll('#secao-caminhao img').forEach(img => {
-            img.src = '';
-            img.style.display = 'none';
-        });
-        document.querySelectorAll('#secao-caminhao .msg-camera').forEach(msg => msg.style.display = 'block');
-        
-        window.scrollTo(0, 0);
-    }
-
-    // 3. SALVAR EM STANDBY
+    // 2. SALVAR EM STANDBY (Com tratamento de erro de espaço)
     function salvarParaDepois() {
         const placa = document.getElementById('p').value;
         if (!placa) {
-            document.getElementById('p').style.borderColor = 'red';
-            return alert("Para salvar, digite ao menos a PLACA.");
+            alert("Para salvar, digite ao menos a PLACA.");
+            return;
         }
 
         const dados = {
@@ -269,21 +255,29 @@
             m: document.getElementById('m').value,
             q: document.getElementById('qtd-volumes').value,
             tp: document.getElementById('tipo-carga').value,
+            nf: document.getElementById('nota-fiscal').value,
             dt: new Date().toLocaleString(),
+            // Pegamos o estado atual das fotos e volumes
             htmlCam: document.getElementById('secao-caminhao').innerHTML,
             htmlVol: document.getElementById('container-volumes').innerHTML
         };
 
-        pendentes.push(dados);
-        localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-        
-        alert("✅ Salvo em Standby!");
-        
-        atualizarContador();
-        limparTela(); // Limpa a página sem precisar dar reload
+        try {
+            pendentes.push(dados);
+            localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+            
+            alert("✅ Salvo com sucesso!");
+            
+            // O SEGREDO DO RESET: Recarregar a página limpa TUDO da memória do celular
+            window.location.reload(); 
+
+        } catch (e) {
+            alert("❌ ERRO: O Standby está cheio! \n\nIsso acontece porque as fotos são pesadas. Exclua itens antigos da lista de pendentes ou gere o PDF desta carga agora.");
+            pendentes.pop(); // Remove o que tentou inserir e falhou
+        }
     }
 
-    // 4. ABRIR O MODAL DE PENDENTES
+    // 3. ABRIR E EXCLUIR (Lógica simplificada)
     function abrirPendentes() {
         const corpo = document.getElementById('lista-pendentes-corpo');
         corpo.innerHTML = '';
@@ -292,70 +286,74 @@
             corpo.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">Nenhuma carga em espera.</p>';
         } else {
             pendentes.forEach((item, i) => {
-                corpo.innerHTML += `
-                    <div style="background:#F9FBFA; border:1px solid #E0E6E2; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid var(--dourado);">
-                        <strong style="color:var(--verde-centro);">Placa: ${item.p}</strong><br>
-                        <small style="color:gray;">${item.dt}</small>
-                        <div style="display:flex; gap:10px; margin-top:10px;">
-                            <button onclick="recuperar(${i})" style="flex:1; background:var(--verde-destaque); color:white; border:none; padding:8px; border-radius:5px; font-weight:bold;">RETOMAR</button>
-                            <button onclick="excluirItem(${i})" style="background:#D32F2F; color:white; border:none; padding:8px 12px; border-radius:5px; font-weight:bold;">X</button>
-                        </div>
+                const div = document.createElement('div');
+                div.style = "background:#F9FBFA; border:1px solid #E0E6E2; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid var(--dourado);";
+                div.innerHTML = `
+                    <strong style="color:var(--verde-centro);">Placa: ${item.p}</strong><br>
+                    <small style="color:gray;">${item.dt}</small>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button onclick="recuperar(${i})" style="flex:1; background:var(--verde-destaque); color:white; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;">RETOMAR</button>
+                        <button onclick="excluirItem(${i})" style="background:#D32F2F; color:white; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">X</button>
                     </div>`;
+                corpo.appendChild(div);
             });
         }
         document.getElementById('modal-pendentes').style.display = 'block';
     }
 
-    // 5. EXCLUIR ITEM (Corrigido para atualizar na hora)
     function excluirItem(index) {
-        if (confirm("Deseja excluir permanentemente?")) {
-            pendentes.splice(index, 1); // Remove da lista
-            localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes)); // Salva no celular
-            atualizarContador(); // Atualiza o numerozinho
-            abrirPendentes(); // Atualiza a lista dentro do modal na hora
+        if (confirm("Excluir permanentemente?")) {
+            pendentes.splice(index, 1);
+            localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+            atualizarContador();
+            abrirPendentes(); // Atualiza a lista visualmente
         }
     }
 
-    // 6. RECUPERAR ITEM
     function recuperar(i) {
         const item = pendentes[i];
-        document.getElementById('p').value = item.p;
-        document.getElementById('c').value = item.c;
-        document.getElementById('t').value = item.t;
-        document.getElementById('m').value = item.m;
-        document.getElementById('qtd-volumes').value = item.q;
-        document.getElementById('tipo-carga').value = item.tp;
         
+        // Preenche campos de texto
+        document.getElementById('p').value = item.p || '';
+        document.getElementById('c').value = item.c || '';
+        document.getElementById('t').value = item.t || '';
+        document.getElementById('m').value = item.m || '';
+        document.getElementById('qtd-volumes').value = item.q || '';
+        document.getElementById('tipo-carga').value = item.tp || '';
+        document.getElementById('nota-fiscal').value = item.nf || '';
+
+        // Restaura o HTML das fotos (Importante: as fotos em base64 voltam aqui)
         document.getElementById('secao-caminhao').innerHTML = item.htmlCam;
         document.getElementById('container-volumes').innerHTML = item.htmlVol;
         
         document.getElementById('secao-caminhao').style.display = 'block';
         document.getElementById('btn-add-vol').style.display = 'block';
 
-        // Remove da lista de pendentes pois agora está na tela
+        // Remove da lista para não duplicar
         pendentes.splice(i, 1);
         localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
         
         document.getElementById('modal-pendentes').style.display = 'none';
         atualizarContador();
+        window.scrollTo(0, 0);
     }
 
     // --- FUNÇÕES DE INTERFACE ---
-
     function mudarTipoCarga() {
         const tipo = document.getElementById('tipo-carga').value;
         const secCam = document.getElementById('secao-caminhao');
         const secVol = document.getElementById('container-volumes');
         const btnAdd = document.getElementById('btn-add-vol');
-        secVol.innerHTML = ''; 
+        
         if (tipo === "") {
             secCam.style.display = 'none';
             btnAdd.style.display = 'none';
+            secVol.innerHTML = '';
             return;
         }
         secCam.style.display = 'block';
         btnAdd.style.display = 'block';
-        addV();
+        if(secVol.innerHTML === "") addV(); 
     }
 
     function addV() {
@@ -372,7 +370,7 @@
                     <div class="foto-col"><label>FOTO ETIQUETA *</label>
                         <div class="box-imagem"><span class="msg-camera">📷 Tocar para Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
                     </div>
-                    <div class="foto-col"><label class="label-lacre">${labelDinamico}</label>
+                    <div class="foto-col"><label>${labelDinamico}</label>
                         <div class="box-imagem"><span class="msg-camera">📷 Tocar para Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
                     </div>
                 </div>
@@ -404,13 +402,15 @@
         
         document.getElementById('loading').style.display = 'block';
         document.getElementById('render-area').classList.add('modo-pdf');
+        
+        // Fix para inputs no PDF
         document.querySelectorAll('input, select').forEach(el => el.setAttribute('value', el.value));
 
         const opt = {
             margin: 0,
             filename: `Checklist_NF_${nf}.pdf`,
-            image: { type: 'jpeg', quality: 1.0 },
-            html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
             jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
         };
 
@@ -420,7 +420,6 @@
         });
     }
 
-    // Roda ao abrir a página
     window.onload = atualizarContador;
 </script>
 </body>
