@@ -158,14 +158,12 @@ input, select {
         /* Diminuir fotos da capa para não vazar */
         .modo-pdf #secao-caminhao .box-imagem { height: 160px !important; }
 
-        /* PULA PARA PÁGINA 2 APÓS O CAMINHÃO E TRAVA A PÁGINA 1 */
 .modo-pdf #secao-caminhao { 
-    page-break-after: always !important; 
-    margin-bottom: 0 !important;
-    height: 950px !important; /* Isso cria uma "parede" que impede os volumes de subirem para a pág 1 */
-    display: flex;
-    flex-direction: column;
-}
+            page-break-after: always !important; 
+            margin-bottom: 0 !important;
+            height: auto !important; /* Deixa fluir naturalmente */
+            min-height: 900px !important; /* Garante que a pág 1 seja só a capa */
+        }
 
         /* CONFIGURAÇÃO DOS VOLUMES (PÁG 2 EM DIANTE) */
         .modo-pdf #container-volumes { 
@@ -173,13 +171,15 @@ input, select {
         }
 
 .modo-pdf .volume-box { 
-    width: 100% !important;
-    page-break-inside: avoid !important; /* Impede que o volume seja cortado ao meio entre duas páginas */
-    border: 2px solid #000 !important; /* Borda mais forte para separar bem no PDF */
-    margin-bottom: 30px !important;
-    padding: 20px !important;
-    height: 480px !important; /* Altura fixa para manter o padrão e evitar que o conteúdo suba */
-}
+            width: 100% !important;
+            page-break-inside: avoid !important; /* Essencial para não cortar o volume */
+            border: 1px solid #333 !important; /* Borda um pouco mais fina */
+            margin-bottom: 15px !important;
+            padding: 12px !important;
+            height: auto !important; /* Libera a altura fixa */
+            min-height: 250px !important; /* Altura mínima apenas para manter estrutura */
+            display: block !important;
+        }
 
         .modo-pdf .foto-wrapper { 
             display: flex !important; 
@@ -187,7 +187,13 @@ input, select {
             justify-content: space-between !important;
         }
 
-        .modo-pdf .box-imagem { width: 48% !important; height: 220px !important; }
+       .modo-pdf .box-imagem { 
+            width: 48% !important; 
+            height: 200px !important; /* Reduzi um pouco para economizar papel */
+            object-fit: contain !important;
+            background: #f9f9f9 !important;
+            border: 1px dashed #ccc !important;
+        }
 
         /* LIMPEZA DE BOTÕES */
         .modo-pdf .btn-remover, .modo-pdf button, .modo-pdf .msg-camera, .modo-pdf input[type="file"] { 
@@ -482,18 +488,18 @@ if (fotosFaltando) {
     });
 
     const opt = {
-        margin: [5, 5, 5, 5],
-        filename: `Checklist_NF_${nf}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            scrollY: 0, 
-            windowWidth: 800 
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
-    };
+            margin: [10, 10, 10, 10], // Margem de 1cm em todos os lados
+            filename: `Checklist_NF_${nf}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true, 
+                scrollY: 0, 
+                windowWidth: 800 
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+        };
 
     html2pdf().set(opt).from(area).save().then(() => {
         area.classList.remove('modo-pdf');
