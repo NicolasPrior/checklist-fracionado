@@ -221,32 +221,65 @@
     </div>
 
 <script>
-    // Carrega a lista com segurança
     let pendentes = [];
     try {
         pendentes = JSON.parse(localStorage.getItem('checklists_pendentes') || '[]');
-    } catch (e) {
-        console.error("Erro ao carregar storage", e);
-        pendentes = [];
-    }
+    } catch (e) { pendentes = []; }
 
-    // 1. ATUALIZAR O NÚMERO (Sempre visível para você saber que está funcionando)
     function atualizarContador() {
         const span = document.getElementById('count-pendentes');
         if (span) {
             span.innerText = pendentes.length;
-            // Se quiser que o 0 suma, mude para: pendentes.length > 0 ? 'inline-block' : 'none'
-            span.style.display = 'inline-block'; 
+            span.style.display = 'inline-block';
         }
     }
 
-    // 2. SALVAR EM STANDBY (Com tratamento de erro de espaço)
+    // --- A MÁGICA: DIMINUIR A FOTO ANTES DE USAR ---
+    async function comprimirImagem(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // Reduz a largura para 800px (ótimo para PDF)
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    // Converte para JPEG com qualidade 0.7 (leve e nítido)
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+            };
+        });
+    }
+
+    // Atualizado para usar compressão
+    async function preview(input) {
+        if (input.files && input.files[0]) {
+            const box = input.parentElement;
+            const msg = box.querySelector('.msg-camera');
+            const imgElement = box.querySelector('img');
+            
+            msg.innerText = "⌛ Reduzindo...";
+            
+            // Comprime a imagem antes de colocar no HTML
+            const imagemCompacta = await comprimirImagem(input.files[0]);
+            
+            imgElement.src = imagemCompacta;
+            imgElement.style.display = 'block';
+            msg.style.display = 'none';
+        }
+    }
+
     function salvarParaDepois() {
         const placa = document.getElementById('p').value;
-        if (!placa) {
-            alert("Para salvar, digite ao menos a PLACA.");
-            return;
-        }
+        if (!placa) return alert("Digite a PLACA!");
 
         const dados = {
             p: placa,
@@ -257,7 +290,6 @@
             tp: document.getElementById('tipo-carga').value,
             nf: document.getElementById('nota-fiscal').value,
             dt: new Date().toLocaleString(),
-            // Pegamos o estado atual das fotos e volumes
             htmlCam: document.getElementById('secao-caminhao').innerHTML,
             htmlVol: document.getElementById('container-volumes').innerHTML
         };
@@ -265,113 +297,91 @@
         try {
             pendentes.push(dados);
             localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-            
-            alert("✅ Salvo com sucesso!");
-            
-            // O SEGREDO DO RESET: Recarregar a página limpa TUDO da memória do celular
-            window.location.reload(); 
-
+            alert("✅ Salvo no Standby!");
+            window.location.reload(); // Limpa tudo e atualiza contador
         } catch (e) {
-            alert("❌ ERRO: O Standby está cheio! \n\nIsso acontece porque as fotos são pesadas. Exclua itens antigos da lista de pendentes ou gere o PDF desta carga agora.");
-            pendentes.pop(); // Remove o que tentou inserir e falhou
+            alert("⚠️ Memória cheia! Gere o PDF desta carga ou exclua pendentes antigos.");
         }
     }
 
-    // 3. ABRIR E EXCLUIR (Lógica simplificada)
     function abrirPendentes() {
         const corpo = document.getElementById('lista-pendentes-corpo');
         corpo.innerHTML = '';
-
         if (pendentes.length === 0) {
-            corpo.innerHTML = '<p style="text-align:center; color:gray; padding:20px;">Nenhuma carga em espera.</p>';
+            corpo.innerHTML = '<p style="text-align:center;color:gray;padding:20px;">Vazio</p>';
         } else {
             pendentes.forEach((item, i) => {
-                const div = document.createElement('div');
-                div.style = "background:#F9FBFA; border:1px solid #E0E6E2; padding:15px; border-radius:10px; margin-bottom:10px; border-left: 5px solid var(--dourado);";
-                div.innerHTML = `
-                    <strong style="color:var(--verde-centro);">Placa: ${item.p}</strong><br>
-                    <small style="color:gray;">${item.dt}</small>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button onclick="recuperar(${i})" style="flex:1; background:var(--verde-destaque); color:white; border:none; padding:8px; border-radius:5px; font-weight:bold; cursor:pointer;">RETOMAR</button>
-                        <button onclick="excluirItem(${i})" style="background:#D32F2F; color:white; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">X</button>
+                corpo.innerHTML += `
+                    <div style="background:#f9f9f9; border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:10px;">
+                        <strong>Placa: ${item.p}</strong><br><small>${item.dt}</small>
+                        <div style="margin-top:10px; display:flex; gap:5px;">
+                            <button onclick="recuperar(${i})" style="flex:1; background:#2E7D32; color:white; border:none; padding:8px; border-radius:5px;">RETOMAR</button>
+                            <button onclick="excluirItem(${i})" style="background:#D32F2F; color:white; border:none; padding:8px 12px; border-radius:5px;">X</button>
+                        </div>
                     </div>`;
-                corpo.appendChild(div);
             });
         }
         document.getElementById('modal-pendentes').style.display = 'block';
     }
 
     function excluirItem(index) {
-        if (confirm("Excluir permanentemente?")) {
+        if (confirm("Excluir?")) {
             pendentes.splice(index, 1);
             localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
+            abrirPendentes();
             atualizarContador();
-            abrirPendentes(); // Atualiza a lista visualmente
         }
     }
 
     function recuperar(i) {
         const item = pendentes[i];
-        
-        // Preenche campos de texto
-        document.getElementById('p').value = item.p || '';
-        document.getElementById('c').value = item.c || '';
-        document.getElementById('t').value = item.t || '';
-        document.getElementById('m').value = item.m || '';
-        document.getElementById('qtd-volumes').value = item.q || '';
-        document.getElementById('tipo-carga').value = item.tp || '';
-        document.getElementById('nota-fiscal').value = item.nf || '';
-
-        // Restaura o HTML das fotos (Importante: as fotos em base64 voltam aqui)
+        document.getElementById('p').value = item.p;
+        document.getElementById('c').value = item.c;
+        document.getElementById('t').value = item.t;
+        document.getElementById('m').value = item.m;
+        document.getElementById('qtd-volumes').value = item.q;
+        document.getElementById('tipo-carga').value = item.tp;
+        document.getElementById('nota-fiscal').value = item.nf;
         document.getElementById('secao-caminhao').innerHTML = item.htmlCam;
         document.getElementById('container-volumes').innerHTML = item.htmlVol;
-        
         document.getElementById('secao-caminhao').style.display = 'block';
         document.getElementById('btn-add-vol').style.display = 'block';
-
-        // Remove da lista para não duplicar
+        
         pendentes.splice(i, 1);
         localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
-        
         document.getElementById('modal-pendentes').style.display = 'none';
         atualizarContador();
-        window.scrollTo(0, 0);
     }
 
-    // --- FUNÇÕES DE INTERFACE ---
     function mudarTipoCarga() {
         const tipo = document.getElementById('tipo-carga').value;
         const secCam = document.getElementById('secao-caminhao');
-        const secVol = document.getElementById('container-volumes');
         const btnAdd = document.getElementById('btn-add-vol');
-        
         if (tipo === "") {
             secCam.style.display = 'none';
             btnAdd.style.display = 'none';
-            secVol.innerHTML = '';
-            return;
+        } else {
+            secCam.style.display = 'block';
+            btnAdd.style.display = 'block';
+            if(document.getElementById('container-volumes').innerHTML === "") addV();
         }
-        secCam.style.display = 'block';
-        btnAdd.style.display = 'block';
-        if(secVol.innerHTML === "") addV(); 
     }
 
     function addV() {
         const container = document.getElementById('container-volumes');
         const num = container.querySelectorAll('.volume-box').length + 1;
-        const tipoCarga = document.getElementById('tipo-carga').value;
-        const labelDinamico = (tipoCarga === "Bag in Box") ? "FOTO DA CARGA *" : "FOTO LACRE *";
+        const labelDinamico = (document.getElementById('tipo-carga').value === "Bag in Box") ? "FOTO CARGA" : "FOTO LACRE";
         const html = `
             <div class="volume-box">
                 <div class="header-volume"><h4>Volume ${num}</h4>
-                ${num > 1 ? `<button type="button" onclick="this.closest('.volume-box').remove(); reordenar();" style="color:red; background:none; border:none; font-weight:bold;">REMOVER</button>` : ''}
+                ${num > 1 ? `<button type="button" onclick="this.closest('.volume-box').remove(); reordenar();" style="color:red; background:none; border:none;">REMOVER</button>` : ''}
                 </div>
                 <div class="foto-wrapper">
-                    <div class="foto-col"><label>FOTO ETIQUETA *</label>
-                        <div class="box-imagem"><span class="msg-camera">📷 Tocar para Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
+                    <div class="foto-col"><label>ETIQUETA</label>
+                        <div class="box-imagem"><span class="msg-camera">📷 Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
                     </div>
                     <div class="foto-col"><label>${labelDinamico}</label>
-                        <div class="box-imagem"><span class="msg-camera">📷 Tocar para Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
+                        <div class="box-imagem"><span class="msg-camera">📷 Foto</span><input type="file" accept="image/*" capture="environment" onchange="preview(this)"><img style="display:none;"></div>
                     </div>
                 </div>
             </div>`;
@@ -382,38 +392,19 @@
         document.querySelectorAll('#container-volumes h4').forEach((h, i) => h.innerText = `Volume ${i+1}`);
     }
 
-    function preview(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const box = input.parentElement;
-                const img = box.querySelector('img');
-                img.src = e.target.result;
-                img.style.display = 'block';
-                box.querySelector('.msg-camera').style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
     function gerarPDF() {
         const nf = document.getElementById('nota-fiscal').value;
-        if (!nf) return alert("Digite a NOTA FISCAL!");
-        
+        if (!nf) return alert("Digite a NF!");
         document.getElementById('loading').style.display = 'block';
         document.getElementById('render-area').classList.add('modo-pdf');
-        
-        // Fix para inputs no PDF
         document.querySelectorAll('input, select').forEach(el => el.setAttribute('value', el.value));
-
         const opt = {
             margin: 0,
             filename: `Checklist_NF_${nf}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            image: { type: 'jpeg', quality: 0.95 },
+            html2canvas: { scale: 1.5, useCORS: true },
             jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
         };
-
         html2pdf().set(opt).from(document.getElementById('render-area')).save().then(() => {
             document.getElementById('render-area').classList.remove('modo-pdf');
             document.getElementById('loading').style.display = 'none';
