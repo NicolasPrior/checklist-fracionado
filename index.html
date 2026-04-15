@@ -106,59 +106,68 @@
         #modal-pendentes { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; padding:20px; backdrop-filter: blur(5px);}
         .modal-conteudo { background:white; padding:30px; border-radius:16px; max-width:500px; margin: 60px auto; color: black; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
 
-/* REGRAS EXCLUSIVAS PARA O PDF */
-.modo-pdf { 
-    width: 750px !important; 
-    margin: 0 auto !important; 
-    padding: 20px !important; 
-    background: white !important; 
-    display: block !important;
-}
+/* 1. CORREÇÃO DO LOADING (Para não aparecer ao abrir o site) */
+        #loading { 
+            display: none; /* Esconde por padrão */
+            position: fixed; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: rgba(255,255,255,0.9); 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.2); 
+            z-index: 9999; 
+        }
 
-/* PAGINA 1: Ajuste para os dados ficarem LADO A LADO no PDF */
-.modo-pdf .header { margin-bottom: 15px !important; }
-.modo-pdf .dados-container { 
-    display: grid !important; 
-    grid-template-columns: 1fr 1fr !important; /* Força 2 colunas no PDF */
-    gap: 10px !important; 
-    margin-bottom: 15px !important;
-}
+        /* 2. REGRAS DO PDF */
+        .modo-pdf { 
+            width: 850px !important; /* Ajuste para preencher o A4 */
+            margin: 0 auto !important; 
+            padding: 20px !important; 
+        }
 
-/* Fotos do veículo menores para caberem na Capa sem empurrar tudo */
-.modo-pdf #secao-caminhao .box-imagem { height: 160px !important; }
-.modo-pdf #secao-caminhao { 
-    page-break-after: always !important; /* Pula para pág 2 obrigatoriamente aqui */
-    margin-bottom: 0 !important;
-}
+        /* PAGINA 1 (CAPA) */
+        .modo-pdf #secao-caminhao { 
+            page-break-after: always !important; /* FORÇA IR PARA A PAGINA 2 */
+            margin-bottom: 0 !important;
+        }
+        .modo-pdf .dados-container { 
+            display: grid !important; 
+            grid-template-columns: 1fr 1fr !important; 
+            gap: 10px !important; 
+        }
 
-/* VOLUMES: Vertical (Um abaixo do outro preenchendo a largura) */
-.modo-pdf #container-volumes { 
-    display: flex !important; 
-    flex-direction: column !important; 
-    gap: 25px !important;
-}
+        /* PAGINA 2 EM DIANTE (VOLUMES EM DUPLAS) */
+        .modo-pdf #container-volumes { 
+            display: grid !important; 
+            grid-template-columns: 1fr 1fr !important; /* Lado a lado */
+            gap: 20px !important;
+        }
 
-.modo-pdf .volume-box { 
-    width: 100% !important;
-    page-break-inside: avoid !important; /* Não corta o volume no meio da folha */
-    border: 1px solid #ddd !important;
-    padding: 20px !important;
-    margin-bottom: 10px !important;
-}
+        .modo-pdf .volume-box { 
+            page-break-inside: avoid !important;
+            height: 450px !important; /* Altura fixa para manter o alinhamento */
+            border: 1px solid #ccc !important;
+            padding: 10px !important;
+        }
 
-.modo-pdf .foto-wrapper { 
-    display: flex !important; 
-    flex-direction: row !important; /* Fotos da etiqueta/carga lado a lado */
-    justify-content: space-between !important;
-}
+        /* Regra Mágica: A cada 2 volumes, ele quebra a página */
+        .modo-pdf .volume-box:nth-child(2n) { 
+            page-break-after: always !important; 
+        }
 
-.modo-pdf .box-imagem { width: 48% !important; height: 230px !important; }
+        /* Ajuste das fotos dentro dos volumes para caberem lado a lado */
+        .modo-pdf .foto-wrapper { 
+            display: flex !important; 
+            flex-direction: row !important; 
+            gap: 5px !important; 
+        }
+        .modo-pdf .box-imagem { height: 180px !important; width: 48% !important; }
 
-/* LIMPEZA TOTAL */
-.modo-pdf .btn-remover, .modo-pdf button, .modo-pdf .msg-camera, 
-.modo-pdf input[type="file"], .modo-pdf #btn-abrir-pendentes { 
-    display: none !important; 
-}
+        /* Esconder botões e lixo no PDF */
+        .modo-pdf .btn-remover, .modo-pdf button, .modo-pdf .msg-camera, .modo-pdf input[type="file"] { 
+            display: none !important; 
+        }
 
 /* CSS DO SITE (Ajustado para não estragar o PDF) */
 @media (max-width: 768px) {
@@ -188,7 +197,7 @@
 
         <div class="dados-container">
             <div class="campo"><label>CLIENTE *</label><input type="text" id="c" placeholder="Nome do Cliente"></div>
-            <div class="campo"><label>TRANSPORTADORA *</label><input type="text" id="t" placeholder="Transportadora"></div>
+            <div class="campo"><label>TRANSPORTADORA *</label><input type="text" id="t" placeholder="Nome da Transportadora"></div>
             <div class="campo"><label>MOTORISTA *</label><input type="text" id="m" placeholder="Nome Completo"></div>
             <div class="campo"><label>PLACA DO VEÍCULO *</label><input type="text" id="p" placeholder="ABC-1234"></div>
             <div class="campo">
@@ -427,43 +436,43 @@
     }
 
 function gerarPDF() {
-    const nf = document.getElementById('nota-fiscal').value;
-    if (!nf) return alert("Digite a NF!");
-    
-    document.getElementById('loading').style.display = 'block';
-    const area = document.getElementById('render-area');
-    
-    // Ativa modo PDF
-    area.classList.add('modo-pdf');
+        const nf = document.getElementById('nota-fiscal').value;
+        if (!nf) return alert("Digite a NF!");
+        
+        // Mostra o loading apenas agora
+        document.getElementById('loading').style.display = 'block';
+        
+        const area = document.getElementById('render-area');
+        area.classList.add('modo-pdf');
 
-    // Sincroniza os textos para o PDF
-    const inputs = area.querySelectorAll('input, select');
-    inputs.forEach(input => { 
-        if (input.type !== 'file') input.setAttribute('value', input.value); 
-    });
+        // Sincroniza os textos para o PDF
+        const inputs = area.querySelectorAll('input, select');
+        inputs.forEach(input => { 
+            if (input.type !== 'file') input.setAttribute('value', input.value); 
+        });
 
-    const opt = {
-        margin: [10, 5, 10, 5],
-        filename: `Checklist_NF_${nf}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
-            windowWidth: 800 // Aumentado para garantir layout de "desktop"
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] } // Removido avoid-all para evitar pulos indesejados
-    };
+        const opt = {
+            margin: [10, 5, 10, 5],
+            filename: `Checklist_NF_${nf}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true, 
+                windowWidth: 900 // Garante que o PDF "veja" o layout largo
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+        };
 
-    html2pdf().set(opt).from(area).save().then(() => {
-        area.classList.remove('modo-pdf');
-        document.getElementById('loading').style.display = 'none';
-    }).catch(err => {
-        console.error(err);
-        area.classList.remove('modo-pdf');
-        document.getElementById('loading').style.display = 'none';
-    });
-}
+        html2pdf().set(opt).from(area).save().then(() => {
+            area.classList.remove('modo-pdf');
+            document.getElementById('loading').style.display = 'none';
+        }).catch(err => {
+            console.error(err);
+            area.classList.remove('modo-pdf');
+            document.getElementById('loading').style.display = 'none';
+        });
+    }
 
     window.onload = atualizarContador;
 </script>
