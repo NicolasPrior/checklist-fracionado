@@ -106,6 +106,21 @@
         #modal-pendentes { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; padding:20px; backdrop-filter: blur(5px);}
         .modal-conteudo { background:white; padding:30px; border-radius:16px; max-width:500px; margin: 60px auto; color: black; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
 
+/* MELHORIA NO VISUAL DO CELULAR - TELA PRINCIPAL */
+.dados-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Mais espaço entre os campos */
+    margin-bottom: 20px;
+}
+
+input, select {
+    padding: 12px !important; /* Aumenta a área de toque */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px; /* Evita que o iPhone dê zoom automático */
+}
+
 /* 1. ESCONDER O LOADING AO ABRIR (Resolve o erro do print) */
         #loading { 
             display: none !important; 
@@ -143,24 +158,28 @@
         /* Diminuir fotos da capa para não vazar */
         .modo-pdf #secao-caminhao .box-imagem { height: 160px !important; }
 
-        /* PULA PARA PÁGINA 2 APÓS O CAMINHÃO */
-        .modo-pdf #secao-caminhao { 
-            page-break-after: always !important; 
-            margin-bottom: 0 !important;
-        }
+        /* PULA PARA PÁGINA 2 APÓS O CAMINHÃO E TRAVA A PÁGINA 1 */
+.modo-pdf #secao-caminhao { 
+    page-break-after: always !important; 
+    margin-bottom: 0 !important;
+    height: 950px !important; /* Isso cria uma "parede" que impede os volumes de subirem para a pág 1 */
+    display: flex;
+    flex-direction: column;
+}
 
         /* CONFIGURAÇÃO DOS VOLUMES (PÁG 2 EM DIANTE) */
         .modo-pdf #container-volumes { 
             display: block !important; /* Volta para vertical para evitar bugs de grid no PDF */
         }
 
-        .modo-pdf .volume-box { 
-            width: 100% !important;
-            page-break-inside: avoid !important; /* Não corta o volume no meio */
-            border: 1px solid #ccc !important;
-            margin-bottom: 20px !important;
-            padding: 15px !important;
-        }
+.modo-pdf .volume-box { 
+    width: 100% !important;
+    page-break-inside: avoid !important; /* Impede que o volume seja cortado ao meio entre duas páginas */
+    border: 2px solid #000 !important; /* Borda mais forte para separar bem no PDF */
+    margin-bottom: 30px !important;
+    padding: 20px !important;
+    height: 480px !important; /* Altura fixa para manter o padrão e evitar que o conteúdo suba */
+}
 
         .modo-pdf .foto-wrapper { 
             display: flex !important; 
@@ -431,51 +450,60 @@
     }
 
 function gerarPDF() {
-        const nf = document.getElementById('nota-fiscal').value;
-        if (!nf) return alert("Digite a NF!");
-        
-        // Mostra o loading
-        document.getElementById('loading').style.display = 'block';
-        
-        const area = document.getElementById('render-area');
-        
-        // Aplica classe de PDF
-        area.classList.add('modo-pdf');
+    const nf = document.getElementById('nota-fiscal').value;
+    if (!nf) return alert("Por favor, digite o número da Nota Fiscal.");
 
-        // Sincroniza dados dos campos
-        const inputs = area.querySelectorAll('input, select');
-        inputs.forEach(input => { 
-            if (input.type !== 'file') input.setAttribute('value', input.value); 
-        });
+    // DENTRO DA FUNÇÃO gerarPDF(), logo no início:
+const areasDeFoto = document.querySelectorAll('.box-imagem');
+let fotosFaltando = false;
 
-        const opt = {
-            margin: [10, 5, 10, 5],
-            filename: `Checklist_NF_${nf}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
-                logging: false,
-                letterRendering: true,
-                scrollY: 0, // FORÇA O PDF A COMEÇAR DO TOPO (PÁGINA 1)
-                scrollX: 0,
-                windowWidth: 800 
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['css', 'legacy'] }
-        };
-
-        // Gerar o PDF
-        html2pdf().set(opt).from(area).save().then(() => {
-            area.classList.remove('modo-pdf');
-            document.getElementById('loading').style.display = 'none';
-        }).catch(err => {
-            console.error(err);
-            area.classList.remove('modo-pdf');
-            document.getElementById('loading').style.display = 'none';
-        });
+areasDeFoto.forEach((box) => {
+    // Se não encontrar uma tag <img> dentro da box, é porque não tirou foto
+    if (!box.querySelector('img')) {
+        fotosFaltando = true;
     }
+});
 
+if (fotosFaltando) {
+    alert("⚠️ ATENÇÃO: Todas as fotos são obrigatórias! Verifique se esqueceu as fotos do veículo ou dos volumes.");
+    document.getElementById('loading').style.display = 'none'; // Esconde o carregando
+    return; // Para tudo e não gera o PDF
+}
+
+    // Se chegou aqui, tem todas as fotos. Inicia o PDF:
+    document.getElementById('loading').style.display = 'block';
+    const area = document.getElementById('render-area');
+    area.classList.add('modo-pdf');
+
+    // Sincroniza campos de texto
+    const inputs = area.querySelectorAll('input, select');
+    inputs.forEach(input => { 
+        if (input.type !== 'file') input.setAttribute('value', input.value); 
+    });
+
+    const opt = {
+        margin: [5, 5, 5, 5],
+        filename: `Checklist_NF_${nf}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            scrollY: 0, 
+            windowWidth: 800 
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+    };
+
+    html2pdf().set(opt).from(area).save().then(() => {
+        area.classList.remove('modo-pdf');
+        document.getElementById('loading').style.display = 'none';
+    }).catch(err => {
+        console.error(err);
+        area.classList.remove('modo-pdf');
+        document.getElementById('loading').style.display = 'none';
+    });
+}
     window.onload = atualizarContador;
 </script>
 </body>
