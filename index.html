@@ -106,79 +106,74 @@
         #modal-pendentes { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; padding:20px; backdrop-filter: blur(5px);}
         .modal-conteudo { background:white; padding:30px; border-radius:16px; max-width:500px; margin: 60px auto; color: black; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
 
-/* 1. CORREÇÃO DO LOADING (Para não aparecer ao abrir o site) */
+/* 1. ESCONDER O LOADING AO ABRIR (Resolve o erro do print) */
         #loading { 
-            display: none; /* Esconde por padrão */
+            display: none !important; 
             position: fixed; 
             top: 50%; left: 50%; 
             transform: translate(-50%, -50%); 
-            background: rgba(255,255,255,0.9); 
+            background: white; 
             padding: 20px; 
             border-radius: 10px; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.2); 
-            z-index: 9999; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.3); 
+            z-index: 10001; 
         }
 
-        /* 2. REGRAS DO PDF */
+        /* 2. REGRAS PARA O PDF INICIAR NA PÁGINA 1 */
         .modo-pdf { 
-            width: 850px !important; /* Ajuste para preencher o A4 */
-            margin: 0 auto !important; 
-            padding: 20px !important; 
+            width: 750px !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            display: block !important;
+            background: white !important;
         }
 
-        /* PAGINA 1 (CAPA) */
-        .modo-pdf #secao-caminhao { 
-            page-break-after: always !important; /* FORÇA IR PARA A PAGINA 2 */
-            margin-bottom: 0 !important;
+        /* Garante que o título seja a primeira coisa na Pág 1 */
+        .modo-pdf .header { 
+            margin-top: 0 !important; 
+            padding-top: 10px !important; 
         }
+
         .modo-pdf .dados-container { 
             display: grid !important; 
             grid-template-columns: 1fr 1fr !important; 
             gap: 10px !important; 
         }
 
-        /* PAGINA 2 EM DIANTE (VOLUMES EM DUPLAS) */
+        /* Diminuir fotos da capa para não vazar */
+        .modo-pdf #secao-caminhao .box-imagem { height: 160px !important; }
+
+        /* PULA PARA PÁGINA 2 APÓS O CAMINHÃO */
+        .modo-pdf #secao-caminhao { 
+            page-break-after: always !important; 
+            margin-bottom: 0 !important;
+        }
+
+        /* CONFIGURAÇÃO DOS VOLUMES (PÁG 2 EM DIANTE) */
         .modo-pdf #container-volumes { 
-            display: grid !important; 
-            grid-template-columns: 1fr 1fr !important; /* Lado a lado */
-            gap: 20px !important;
+            display: block !important; /* Volta para vertical para evitar bugs de grid no PDF */
         }
 
         .modo-pdf .volume-box { 
-            page-break-inside: avoid !important;
-            height: 450px !important; /* Altura fixa para manter o alinhamento */
+            width: 100% !important;
+            page-break-inside: avoid !important; /* Não corta o volume no meio */
             border: 1px solid #ccc !important;
-            padding: 10px !important;
+            margin-bottom: 20px !important;
+            padding: 15px !important;
         }
 
-        /* Regra Mágica: A cada 2 volumes, ele quebra a página */
-        .modo-pdf .volume-box:nth-child(2n) { 
-            page-break-after: always !important; 
-        }
-
-        /* Ajuste das fotos dentro dos volumes para caberem lado a lado */
         .modo-pdf .foto-wrapper { 
             display: flex !important; 
             flex-direction: row !important; 
-            gap: 5px !important; 
+            justify-content: space-between !important;
         }
-        .modo-pdf .box-imagem { height: 180px !important; width: 48% !important; }
 
-        /* Esconder botões e lixo no PDF */
+        .modo-pdf .box-imagem { width: 48% !important; height: 220px !important; }
+
+        /* LIMPEZA DE BOTÕES */
         .modo-pdf .btn-remover, .modo-pdf button, .modo-pdf .msg-camera, .modo-pdf input[type="file"] { 
             display: none !important; 
-        }
-
-/* CSS DO SITE (Ajustado para não estragar o PDF) */
-@media (max-width: 768px) {
-    /* O :not(.modo-pdf) impede que o visual de celular estrague o PDF */
-    body:not(.modo-pdf) { padding: 10px 5px 120px 5px; background: #FFFFFF; }
-    #render-area:not(.modo-pdf) { padding: 15px; box-shadow: none; border-radius: 0; width: 100%; }
-    .dados-container:not(.modo-pdf) { grid-template-columns: 1fr; gap: 15px; }
-    .foto-wrapper:not(.modo-pdf) { flex-direction: column; gap: 15px; }
-    .box-imagem:not(.modo-pdf) { height: 180px; }
-}
- 
+        } 
 </style>
 </head>
 <body>
@@ -439,13 +434,15 @@ function gerarPDF() {
         const nf = document.getElementById('nota-fiscal').value;
         if (!nf) return alert("Digite a NF!");
         
-        // Mostra o loading apenas agora
+        // Mostra o loading
         document.getElementById('loading').style.display = 'block';
         
         const area = document.getElementById('render-area');
+        
+        // Aplica classe de PDF
         area.classList.add('modo-pdf');
 
-        // Sincroniza os textos para o PDF
+        // Sincroniza dados dos campos
         const inputs = area.querySelectorAll('input, select');
         inputs.forEach(input => { 
             if (input.type !== 'file') input.setAttribute('value', input.value); 
@@ -458,12 +455,17 @@ function gerarPDF() {
             html2canvas: { 
                 scale: 2, 
                 useCORS: true, 
-                windowWidth: 900 // Garante que o PDF "veja" o layout largo
+                logging: false,
+                letterRendering: true,
+                scrollY: 0, // FORÇA O PDF A COMEÇAR DO TOPO (PÁGINA 1)
+                scrollX: 0,
+                windowWidth: 800 
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak: { mode: ['css', 'legacy'] }
         };
 
+        // Gerar o PDF
         html2pdf().set(opt).from(area).save().then(() => {
             area.classList.remove('modo-pdf');
             document.getElementById('loading').style.display = 'none';
