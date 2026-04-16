@@ -142,50 +142,51 @@
             z-index: 10001; 
         }
 
-        /* 2. REGRAS CORRIGIDAS PARA O PDF (CENTRALIZADO E ALINHADO) */
+        /* REGRAS CORRIGIDAS PARA O PDF (FIM DO EFEITO ZOOM) */
         .modo-pdf { 
-            width: 790px !important; 
-            margin: 0 auto !important; /* ISSO CENTRALIZA O PDF */
-            padding: 20px !important;
+            width: 1024px !important; /* Aumentado para tirar o zoom e ficar mais nítido */
+            margin: 0 auto !important; 
+            padding: 30px !important;
             display: block !important;
             background: white !important;
         }
 
-        .modo-pdf .header { text-align: center; margin-bottom: 20px; }
+        .modo-pdf .header { text-align: center; margin-bottom: 25px; }
 
-        /* Dados em 2 colunas no PDF */
         .modo-pdf .dados-container { 
             display: grid !important; 
             grid-template-columns: 1fr 1fr !important; 
-            gap: 10px !important; 
+            gap: 15px !important; 
         }
 
-        /* FOTOS DO VEÍCULO - FORÇA 3 COLUNAS LADO A LADO */
         .modo-pdf #secao-caminhao .foto-wrapper { 
             display: grid !important;
             grid-template-columns: 1fr 1fr 1fr !important; 
-            gap: 10px !important;
+            gap: 15px !important;
             margin-top: 15px !important;
         }
 
-        /* FOTOS DOS VOLUMES - MANTÉM 2 COLUNAS */
         .modo-pdf .volume-box .foto-wrapper { 
             display: grid !important;
             grid-template-columns: 1fr 1fr !important; 
-            gap: 15px !important;
+            gap: 20px !important;
         }
 
-        /* Estilo das boxes de imagem no PDF para serem simétricas */
+        /* Ajuste das caixas de imagem para a nova largura */
         .modo-pdf .box-imagem { 
             width: 100% !important; 
-            height: 150px !important; 
-            border: 1px solid #ddd !important;
-            border-radius: 6px !important;
+            height: 220px !important; /* Fotos um pouco maiores para compensar o zoom out */
+            border: 1px solid #ccc !important;
+            border-radius: 8px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             overflow: hidden !important;
             background: #fff !important;
+        }
+
+        .modo-pdf #secao-caminhao .box-imagem {
+            height: 160px !important; /* Capa um pouco menor para caber tudo na Pág 1 */
         }
 
         .modo-pdf .box-imagem img {
@@ -198,8 +199,8 @@
         .modo-pdf .volume-box { 
             page-break-inside: avoid !important;
             border: 1px solid #333 !important;
-            margin-bottom: 20px !important;
-            padding: 15px !important;
+            margin-bottom: 25px !important;
+            padding: 20px !important;
         }
 
         /* Esconde botões e lixo no PDF */
@@ -498,17 +499,17 @@ function gerarPDF() {
     });
 
     const opt = {
-        margin: [10, 5, 10, 5],
+        margin: [10, 10, 10, 10],
         filename: `Checklist_NF_${nf}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 1.0 }, // Força 100% de qualidade no PDF
         html2canvas: { 
-            scale: 2, 
-            useCORS: true,
-            scrollY: 0,
-            windowWidth: 800 // FORÇA LARGURA DE DESKTOP PARA SAIR CENTRALIZADO
+            scale: 3, // Aumenta a nitidez da "foto" que o gerador tira (Antes era 2)
+            useCORS: true, 
+            logging: false,
+            windowWidth: 1024 // Engana o celular para afastar o zoom (casa com o CSS)
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] } 
+        pagebreak: { mode: ['css', 'legacy'] }
     };
 
     // 4. Executa a geração
