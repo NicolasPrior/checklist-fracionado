@@ -142,15 +142,15 @@
             z-index: 10001; 
         }
 
-        /* AJUSTES FINAIS DE POSICIONAMENTO E TRAVAMENTO */
+        /* AJUSTES DE POSICIONAMENTO E TRAVAMENTO DO PDF */
         .modo-pdf { 
             width: 800px !important; 
-            margin: 0 !important; /* MUDOU AQUI: Remove o 'auto' para encostar na esquerda */
-            margin-left: 5px !important; /* Pequeno respiro para não colar na borda do papel */
+            margin: 0 !important; 
+            margin-left: 5px !important; 
             padding: 20px !important;
             display: block !important;
             background: white !important;
-            text-align: left !important; /* Garante que tudo alinhe à esquerda */
+            text-align: left !important; 
         }
 
         .modo-pdf .header { text-align: center; margin-bottom: 20px; }
@@ -161,25 +161,42 @@
             gap: 15px !important; 
         }
 
-        /* GARANTE QUE A SEÇÃO DO CAMINHÃO OCUPE A PÁGINA 1 SOZINHA E TRAVADA */
+        /* --- ALTERAÇÃO AQUI: TRAVA DA SEÇÃO CAMINHÃO --- */
         .modo-pdf #secao-caminhao {
-            display: table !important;
+            display: block !important; /* Mudado de table para block para não subir */
             width: 100% !important;
             clear: both !important;
             float: none !important;
-            page-break-after: always !important; /* Força os volumes a começarem na Pág 2 */
-            margin-bottom: 0 !important;
+            position: relative !important;
+            overflow: hidden !important; /* Impede que o conteúdo vaze e empurre outros */
+            page-break-after: always !important; 
+            margin-bottom: 20px !important;
             padding: 20px !important;
-            border: 1px solid #333 !important;
+            border: 2px solid #333 !important; /* Borda mais forte para marcar o limite */
+        }
+
+        /* --- ALTERAÇÃO AQUI: TRAVA DAS BOXES DE VOLUMES --- */
+        .modo-pdf .volume-box { 
+            display: block !important; /* Mudado de table para block */
+            width: 100% !important;
+            clear: both !important;
+            float: none !important;
+            position: relative !important;
+            overflow: hidden !important;
+            page-break-inside: avoid !important;
+            border: 2px solid #333 !important;
+            margin-bottom: 40px !important; /* Aumentado para 40px para evitar colisão */
+            padding: 20px !important;
+            background: #fff !important;
         }
 
         .modo-pdf .volume-box .foto-wrapper { 
             display: grid !important;
             grid-template-columns: 1fr 1fr !important; 
             gap: 20px !important;
+            clear: both !important;
         }
 
-       /* Ajuste das fotos para não ficarem gigantes no alinhamento à esquerda */
         .modo-pdf .box-imagem { 
             width: 100% !important; 
             height: 160px !important; 
@@ -191,7 +208,7 @@
         }
 
         .modo-pdf #secao-caminhao .box-imagem {
-            height: 140px !important; /* Um pouco menor na capa para sobrar espaço */
+            height: 140px !important; 
         }
 
         .modo-pdf .box-imagem img {
@@ -201,16 +218,14 @@
             display: block !important;
         }
 
-        /* TRAVA PARA AS BOXES NÃO SUBIREM E FICAREM ALINHADAS */
-        .modo-pdf .volume-box { 
-            display: table !important; /* Força o elemento a ocupar o seu espaço real */
-            width: 100% !important;
-            clear: both !important; /* Impede que volumes subam para o lado de outros */
-            float: none !important;
-            page-break-inside: avoid !important;
-            border: 1px solid #333 !important;
-            margin-bottom: 30px !important; /* Aumentado para 30px para dar respiro */
-            padding: 20px !important;
+        /* --- ADICIONADO: ESTILO PARA CAMPOS VAZIOS (VALIDAÇÃO) --- */
+        input:invalid, select:invalid {
+            border: 2px solid #ff0000 !important;
+        }
+
+        .campo-erro {
+            border: 2px solid red !important;
+            background-color: #fff0f0 !important;
         }
 
         /* Esconde botões e lixo no PDF */
@@ -479,11 +494,46 @@ function gerarPDF() {
     const info = document.getElementById('data-hora-pdf');
     const nf = document.getElementById('nota-fiscal').value;
 
-    if(!nf) return alert("Por favor, preencha o número da Nota Fiscal!");
+    // --- 1. VALIDAÇÃO DE CAMPOS DE TEXTO ---
+    const camposObrigatorios = element.querySelectorAll('input[required], select[required]');
+    let faltamDados = false;
 
-    // 1. FORÇA O CELULAR A SUBIR PARA O TOPO (Resolve o bug de não começar na Pág 1)
+    camposObrigatorios.forEach(campo => {
+        if (!campo.value.trim()) {
+            campo.style.border = "2px solid red"; // Destaca o erro
+            faltamDados = true;
+        } else {
+            campo.style.border = "1px solid #ccc";
+        }
+    });
+
+    if (faltamDados) {
+        return alert("Erro: Preencha todos os campos obrigatórios marcados em vermelho!");
+    }
+
+    // --- 2. VALIDAÇÃO DE FOTOS ---
+    // Verifica se existe alguma .box-imagem que não contenha uma tag <img> dentro
+    const boxesImagens = element.querySelectorAll('.box-imagem');
+    let faltamFotos = false;
+
+    boxesImagens.forEach(box => {
+        const temImg = box.querySelector('img');
+        if (!temImg) {
+            box.style.backgroundColor = "#ffe6e6"; // Destaca a box sem foto
+            box.style.border = "2px dashed red";
+            faltamFotos = true;
+        } else {
+            box.style.backgroundColor = "#fff";
+            box.style.border = "1px solid #ccc";
+        }
+    });
+
+    if (faltamFotos) {
+        return alert("Erro: Estão faltando fotos obrigatórias! Verifique as caixas em vermelho.");
+    }
+
+    // --- SE PASSOU NA VALIDAÇÃO, GERA O PDF ---
     window.scrollTo(0, 0);
-
     load.style.display = 'block';
     element.classList.add('modo-pdf');
     
@@ -491,28 +541,24 @@ function gerarPDF() {
     info.innerText = `Gerado em: ${agora.toLocaleString('pt-BR')}`;
     info.style.display = 'block';
 
-    // Sincroniza os valores
     const inputs = element.querySelectorAll('input, select');
     inputs.forEach(i => { if (i.type !== 'file') i.setAttribute('value', i.value); });
 
-    // Lógica de paginação
-    const todasQuebras = element.querySelectorAll('.quebra-pagina-manual');
-    todasQuebras.forEach(q => q.remove());
-
+    // Paginação
+    document.querySelectorAll('.quebra-pagina-manual').forEach(q => q.remove());
     const volumes = document.querySelectorAll('#container-volumes .volume-box');
     volumes.forEach((vol, index) => {
         if ((index + 1) % 2 === 0 && index !== volumes.length - 1) {
             const divisor = document.createElement('div');
             divisor.className = 'quebra-pagina-manual';
+            divisor.style.clear = 'both';
             divisor.style.pageBreakAfter = 'always';
             vol.parentNode.insertBefore(divisor, vol.nextSibling);
         }
     });
 
     const opt = {
-        // [Cima, Esquerda, Baixo, Direita]
-        // Diminuímos a margem da esquerda (de 10 para 5) para o conteúdo ir mais para lá
-        margin: [10, 5, 10, 10], 
+        margin: [10, 5, 10, 10],
         filename: `Checklist_NF_${nf}.pdf`,
         image: { type: 'jpeg', quality: 1.0 },
         html2canvas: { 
@@ -520,14 +566,12 @@ function gerarPDF() {
             useCORS: true, 
             logging: false,
             scrollY: 0, 
-            scrollX: 0,
             windowWidth: 800 
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
     };
 
-    // Gera o PDF com um pequeno atraso para o navegador respirar
     setTimeout(() => {
         html2pdf().set(opt).from(element).save().then(() => {
             element.classList.remove('modo-pdf');
@@ -535,7 +579,7 @@ function gerarPDF() {
             load.style.display = 'none';
             info.style.display = 'none';
         });
-    }, 300);
+    }, 500);
 }
     window.onload = atualizarContador;
 </script>
