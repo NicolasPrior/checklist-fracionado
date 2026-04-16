@@ -8,9 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root { 
-            --verde-centro: #005A32; /* Verde profundo institucional */
-            --verde-destaque: #2E7D32; /* Verde vibrante botões */
-            --verde-fundo: #F2F7F4; /* Fundo limpo */
+            --verde-centro: #005A32; 
+            --verde-destaque: #2E7D32; 
+            --verde-fundo: #F2F7F4; 
             --texto-escuro: #1A251D; 
             --texto-mutado: #5C6E62;
             --borda: #E0E6E2;
@@ -20,7 +20,6 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
         
-        /* ESTILOS GERAIS PARA O CELULAR (FORA DO PDF) */
         body:not(.modo-pdf) { 
             background: #F4F7F6; 
             padding: 20px 10px 120px 10px; 
@@ -36,53 +35,22 @@
             margin: 0 auto; 
         }
 
-/* Força a quebra de página após cada par de volumes */
-.quebra-pagina-obrigatoria {
-    page-break-after: always !important;
-    break-after: page !important;
-}
-
-/* Garante que o cabeçalho não empurre o conteúdo para a segunda página */
-#render-area {
-    position: static !important;
-    margin: 0 auto !important;
-}
-
-        /* Cabeçalho */
         .header { text-align: center; border-bottom: 2px solid var(--verde-fundo); padding-bottom: 20px; margin-bottom: 25px; }
         .header h2 { color: var(--verde-centro); font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
 
-        /* MELHORIA NO VISUAL DO CELULAR - TELA PRINCIPAL */
-        .dados-container:not(.modo-pdf) { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-            margin-bottom: 20px; 
-        }
-
+        .dados-container:not(.modo-pdf) { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
         .campo { display: flex; flex-direction: column; }
         .campo label { font-size: 12px; font-weight: 700; color: var(--texto-mutado); margin-bottom: 8px; text-transform: uppercase; }
         
-        input:not([type="file"]):not(.modo-pdf), 
-        select:not(.modo-pdf) { 
-            width: 100%;
-            padding: 15px !important; 
-            border: 1px solid var(--borda); 
+        input:not([type="file"]):not(.modo-pdf), select:not(.modo-pdf) { 
+            width: 100%; padding: 15px !important; border: 1px solid var(--borda); 
             background: #FAFAFA; border-radius: 8px; font-size: 16px; 
             color: var(--texto-escuro); transition: all 0.3s; 
         }
         
-        input:focus, select:focus { 
-            border-color: var(--verde-destaque); background: #FFFFFF; 
-            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1); outline: none; 
-        }
+        input:focus, select:focus { border-color: var(--verde-destaque); background: #FFFFFF; outline: none; }
 
-        /* Seções e Volumes */
-        .volume-box { 
-            border: 1px solid var(--borda); padding: 25px; margin-bottom: 30px; 
-            background: #FFFFFF; border-radius: 12px; position: relative; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-        }
+        .volume-box { border: 1px solid var(--borda); padding: 25px; margin-bottom: 30px; background: #FFFFFF; border-radius: 12px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
         .volume-box::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 5px; background: var(--verde-centro); border-radius: 12px 0 0 12px; }
         .header-volume { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--verde-fundo); padding-bottom: 10px; }
         .header-volume h4 { font-size: 16px; color: var(--texto-escuro); }
@@ -101,52 +69,27 @@
         .box-imagem input { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
         .msg-camera { font-size: 14px; font-weight: 700; color: var(--texto-mutado); }
 
-        /* Botão Pendentes Superior */
-        #btn-abrir-pendentes { 
-            position: fixed; top: 20px; right: 20px; z-index: 9999; 
-            background: var(--verde-centro); color: white; border: none; 
-            padding: 12px 18px; border-radius: 10px; font-weight: bold; font-size: 13px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; transition: 0.3s;
-        }
-        #btn-abrir-pendentes:hover { transform: translateY(-2px); }
+        #btn-abrir-pendentes { position: fixed; top: 20px; right: 20px; z-index: 9999; background: var(--verde-centro); color: white; border: none; padding: 12px 18px; border-radius: 10px; font-weight: bold; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; transition: 0.3s; }
         #count-pendentes { background: var(--dourado); color: white; padding: 3px 8px; border-radius: 50%; font-size: 12px; margin-left: 5px;}
 
-        /* Botoes Flutuantes Rodapé */
-        .botoes-fixos { 
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 
-            width: 95%; max-width: 600px; display: flex; gap: 15px; z-index: 999; 
-            background: rgba(255, 255, 255, 0.95); padding: 15px 20px; border-radius: 50px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); backdrop-filter: blur(10px);
-        }
+        .botoes-fixos { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 95%; max-width: 600px; display: flex; gap: 15px; z-index: 999; background: rgba(255, 255, 255, 0.95); padding: 15px 20px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); backdrop-filter: blur(10px); }
         .btn { flex: 1; padding: 16px; border: none; border-radius: 30px; font-weight: 700; font-size: 13px; cursor: pointer; letter-spacing: 0.5px; transition: 0.3s; }
         .btn-add { background: white; border: 2px solid var(--verde-destaque); color: var(--verde-destaque); }
-        .btn-add:hover { background: var(--verde-fundo); }
         .btn-standby { background: var(--dourado); color: white; box-shadow: 0 4px 10px rgba(249, 168, 37, 0.3); }
         .btn-save { background: var(--verde-destaque); color: white; box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3); }
-        .btn-save:hover { background: var(--verde-centro); transform: translateY(-2px); }
 
-        /* Modal Standby */
         #modal-pendentes { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; padding:20px; backdrop-filter: blur(5px);}
         .modal-conteudo { background:white; padding:30px; border-radius:16px; max-width:500px; margin: 60px auto; color: black; box-shadow: 0 20px 40px rgba(0,0,0,0.3);}
 
-        /* 1. ESCONDER O LOADING AO ABRIR */
-        #loading { 
-            display: none !important; 
-            position: fixed; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            background: white; 
-            padding: 20px; 
-            border-radius: 10px; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.3); 
-            z-index: 10001; 
-        }
+        #loading { display: none !important; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3); z-index: 10001; }
 
-        /* AJUSTES DE POSICIONAMENTO E TRAVAMENTO DO PDF */
-.modo-pdf { 
-            width: 760px !important; /* Diminuído para caber com folga no papel */
-            margin: 0 auto !important; /* Centraliza perfeitamente no meio */
-            padding: 30px 20px !important; /* Aumentei o padding do topo para ajudar na questão 2 */
+        /* ======================================================== */
+        /* O MÁGICO MODO PDF (ONDE ACONTECEM AS TRAVAS E NITIDEZ) */
+        /* ======================================================== */
+        .modo-pdf { 
+            width: 760px !important; 
+            margin: 0 auto !important; 
+            padding: 30px 20px !important; 
             display: block !important;
             background: white !important;
             text-align: left !important; 
@@ -154,29 +97,25 @@
 
         .modo-pdf .header { text-align: center; margin-bottom: 20px; }
 
-        .modo-pdf .dados-container { 
-            display: grid !important; 
-            grid-template-columns: 1fr 1fr !important; 
-            gap: 15px !important; 
-        }
+        .modo-pdf .dados-container { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 15px !important; }
 
-        /* --- ALTERAÇÃO AQUI: TRAVA DA SEÇÃO CAMINHÃO --- */
+        /* Trava do Caminhão */
         .modo-pdf #secao-caminhao {
-            display: block !important; /* Mudado de table para block para não subir */
+            display: block !important; 
             width: 100% !important;
             clear: both !important;
             float: none !important;
             position: relative !important;
-            overflow: hidden !important; /* Impede que o conteúdo vaze e empurre outros */
+            overflow: hidden !important; 
             page-break-after: always !important; 
             margin-bottom: 20px !important;
             padding: 20px !important;
-            border: 2px solid #333 !important; /* Borda mais forte para marcar o limite */
+            border: 2px solid #333 !important; 
         }
 
-        /* --- ALTERAÇÃO AQUI: TRAVA DAS BOXES DE VOLUMES --- */
+        /* Trava das Boxes de Volumes */
         .modo-pdf .volume-box { 
-            display: block !important; /* Mudado de table para block */
+            display: block !important; 
             width: 100% !important;
             clear: both !important;
             float: none !important;
@@ -184,21 +123,18 @@
             overflow: hidden !important;
             page-break-inside: avoid !important;
             border: 2px solid #333 !important;
-            margin-bottom: 40px !important; /* Aumentado para 40px para evitar colisão */
+            margin-bottom: 40px !important; 
             padding: 20px !important;
             background: #fff !important;
         }
 
-        .modo-pdf .volume-box .foto-wrapper { 
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important; 
-            gap: 20px !important;
-            clear: both !important;
-        }
+        .modo-pdf .volume-box .foto-wrapper { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px !important; clear: both !important; }
+        .modo-pdf #secao-caminhao .foto-wrapper { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 15px !important; margin-top: 15px !important; }
 
+        /* O FIX DA QUALIDADE DA IMAGEM: Nunca usar width 100% no html2canvas */
         .modo-pdf .box-imagem { 
             width: 100% !important; 
-            height: 160px !important; 
+            height: 180px !important; /* Altura segura */
             border: 1px solid #ccc !important;
             display: flex !important;
             align-items: center !important;
@@ -206,32 +142,26 @@
             background: #fff !important;
         }
 
-        .modo-pdf #secao-caminhao .box-imagem {
-            height: 140px !important; 
-        }
+        .modo-pdf #secao-caminhao .box-imagem { height: 150px !important; }
 
         .modo-pdf .box-imagem img {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: auto !important;
+            height: auto !important;
             display: block !important;
+            margin: 0 auto !important;
         }
 
-        /* --- ADICIONADO: ESTILO PARA CAMPOS VAZIOS (VALIDAÇÃO) --- */
-        input:invalid, select:invalid {
-            border: 2px solid #ff0000 !important;
-        }
+        /* Validação visual */
+        input:invalid, select:invalid { border: 2px solid #ff0000 !important; }
+        .campo-erro { border: 2px solid red !important; background-color: #fff0f0 !important; }
 
-        .campo-erro {
-            border: 2px solid red !important;
-            background-color: #fff0f0 !important;
-        }
+        .modo-pdf .btn-remover, .modo-pdf button, .modo-pdf .msg-camera, .modo-pdf input[type="file"] { display: none !important; }
 
-        /* Esconde botões e lixo no PDF */
-        .modo-pdf .btn-remover, .modo-pdf button, .modo-pdf .msg-camera, .modo-pdf input[type="file"] { 
-            display: none !important; 
-        }
-</style>
+        /* Divisor invisível forte */
+        .quebra-pagina-forte { display: block !important; width: 100% !important; height: 1px !important; clear: both !important; page-break-after: always !important; }
+    </style>
 </head>
 <body>
 
@@ -248,20 +178,20 @@
         <div id="data-hora-pdf" style="display: none; text-align: center; margin-bottom: 25px; font-weight: bold; color: var(--verde-centro); background: var(--verde-fundo); padding: 10px; border-radius: 8px;"></div>
 
         <div class="dados-container">
-            <div class="campo"><label>CLIENTE *</label><input type="text" id="c" placeholder="Nome do Cliente"></div>
-            <div class="campo"><label>TRANSPORTADORA *</label><input type="text" id="t" placeholder="Nome da Transportadora"></div>
-            <div class="campo"><label>MOTORISTA *</label><input type="text" id="m" placeholder="Nome Completo"></div>
-            <div class="campo"><label>PLACA DO VEÍCULO *</label><input type="text" id="p" placeholder="ABC-1234"></div>
+            <div class="campo"><label>CLIENTE *</label><input type="text" id="c" placeholder="Nome do Cliente" required></div>
+            <div class="campo"><label>TRANSPORTADORA *</label><input type="text" id="t" placeholder="Nome da Transportadora" required></div>
+            <div class="campo"><label>MOTORISTA *</label><input type="text" id="m" placeholder="Nome Completo" required></div>
+            <div class="campo"><label>PLACA DO VEÍCULO *</label><input type="text" id="p" placeholder="ABC-1234" required></div>
             <div class="campo">
                 <label>TIPO DE CARGA *</label>
-                <select id="tipo-carga" onchange="mudarTipoCarga()">
-    <option value="">Selecione o formato...</option>
-    <option value="Tambor / Container">Tambor / Container</option>
-    <option value="Bag in Box">Bag in Box</option>
-</select>
+                <select id="tipo-carga" onchange="mudarTipoCarga()" required>
+                    <option value="">Selecione o formato...</option>
+                    <option value="Tambor / Container">Tambor / Container</option>
+                    <option value="Bag in Box">Bag in Box</option>
+                </select>
             </div>
-            <div class="campo"><label>QTD. VOLUMES *</label><input type="number" id="qtd-volumes" placeholder="Ex: 10"></div>
-            <div class="campo" style="grid-column: 1 / -1;"><label>Nº DA NOTA FISCAL *</label><input type="text" id="nota-fiscal" placeholder="Aguardando faturamento..."></div>
+            <div class="campo"><label>QTD. VOLUMES *</label><input type="number" id="qtd-volumes" placeholder="Ex: 10" required></div>
+            <div class="campo" style="grid-column: 1 / -1;"><label>Nº DA NOTA FISCAL *</label><input type="text" id="nota-fiscal" placeholder="Aguardando faturamento..." required></div>
         </div>
         
         <div id="secao-caminhao" class="volume-box" style="display: none; border: 2px solid var(--verde-centro);">
@@ -329,7 +259,6 @@
         }
     }
 
-// --- A MÁGICA: DIMINUIR A FOTO ANTES DE USAR ---
     async function comprimirImagem(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -339,22 +268,19 @@
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1920; // AUMENTADO PARA MAIOR NITIDEZ (Antes era 800)
+                    const MAX_WIDTH = 1920; 
                     const scaleSize = MAX_WIDTH / img.width;
                     canvas.width = MAX_WIDTH;
                     canvas.height = img.height * scaleSize;
 
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    // Aumentamos a qualidade do JPEG de 0.7 para 0.85
                     resolve(canvas.toDataURL('image/jpeg', 0.95));
                 };
             };
         });
     }
 
-    // Atualizado para usar compressão
     async function preview(input) {
         if (input.files && input.files[0]) {
             const box = input.parentElement;
@@ -363,7 +289,6 @@
             
             msg.innerText = "⌛ Reduzindo...";
             
-            // Comprime a imagem antes de colocar no HTML
             const imagemCompacta = await comprimirImagem(input.files[0]);
             
             imgElement.src = imagemCompacta;
@@ -393,7 +318,7 @@
             pendentes.push(dados);
             localStorage.setItem('checklists_pendentes', JSON.stringify(pendentes));
             alert("✅ Salvo no Standby!");
-            window.location.reload(); // Limpa tudo e atualiza contador
+            window.location.reload(); 
         } catch (e) {
             alert("⚠️ Memória cheia! Gere o PDF desta carga ou exclua pendentes antigos.");
         }
@@ -499,7 +424,7 @@ function gerarPDF() {
 
     camposObrigatorios.forEach(campo => {
         if (!campo.value.trim()) {
-            campo.style.border = "2px solid red"; // Destaca o erro
+            campo.style.border = "2px solid red"; 
             faltamDados = true;
         } else {
             campo.style.border = "1px solid #ccc";
@@ -510,15 +435,15 @@ function gerarPDF() {
         return alert("Erro: Preencha todos os campos obrigatórios marcados em vermelho!");
     }
 
-    // --- 2. VALIDAÇÃO DE FOTOS ---
-    // Verifica se existe alguma .box-imagem que não contenha uma tag <img> dentro
+    // --- 2. VALIDAÇÃO DE FOTOS (CORRIGIDA) ---
     const boxesImagens = element.querySelectorAll('.box-imagem');
     let faltamFotos = false;
 
     boxesImagens.forEach(box => {
-        const temImg = box.querySelector('img');
-        if (!temImg) {
-            box.style.backgroundColor = "#ffe6e6"; // Destaca a box sem foto
+        const img = box.querySelector('img');
+        // Se não tem src, ou está invisível, faltou foto
+        if (!img.getAttribute('src') || img.style.display === 'none') {
+            box.style.backgroundColor = "#ffe6e6"; 
             box.style.border = "2px dashed red";
             faltamFotos = true;
         } else {
@@ -531,7 +456,7 @@ function gerarPDF() {
         return alert("Erro: Estão faltando fotos obrigatórias! Verifique as caixas em vermelho.");
     }
 
-    // --- SE PASSOU NA VALIDAÇÃO, GERA O PDF ---
+    // --- GERAÇÃO DO PDF ---
     window.scrollTo(0, 0);
     load.style.display = 'block';
     element.classList.add('modo-pdf');
@@ -543,21 +468,19 @@ function gerarPDF() {
     const inputs = element.querySelectorAll('input, select');
     inputs.forEach(i => { if (i.type !== 'file') i.setAttribute('value', i.value); });
 
-    // Paginação
-    document.querySelectorAll('.quebra-pagina-manual').forEach(q => q.remove());
+    // Nova Paginação Blindada
+    document.querySelectorAll('.quebra-pagina-forte').forEach(q => q.remove());
     const volumes = document.querySelectorAll('#container-volumes .volume-box');
     volumes.forEach((vol, index) => {
         if ((index + 1) % 2 === 0 && index !== volumes.length - 1) {
             const divisor = document.createElement('div');
-            divisor.className = 'quebra-pagina-manual';
-            divisor.style.clear = 'both';
-            divisor.style.pageBreakAfter = 'always';
+            divisor.className = 'quebra-pagina-forte';
             vol.parentNode.insertBefore(divisor, vol.nextSibling);
         }
     });
 
-const opt = {
-        margin: [15, 10, 15, 10], /* Margem superior aumentada para 15mm para segurar o conteúdo */
+    const opt = {
+        margin: [15, 10, 15, 10], 
         filename: `Checklist_NF_${nf}.pdf`,
         image: { type: 'jpeg', quality: 1.0 },
         html2canvas: { 
@@ -565,7 +488,7 @@ const opt = {
             useCORS: true, 
             logging: false,
             scrollY: 0, 
-            y: 0, /* Essa linha é a grande trava: Força a captura a partir do exato pixel zero do topo */
+            y: 0, 
             windowWidth: 800 
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -575,7 +498,7 @@ const opt = {
     setTimeout(() => {
         html2pdf().set(opt).from(element).save().then(() => {
             element.classList.remove('modo-pdf');
-            document.querySelectorAll('.quebra-pagina-manual').forEach(q => q.remove());
+            document.querySelectorAll('.quebra-pagina-forte').forEach(q => q.remove());
             load.style.display = 'none';
             info.style.display = 'none';
         });
