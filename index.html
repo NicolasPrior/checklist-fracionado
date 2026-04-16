@@ -142,13 +142,15 @@
             z-index: 10001; 
         }
 
-        /* REGRAS CORRIGIDAS PARA O PDF (ALINHADO E CENTRALIZADO) */
+        /* AJUSTES FINAIS DE POSICIONAMENTO E TRAVAMENTO */
         .modo-pdf { 
-            width: 800px !important; /* Voltou para 800 para encaixar no A4 certinho */
-            margin: 0 auto !important; 
-            padding: 25px !important;
+            width: 800px !important; 
+            margin: 0 !important; /* MUDOU AQUI: Remove o 'auto' para encostar na esquerda */
+            margin-left: 5px !important; /* Pequeno respiro para não colar na borda do papel */
+            padding: 20px !important;
             display: block !important;
             background: white !important;
+            text-align: left !important; /* Garante que tudo alinhe à esquerda */
         }
 
         .modo-pdf .header { text-align: center; margin-bottom: 20px; }
@@ -159,11 +161,16 @@
             gap: 15px !important; 
         }
 
-        .modo-pdf #secao-caminhao .foto-wrapper { 
-            display: grid !important;
-            grid-template-columns: 1fr 1fr 1fr !important; 
-            gap: 15px !important;
-            margin-top: 15px !important;
+        /* GARANTE QUE A SEÇÃO DO CAMINHÃO OCUPE A PÁGINA 1 SOZINHA E TRAVADA */
+        .modo-pdf #secao-caminhao {
+            display: table !important;
+            width: 100% !important;
+            clear: both !important;
+            float: none !important;
+            page-break-after: always !important; /* Força os volumes a começarem na Pág 2 */
+            margin-bottom: 0 !important;
+            padding: 20px !important;
+            border: 1px solid #333 !important;
         }
 
         .modo-pdf .volume-box .foto-wrapper { 
@@ -172,16 +179,14 @@
             gap: 20px !important;
         }
 
-        /* Ajuste das caixas de imagem para caber na folha sem cortar */
+       /* Ajuste das fotos para não ficarem gigantes no alinhamento à esquerda */
         .modo-pdf .box-imagem { 
             width: 100% !important; 
-            height: 160px !important; /* Voltou para o ideal para caberem 2 volumes por folha */
+            height: 160px !important; 
             border: 1px solid #ccc !important;
-            border-radius: 8px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            overflow: hidden !important;
             background: #fff !important;
         }
 
@@ -196,10 +201,15 @@
             display: block !important;
         }
 
+        /* TRAVA PARA AS BOXES NÃO SUBIREM E FICAREM ALINHADAS */
         .modo-pdf .volume-box { 
+            display: table !important; /* Força o elemento a ocupar o seu espaço real */
+            width: 100% !important;
+            clear: both !important; /* Impede que volumes subam para o lado de outros */
+            float: none !important;
             page-break-inside: avoid !important;
             border: 1px solid #333 !important;
-            margin-bottom: 20px !important;
+            margin-bottom: 30px !important; /* Aumentado para 30px para dar respiro */
             padding: 20px !important;
         }
 
@@ -500,16 +510,18 @@ function gerarPDF() {
     });
 
     const opt = {
-        margin: [10, 10, 10, 10],
+        // [Cima, Esquerda, Baixo, Direita]
+        // Diminuímos a margem da esquerda (de 10 para 5) para o conteúdo ir mais para lá
+        margin: [10, 5, 10, 10], 
         filename: `Checklist_NF_${nf}.pdf`,
-        image: { type: 'jpeg', quality: 1.0 }, // Qualidade máxima
+        image: { type: 'jpeg', quality: 1.0 },
         html2canvas: { 
-            scale: 3, // É ISSO AQUI QUE DEIXA A FOTO NÍTIDA SEM DAR ZOOM
+            scale: 3, 
             useCORS: true, 
             logging: false,
             scrollY: 0, 
             scrollX: 0,
-            windowWidth: 800 // Voltou para 800 para não "comer" a borda no celular
+            windowWidth: 800 
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
