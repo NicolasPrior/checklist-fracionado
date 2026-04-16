@@ -142,16 +142,16 @@
             z-index: 10001; 
         }
 
-        /* REGRAS CORRIGIDAS PARA O PDF (FIM DO EFEITO ZOOM) */
+        /* REGRAS CORRIGIDAS PARA O PDF (ALINHADO E CENTRALIZADO) */
         .modo-pdf { 
-            width: 1024px !important; /* Aumentado para tirar o zoom e ficar mais nítido */
+            width: 800px !important; /* Voltou para 800 para encaixar no A4 certinho */
             margin: 0 auto !important; 
-            padding: 30px !important;
+            padding: 25px !important;
             display: block !important;
             background: white !important;
         }
 
-        .modo-pdf .header { text-align: center; margin-bottom: 25px; }
+        .modo-pdf .header { text-align: center; margin-bottom: 20px; }
 
         .modo-pdf .dados-container { 
             display: grid !important; 
@@ -172,10 +172,10 @@
             gap: 20px !important;
         }
 
-        /* Ajuste das caixas de imagem para a nova largura */
+        /* Ajuste das caixas de imagem para caber na folha sem cortar */
         .modo-pdf .box-imagem { 
             width: 100% !important; 
-            height: 220px !important; /* Fotos um pouco maiores para compensar o zoom out */
+            height: 160px !important; /* Voltou para o ideal para caberem 2 volumes por folha */
             border: 1px solid #ccc !important;
             border-radius: 8px !important;
             display: flex !important;
@@ -186,7 +186,7 @@
         }
 
         .modo-pdf #secao-caminhao .box-imagem {
-            height: 160px !important; /* Capa um pouco menor para caber tudo na Pág 1 */
+            height: 140px !important; /* Um pouco menor na capa para sobrar espaço */
         }
 
         .modo-pdf .box-imagem img {
@@ -199,7 +199,7 @@
         .modo-pdf .volume-box { 
             page-break-inside: avoid !important;
             border: 1px solid #333 !important;
-            margin-bottom: 25px !important;
+            margin-bottom: 20px !important;
             padding: 20px !important;
         }
 
@@ -466,64 +466,64 @@
 function gerarPDF() {
     const element = document.getElementById('render-area');
     const load = document.getElementById('loading');
-    const info = document.getElementById('data-hora-pdf'); // ID corrigido aqui
+    const info = document.getElementById('data-hora-pdf');
     const nf = document.getElementById('nota-fiscal').value;
 
-    // Validação de campos obrigatórios
-    let vazio = false;
-    document.querySelectorAll('#render-area input[required]').forEach(i => { if(!i.value.trim()) vazio = true; });
-    
-    if(!nf) { 
-        alert("Por favor, preencha o número da Nota Fiscal!"); 
-        return; 
-    }
+    if(!nf) return alert("Por favor, preencha o número da Nota Fiscal!");
 
-    // 1. Prepara a interface
+    // 1. FORÇA O CELULAR A SUBIR PARA O TOPO (Resolve o bug de não começar na Pág 1)
+    window.scrollTo(0, 0);
+
     load.style.display = 'block';
-    element.classList.add('modo-pdf'); // Força o layout de PDF
+    element.classList.add('modo-pdf');
     
     const agora = new Date();
     info.innerText = `Gerado em: ${agora.toLocaleString('pt-BR')}`;
     info.style.display = 'block';
 
-    // 2. Sincroniza os valores digitados para aparecerem no PDF
+    // Sincroniza os valores
     const inputs = element.querySelectorAll('input, select');
     inputs.forEach(i => { if (i.type !== 'file') i.setAttribute('value', i.value); });
 
-    // 3. Lógica de Paginação (Volumes)
-    const volumes = document.querySelectorAll('.volume-box');
+    // Lógica de paginação
+    const todasQuebras = element.querySelectorAll('.quebra-pagina-manual');
+    todasQuebras.forEach(q => q.remove());
+
+    const volumes = document.querySelectorAll('#container-volumes .volume-box');
     volumes.forEach((vol, index) => {
         if ((index + 1) % 2 === 0 && index !== volumes.length - 1) {
-            vol.classList.add('quebra-pagina-obrigatoria');
+            const divisor = document.createElement('div');
+            divisor.className = 'quebra-pagina-manual';
+            divisor.style.pageBreakAfter = 'always';
+            vol.parentNode.insertBefore(divisor, vol.nextSibling);
         }
     });
 
     const opt = {
         margin: [10, 10, 10, 10],
         filename: `Checklist_NF_${nf}.pdf`,
-        image: { type: 'jpeg', quality: 1.0 }, // Força 100% de qualidade no PDF
+        image: { type: 'jpeg', quality: 1.0 }, // Qualidade máxima
         html2canvas: { 
-            scale: 3, // Aumenta a nitidez da "foto" que o gerador tira (Antes era 2)
+            scale: 3, // É ISSO AQUI QUE DEIXA A FOTO NÍTIDA SEM DAR ZOOM
             useCORS: true, 
             logging: false,
-            windowWidth: 1024 // Engana o celular para afastar o zoom (casa com o CSS)
+            scrollY: 0, 
+            scrollX: 0,
+            windowWidth: 800 // Voltou para 800 para não "comer" a borda no celular
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
     };
 
-    // 4. Executa a geração
-    html2pdf().set(opt).from(element).save().then(() => {
-        // 5. Limpa tudo e volta ao normal
-        element.classList.remove('modo-pdf');
-        volumes.forEach(vol => vol.classList.remove('quebra-pagina-obrigatoria'));
-        load.style.display = 'none';
-        info.style.display = 'none';
-    }).catch(err => {
-        console.error("Erro ao gerar PDF:", err);
-        load.style.display = 'none';
-        element.classList.remove('modo-pdf');
-    });
+    // Gera o PDF com um pequeno atraso para o navegador respirar
+    setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+            element.classList.remove('modo-pdf');
+            document.querySelectorAll('.quebra-pagina-manual').forEach(q => q.remove());
+            load.style.display = 'none';
+            info.style.display = 'none';
+        });
+    }, 300);
 }
     window.onload = atualizarContador;
 </script>
