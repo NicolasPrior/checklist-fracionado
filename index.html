@@ -305,7 +305,7 @@
         }
     }
 
-    // --- A MÁGICA: DIMINUIR A FOTO ANTES DE USAR ---
+// --- A MÁGICA: DIMINUIR A FOTO ANTES DE USAR ---
     async function comprimirImagem(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -315,7 +315,7 @@
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; // Reduz a largura para 800px (ótimo para PDF)
+                    const MAX_WIDTH = 1200; // AUMENTADO PARA MAIOR NITIDEZ (Antes era 800)
                     const scaleSize = MAX_WIDTH / img.width;
                     canvas.width = MAX_WIDTH;
                     canvas.height = img.height * scaleSize;
@@ -323,8 +323,8 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     
-                    // Converte para JPEG com qualidade 0.7 (leve e nítido)
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    // Aumentamos a qualidade do JPEG de 0.7 para 0.85
+                    resolve(canvas.toDataURL('image/jpeg', 0.85));
                 };
             };
         });
