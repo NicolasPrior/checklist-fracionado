@@ -240,21 +240,13 @@
       position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:3;
     }
 
-    .box-imagem {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-}
-
-.box-imagem img {
-  position: relative;
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-}
+    .box-imagem img{
+      position:absolute;inset:0;margin:auto;
+      max-width:100%;max-height:100%;
+      width:auto;height:auto;
+      z-index:2;display:none;
+      object-fit:contain;background:linear-gradient(180deg,#FDFEFD 0%,#F1F7F3 100%);
+    }
 
     .msg-camera{
       position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;
@@ -595,15 +587,26 @@
     }
 
     .pdf-photo-frame{
-      overflow:hidden;display:flex;align-items:center;justify-content:center;height:118px;border-radius:10px;
-      background:#F7FBF8;border:1px solid #E6EFE8;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:118px;
+      border-radius:10px;
+      background:#F7FBF8;
+      border:1px solid #E6EFE8;
+      padding:6px;
     }
 
     .pdf-photo-frame img{
-      width:100%;
-      height:100%;
+      display:block;
+      max-width:100%;
+      max-height:100%;
+      width:auto;
+      height:auto;
       object-fit:contain;
       background:#FFFFFF;
+      image-rendering:auto;
     }
 
     .pdf-page-header{
@@ -961,15 +964,14 @@
       return {
         larguraMaximaFoto: ambiente.mobile ? 2200 : 2600,
         alturaMaximaFoto: ambiente.mobile ? 2200 : 2600,
-        qualidadeFoto: ambiente.mobile ? 0.98 : 1
+        qualidadeFoto: ambiente.mobile ? 0.92 : 0.96
       };
     }
 
     function obterConfiguracaoPDF() {
       const ambiente = detectarAmbientePDF();
       return {
-        escalaCanvas: ambiente.mobile ? 2.5 : 3,
-        qualidadeImagem: ambiente.mobile ? 0.94 : 0.98
+        escalaCanvas: ambiente.mobile ? 1.9 : 2.4
       };
     }
 
@@ -1054,37 +1056,46 @@
       sincronizarCaixa(box);
     }
 
-async function comprimirImagem(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+    async function comprimirImagem(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
 
-    reader.onload = (evento) => {
-      const img = new Image();
+        reader.onload = (evento) => {
+          const img = new Image();
 
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+          img.onload = () => {
+            const config = obterConfiguracaoFotos();
+            const canvas = document.createElement('canvas');
 
-        // 👉 MANTÉM TAMANHO ORIGINAL (sem zoom)
-        canvas.width = img.width;
-        canvas.height = img.height;
+            const escala = Math.min(
+              1,
+              config.larguraMaximaFoto / img.width,
+              config.alturaMaximaFoto / img.height
+            );
 
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+            canvas.width = Math.max(1, Math.round(img.width * escala));
+            canvas.height = Math.max(1, Math.round(img.height * escala));
 
-        ctx.drawImage(img, 0, 0);
+            const ctx = canvas.getContext('2d', { alpha: false });
 
-        resolve(canvas.toDataURL('image/jpeg', 1)); // qualidade máxima
-      };
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
 
-      img.onerror = reject;
-      img.src = evento.target.result;
-    };
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+            resolve(canvas.toDataURL('image/jpeg', config.qualidadeFoto));
+          };
+
+          img.onerror = reject;
+          img.src = evento.target.result;
+        };
+
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
 
     async function preview(input) {
       if (!input.files || !input.files[0]) return;
@@ -1669,7 +1680,7 @@ async function comprimirImagem(file) {
       }
     }
 
-    async function renderizarPaginaParaImagem(pagina, escalaCanvas, qualidadeImagem) {
+    async function renderizarPaginaParaImagem(pagina, escalaCanvas) {
       const canvas = await html2canvas(pagina, {
         scale: escalaCanvas,
         useCORS: true,
@@ -1690,7 +1701,7 @@ async function comprimirImagem(file) {
         ctx.imageSmoothingQuality = 'high';
       }
 
-      return canvas.toDataURL('image/jpeg', qualidadeImagem);
+      return canvas.toDataURL('image/png');
     }
 
     function baixarBlob(blob, nomeArquivo) {
@@ -1753,28 +1764,12 @@ async function comprimirImagem(file) {
 
           const imagem = await renderizarPaginaParaImagem(
             paginas[i],
-            configPDF.escalaCanvas,
-            configPDF.qualidadeImagem
+            configPDF.escalaCanvas
           );
 
           if (i > 0) doc.addPage('a4', 'portrait');
-          const imgProps = doc.getImageProperties(imagem);
-
-const pdfWidth = 210;
-const pdfHeight = 297;
-
-const ratio = Math.min(
-  pdfWidth / imgProps.width,
-  pdfHeight / imgProps.height
-);
-
-const imgWidth = imgProps.width * ratio;
-const imgHeight = imgProps.height * ratio;
-
-const marginX = (pdfWidth - imgWidth) / 2;
-const marginY = (pdfHeight - imgHeight) / 2;
-
-doc.addImage(imagem, 'JPEG', marginX, marginY, imgWidth, imgHeight);
+          doc.addImage(imagem, 'PNG', 0, 0, 210, 297);
+        }
 
         atualizarStatusLoading('Salvando arquivo PDF...');
         const blob = doc.output('blob');
