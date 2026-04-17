@@ -22,11 +22,9 @@
       --verde-100:#EAF5EE;
       --verde-050:#F7FBF8;
       --dourado-500:#C69A2B;
-      --dourado-100:#F6ECD0;
       --grafite:#233129;
       --texto-suave:#6D7C73;
       --borda:#DCE9E0;
-      --branco:#FFFFFF;
       --erro:#C53939;
       --sombra-forte:0 30px 60px rgba(24,75,53,.10);
       --sombra-media:0 18px 32px rgba(24,75,53,.08);
@@ -122,6 +120,7 @@
       display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border-radius:16px;
       background:rgba(255,255,255,.10);font-size:14px;color:rgba(255,255,255,.90);
     }
+
     .hero-guide li span{
       display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;
       border-radius:10px;background:rgba(232,211,155,.22);color:#FFF6DA;
@@ -362,6 +361,7 @@
       height:42px;border:none;border-radius:14px;cursor:pointer;
       font:700 12px/1 'Montserrat',sans-serif;letter-spacing:.05em;
     }
+
     .pendente-retomar{flex:1;color:#fff;background:linear-gradient(135deg,var(--verde-700),var(--verde-600))}
     .pendente-excluir{
       width:48px;color:var(--erro);background:rgba(197,57,57,.10);
@@ -419,7 +419,7 @@
     .pdf-page{
       width:794px;
       height:1122px;
-      padding:12px;
+      padding:10px;
       overflow:hidden;
       background:#FFFFFF;
       margin:0;
@@ -474,7 +474,7 @@
 
     .pdf-hero{
       display:grid;
-      grid-template-columns:minmax(0,1.45fr) 180px;
+      grid-template-columns:minmax(0,1.4fr) 180px;
       gap:10px;
       padding:10px;
       border-radius:14px;
@@ -574,7 +574,9 @@
     }
 
     .pdf-truck-grid{
-      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
     }
 
     .pdf-photo-card{
@@ -591,7 +593,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      height:152px;
+      height:170px;
       border-radius:10px;
       background:#F7FBF8;
       border:1px solid #E6EFE8;
@@ -610,7 +612,7 @@
     }
 
     .pdf-truck-grid .pdf-photo-frame{
-      height:168px;
+      height:155px;
     }
 
     .pdf-page-header{
@@ -673,7 +675,9 @@
     }
 
     .pdf-volume-photos{
-      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
     }
 
     .pdf-volume-panel{
@@ -686,7 +690,7 @@
     }
 
     .pdf-volume-panel .pdf-photo-frame{
-      height:164px;
+      height:330px;
     }
 
     .pdf-footer{
@@ -737,15 +741,15 @@
       <div class="hero-main">
         <div class="hero-copy">
           <h1>Checklist operacional com evidência visual e PDF institucional.</h1>
-          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento com paginação fixa: capa operacional na primeira página e volumes organizados em duplas nas páginas seguintes.</p>
+          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento com paginação fixa: capa operacional na primeira página e volumes em sequência para melhor leitura visual.</p>
         </div>
 
         <div class="hero-guide">
           <strong>Estrutura do PDF</strong>
           <ul>
-            <li><span>01</span> Página 1 com informações gerais e fotos do veículo.</li>
-            <li><span>02</span> Página 2 com Volume 1 e Volume 2.</li>
-            <li><span>03</span> Páginas seguintes sempre com 2 volumes por folha.</li>
+            <li><span>01</span> Página 1 com informações gerais e fotos do veículo em sequência.</li>
+            <li><span>02</span> Cada volume passa a ocupar uma página própria.</li>
+            <li><span>03</span> Fotos maiores para facilitar leitura e envio ao cliente.</li>
           </ul>
         </div>
       </div>
@@ -799,7 +803,10 @@
             <div class="input-shell">
               <select id="tipo-carga" onchange="mudarTipoCarga()" required>
                 <option value="">Selecione o formato...</option>
-                <option value="Tambor / Container">Tambor / Container</option>
+                <option value="Tambor">Tambor</option>
+                <option value="Container">Container</option>
+                <option value="Tambor do Cliente">Tambor do Cliente</option>
+                <option value="Container do Cliente">Container do Cliente</option>
                 <option value="Bag in Box">Bag in Box</option>
               </select>
             </div>
@@ -861,7 +868,7 @@
           <div>
             <div class="panel-kicker">Etapa 2</div>
             <h3>Volumes conferidos</h3>
-            <p>No PDF, os volumes são organizados em pares por página: 1 e 2, depois 3 e 4, e assim por diante.</p>
+            <p>No PDF, cada volume terá uma página própria com fotos em sequência para melhorar a visibilidade.</p>
           </div>
         </div>
 
@@ -968,16 +975,16 @@
     function obterConfiguracaoFotos() {
       const ambiente = detectarAmbientePDF();
       return {
-        larguraMaximaFoto: ambiente.mobile ? 2200 : 2600,
-        alturaMaximaFoto: ambiente.mobile ? 2200 : 2600,
-        qualidadeFoto: ambiente.mobile ? 0.92 : 0.96
+        larguraMaximaFoto: ambiente.mobile ? 3200 : 3800,
+        alturaMaximaFoto: ambiente.mobile ? 3200 : 3800,
+        qualidadeFoto: ambiente.mobile ? 0.97 : 0.99
       };
     }
 
     function obterConfiguracaoPDF() {
       const ambiente = detectarAmbientePDF();
       return {
-        escalaCanvas: ambiente.mobile ? 1.9 : 2.4
+        escalaCanvas: ambiente.mobile ? 2.6 : 3.2
       };
     }
 
@@ -1083,7 +1090,6 @@
             canvas.height = Math.max(1, Math.round(img.height * escala));
 
             const ctx = canvas.getContext('2d', { alpha: false });
-
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
@@ -1344,7 +1350,7 @@
             <div class="volume-title-wrap">
               <span class="volume-seq">Volume ${numero}</span>
               <h4 class="volume-nome">Conferência visual do volume ${numero}</h4>
-              <p>Esses cartões são levados em pares para as páginas internas do PDF.</p>
+              <p>Esse volume terá uma página própria no PDF, com fotos maiores.</p>
             </div>
             <button type="button" class="btn-remover" onclick="removerVolume(this)">Remover</button>
           </div>
@@ -1529,7 +1535,7 @@
       const { campos, caminhao, volumes, geradoEm } = obterDadosPDF();
       const root = document.getElementById('pdf-render-root');
       const paginas = [];
-      const totalPaginas = 1 + Math.ceil(volumes.length / 2);
+      const totalPaginas = 1 + volumes.length;
 
       paginas.push(`
         <section class="pdf-page">
@@ -1589,7 +1595,7 @@
                     <span>Registro fotográfico</span>
                     <h2>Fotos do veículo</h2>
                   </div>
-                  <p>Essas imagens identificam o veículo e registram o momento do carregamento.</p>
+                  <p>As imagens do veículo agora aparecem em sequência para melhor leitura.</p>
                 </div>
 
                 <div class="pdf-truck-grid">
@@ -1608,23 +1614,22 @@
         </section>
       `);
 
-      for (let i = 0; i < volumes.length; i += 2) {
-        const dupla = volumes.slice(i, i + 2);
-        const paginaAtual = paginas.length + 1;
+      volumes.forEach((volume, index) => {
+        const paginaAtual = index + 2;
 
         paginas.push(`
           <section class="pdf-page">
             <div class="pdf-sheet">
               <div class="pdf-topline">
-                <div class="pdf-brandline">Centrosucar • Volumes conferidos</div>
+                <div class="pdf-brandline">Centrosucar • Volume conferido</div>
                 <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
               </div>
 
               <div class="pdf-main">
                 <div class="pdf-page-header">
                   <div>
-                    <h2>Volumes conferidos</h2>
-                    <p>Volumes organizados em pares por página para facilitar visualização e conferência operacional.</p>
+                    <h2>Volume ${volume.numero}</h2>
+                    <p>Página dedicada para ampliar a visualização das evidências fotográficas.</p>
                   </div>
                   <div class="pdf-page-tags">
                     <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
@@ -1634,18 +1639,18 @@
                 </div>
 
                 <div class="pdf-volumes-list">
-                  ${dupla.map(volume => montarVolumePDF(volume, campos.tp)).join('')}
+                  ${montarVolumePDF(volume, campos.tp)}
                 </div>
               </div>
 
               <div class="pdf-footer">
-                <span>Volumes ${i + 1}${dupla.length === 2 ? ` e ${i + 2}` : ''}</span>
+                <span>Volume ${volume.numero}</span>
                 <strong>Centrosucar</strong>
               </div>
             </div>
           </section>
         `);
-      }
+      });
 
       root.innerHTML = `<div class="pdf-document">${paginas.join('')}</div>`;
       return root;
@@ -1745,7 +1750,7 @@
         atualizarStatusLoading('Montando as páginas do checklist...');
         const root = construirPaginasPDF();
 
-        await esperar(250);
+        await esperar(300);
         await aguardarImagensCarregadas(root);
 
         const paginas = Array.from(root.querySelectorAll('.pdf-page'));
@@ -1762,7 +1767,7 @@
           orientation: 'portrait',
           unit: 'mm',
           format: 'a4',
-          compress: true
+          compress: false
         });
 
         for (let i = 0; i < paginas.length; i++) {
