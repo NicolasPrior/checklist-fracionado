@@ -576,7 +576,7 @@
     .pdf-truck-grid{
       display:grid;
       grid-template-columns:1fr;
-      gap:8px;
+      gap:10px;
     }
 
     .pdf-photo-card{
@@ -612,7 +612,7 @@
     }
 
     .pdf-truck-grid .pdf-photo-frame{
-      height:155px;
+      height:185px;
     }
 
     .pdf-page-header{
@@ -641,7 +641,8 @@
 
     .pdf-volumes-list{
       display:grid;
-      gap:6px;
+      grid-template-columns:1fr;
+      gap:8px;
       align-content:start;
       min-height:0;
       overflow:hidden;
@@ -676,8 +677,8 @@
 
     .pdf-volume-photos{
       display:grid;
-      grid-template-columns:1fr;
-      gap:10px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
     }
 
     .pdf-volume-panel{
@@ -690,7 +691,7 @@
     }
 
     .pdf-volume-panel .pdf-photo-frame{
-      height:330px;
+      height:220px;
     }
 
     .pdf-footer{
@@ -741,14 +742,14 @@
       <div class="hero-main">
         <div class="hero-copy">
           <h1>Checklist operacional com evidência visual e PDF institucional.</h1>
-          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento com paginação fixa: capa operacional na primeira página e volumes em sequência para melhor leitura visual.</p>
+          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento com paginação fixa: capa operacional na primeira página e volumes organizados em duplas nas páginas seguintes.</p>
         </div>
 
         <div class="hero-guide">
           <strong>Estrutura do PDF</strong>
           <ul>
-            <li><span>01</span> Página 1 com informações gerais e fotos do veículo em sequência.</li>
-            <li><span>02</span> Cada volume passa a ocupar uma página própria.</li>
+            <li><span>01</span> Página 1 com informações gerais e fotos do veículo em sequência ampliada.</li>
+            <li><span>02</span> As páginas internas trazem 2 volumes por folha.</li>
             <li><span>03</span> Fotos maiores para facilitar leitura e envio ao cliente.</li>
           </ul>
         </div>
@@ -868,7 +869,7 @@
           <div>
             <div class="panel-kicker">Etapa 2</div>
             <h3>Volumes conferidos</h3>
-            <p>No PDF, cada volume terá uma página própria com fotos em sequência para melhorar a visibilidade.</p>
+            <p>No PDF, os volumes são organizados em 2 por página com fotos ampliadas e melhor visibilidade.</p>
           </div>
         </div>
 
@@ -984,7 +985,7 @@
     function obterConfiguracaoPDF() {
       const ambiente = detectarAmbientePDF();
       return {
-        escalaCanvas: ambiente.mobile ? 2.6 : 3.2
+        escalaCanvas: ambiente.mobile ? 2.5 : 3.1
       };
     }
 
@@ -1350,7 +1351,7 @@
             <div class="volume-title-wrap">
               <span class="volume-seq">Volume ${numero}</span>
               <h4 class="volume-nome">Conferência visual do volume ${numero}</h4>
-              <p>Esse volume terá uma página própria no PDF, com fotos maiores.</p>
+              <p>Esse volume entrará no PDF com fotos ampliadas e melhor leitura.</p>
             </div>
             <button type="button" class="btn-remover" onclick="removerVolume(this)">Remover</button>
           </div>
@@ -1535,7 +1536,7 @@
       const { campos, caminhao, volumes, geradoEm } = obterDadosPDF();
       const root = document.getElementById('pdf-render-root');
       const paginas = [];
-      const totalPaginas = 1 + volumes.length;
+      const totalPaginas = 1 + Math.ceil(volumes.length / 2);
 
       paginas.push(`
         <section class="pdf-page">
@@ -1595,7 +1596,7 @@
                     <span>Registro fotográfico</span>
                     <h2>Fotos do veículo</h2>
                   </div>
-                  <p>As imagens do veículo agora aparecem em sequência para melhor leitura.</p>
+                  <p>As imagens do veículo foram ampliadas para melhor leitura visual.</p>
                 </div>
 
                 <div class="pdf-truck-grid">
@@ -1614,22 +1615,23 @@
         </section>
       `);
 
-      volumes.forEach((volume, index) => {
-        const paginaAtual = index + 2;
+      for (let i = 0; i < volumes.length; i += 2) {
+        const dupla = volumes.slice(i, i + 2);
+        const paginaAtual = paginas.length + 1;
 
         paginas.push(`
           <section class="pdf-page">
             <div class="pdf-sheet">
               <div class="pdf-topline">
-                <div class="pdf-brandline">Centrosucar • Volume conferido</div>
+                <div class="pdf-brandline">Centrosucar • Volumes conferidos</div>
                 <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
               </div>
 
               <div class="pdf-main">
                 <div class="pdf-page-header">
                   <div>
-                    <h2>Volume ${volume.numero}</h2>
-                    <p>Página dedicada para ampliar a visualização das evidências fotográficas.</p>
+                    <h2>Volumes conferidos</h2>
+                    <p>Dois volumes por página, com fotos maiores para manter a visibilidade.</p>
                   </div>
                   <div class="pdf-page-tags">
                     <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
@@ -1639,18 +1641,18 @@
                 </div>
 
                 <div class="pdf-volumes-list">
-                  ${montarVolumePDF(volume, campos.tp)}
+                  ${dupla.map(volume => montarVolumePDF(volume, campos.tp)).join('')}
                 </div>
               </div>
 
               <div class="pdf-footer">
-                <span>Volume ${volume.numero}</span>
+                <span>Volumes ${i + 1}${dupla.length === 2 ? ` e ${i + 2}` : ''}</span>
                 <strong>Centrosucar</strong>
               </div>
             </div>
           </section>
         `);
-      });
+      }
 
       root.innerHTML = `<div class="pdf-document">${paginas.join('')}</div>`;
       return root;
