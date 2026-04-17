@@ -241,20 +241,19 @@
     }
 
     .box-imagem {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #fff;
 }
 
 .box-imagem img {
-  position: relative; /* remove absolute */
+  position: relative;
   max-width: 100%;
   max-height: 100%;
   width: auto;
   height: auto;
-  z-index: 2;
-  display: none;
-  object-fit: contain;
 }
 
     .msg-camera{
@@ -1055,46 +1054,37 @@
       sincronizarCaixa(box);
     }
 
-    async function comprimirImagem(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
+async function comprimirImagem(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-        reader.onload = (evento) => {
-          const img = new Image();
+    reader.onload = (evento) => {
+      const img = new Image();
 
-          img.onload = () => {
-            const config = obterConfiguracaoFotos();
-            const canvas = document.createElement('canvas');
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
-            const escala = Math.min(
-              1,
-              config.larguraMaximaFoto / img.width,
-              config.alturaMaximaFoto / img.height
-            );
+        // 👉 MANTÉM TAMANHO ORIGINAL (sem zoom)
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-            canvas.width = Math.max(1, Math.round(img.width * escala));
-            canvas.height = Math.max(1, Math.round(img.height * escala));
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
-            const ctx = canvas.getContext('2d', { alpha: false });
+        ctx.drawImage(img, 0, 0);
 
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
+        resolve(canvas.toDataURL('image/jpeg', 1)); // qualidade máxima
+      };
 
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.onerror = reject;
+      img.src = evento.target.result;
+    };
 
-            resolve(canvas.toDataURL('image/jpeg', config.qualidadeFoto));
-          };
-
-          img.onerror = reject;
-          img.src = evento.target.result;
-        };
-
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
     async function preview(input) {
       if (!input.files || !input.files[0]) return;
@@ -1768,8 +1758,23 @@
           );
 
           if (i > 0) doc.addPage('a4', 'portrait');
-          doc.addImage(imagem, 'JPEG', 0, 0, 210, 297, undefined, 'MEDIUM');
-        }
+          const imgProps = doc.getImageProperties(imagem);
+
+const pdfWidth = 210;
+const pdfHeight = 297;
+
+const ratio = Math.min(
+  pdfWidth / imgProps.width,
+  pdfHeight / imgProps.height
+);
+
+const imgWidth = imgProps.width * ratio;
+const imgHeight = imgProps.height * ratio;
+
+const marginX = (pdfWidth - imgWidth) / 2;
+const marginY = (pdfHeight - imgHeight) / 2;
+
+doc.addImage(imagem, 'JPEG', marginX, marginY, imgWidth, imgHeight);
 
         atualizarStatusLoading('Salvando arquivo PDF...');
         const blob = doc.output('blob');
