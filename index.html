@@ -573,12 +573,6 @@
       color:var(--grafite);font-size:8px;line-height:1.05;font-weight:600;
     }
 
-    .pdf-photo-stack{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:3px;
-    }
-
     .pdf-photo-card{
       padding:4px;
       border-radius:11px;
@@ -601,11 +595,11 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      height:220px;
+      height:210px;
       border-radius:10px;
       background:#F7FBF8;
       border:1px solid #E6EFE8;
-      padding:4px;
+      padding:3px;
     }
 
     .pdf-photo-frame img{
@@ -620,8 +614,22 @@
       image-rendering:auto;
     }
 
-    .pdf-truck-stack .pdf-photo-frame{
-      height:238px;
+    .pdf-truck-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:4px;
+    }
+
+    .pdf-truck-grid .pdf-photo-card.is-placa{
+      grid-column:1 / -1;
+    }
+
+    .pdf-truck-grid .pdf-photo-frame{
+      height:165px;
+    }
+
+    .pdf-truck-grid .pdf-photo-card.is-placa .pdf-photo-frame{
+      height:185px;
     }
 
     .pdf-page-header{
@@ -749,7 +757,7 @@
           <ul>
             <li><span>01</span> Página 1 com informações gerais e fotos do veículo.</li>
             <li><span>02</span> Páginas internas com 2 volumes por folha.</li>
-            <li><span>03</span> Fotos maiores e com mais nitidez no zoom.</li>
+            <li><span>03</span> Placa com área maior e nitidez reforçada.</li>
           </ul>
         </div>
       </div>
@@ -868,7 +876,7 @@
           <div>
             <div class="panel-kicker">Etapa 2</div>
             <h3>Volumes conferidos</h3>
-            <p>No PDF, os volumes saem em duplas por página, com fotos em sequência vertical.</p>
+            <p>No PDF, os volumes saem em duplas por página, com fotos ampliadas.</p>
           </div>
         </div>
 
@@ -975,16 +983,16 @@
     function obterConfiguracaoFotos() {
       const ambiente = detectarAmbientePDF();
       return {
-        larguraMaximaFoto: ambiente.mobile ? 4200 : 5200,
-        alturaMaximaFoto: ambiente.mobile ? 4200 : 5200,
-        qualidadeFoto: ambiente.mobile ? 0.99 : 1
+        larguraMaximaFoto: ambiente.mobile ? 5200 : 6500,
+        alturaMaximaFoto: ambiente.mobile ? 5200 : 6500,
+        qualidadeFoto: 1
       };
     }
 
     function obterConfiguracaoPDF() {
       const ambiente = detectarAmbientePDF();
       return {
-        escalaCanvas: ambiente.mobile ? 3.2 : 3.8
+        escalaCanvas: ambiente.mobile ? 4.2 : 5.0
       };
     }
 
@@ -1092,7 +1100,6 @@
             const ctx = canvas.getContext('2d', { alpha: false });
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -1488,9 +1495,9 @@
       `;
     }
 
-    function montarFotoPDF(label, src = '') {
+    function montarFotoPDF(label, src = '', extraClass = '') {
       return `
-        <div class="pdf-photo-card">
+        <div class="pdf-photo-card ${extraClass}">
           <span>${escaparHTML(label)}</span>
           <div class="pdf-photo-frame">
             ${src ? `<img src="${src}" alt="${escaparHTML(label)}">` : ''}
@@ -1512,7 +1519,7 @@
             <div class="pdf-volume-badge">Volume ${volume.numero}</div>
           </div>
 
-          <div class="pdf-volume-photos pdf-photo-stack">
+          <div class="pdf-volume-photos">
             ${montarFotoPDF('Foto etiqueta', volume.fotos?.[0] || '')}
             ${montarFotoPDF(labelSecundario, volume.fotos?.[1] || '')}
           </div>
@@ -1584,13 +1591,13 @@
                     <span>Registro fotográfico</span>
                     <h2>Fotos do veículo</h2>
                   </div>
-                  <p>Fotos ampliadas para melhor leitura e prova visual.</p>
+                  <p>Placa ampliada e sem corte na primeira página.</p>
                 </div>
 
-                <div class="pdf-photo-stack pdf-truck-stack">
+                <div class="pdf-truck-grid">
                   ${montarFotoPDF('Lateral do caminhão carregado', caminhao[0] || '')}
                   ${montarFotoPDF('Carregamento', caminhao[1] || '')}
-                  ${montarFotoPDF('Placa', caminhao[2] || '')}
+                  ${montarFotoPDF('Placa', caminhao[2] || '', 'is-placa')}
                 </div>
               </section>
             </div>
@@ -1619,7 +1626,7 @@
                 <div class="pdf-page-header">
                   <div>
                     <h2>Volumes conferidos</h2>
-                    <p>Volumes organizados em pares por página, com fotos ampliadas e legíveis.</p>
+                    <p>Volumes organizados em pares por página, com fotos ampliadas e mais nítidas.</p>
                   </div>
                   <div class="pdf-page-tags">
                     <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
@@ -1740,7 +1747,7 @@
         atualizarStatusLoading('Montando as páginas do checklist...');
         const root = construirPaginasPDF();
 
-        await esperar(250);
+        await esperar(300);
         await aguardarImagensCarregadas(root);
 
         const paginas = Array.from(root.querySelectorAll('.pdf-page'));
@@ -1785,11 +1792,11 @@
 
       } catch (erro) {
         console.error('Erro ao gerar PDF:', erro);
-        alert('Não foi possível gerar o PDF neste aparelho. Tente novamente no Chrome do celular.');
+        alert('Não foi possível gerar o PDF neste aparelho. Se travar no celular, me peça que eu preparo uma versão “alta qualidade equilibrada”.');
       } finally {
         setTimeout(() => {
           loading.style.display = 'none';
-        }, 600);
+        }, 650);
       }
     }
 
