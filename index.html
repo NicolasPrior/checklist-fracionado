@@ -226,6 +226,14 @@
       font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;text-align:center;
     }
 
+    .foto-col .foto-dica{
+      margin-top:8px;
+      text-align:center;
+      color:var(--texto-suave);
+      font-size:12px;
+      line-height:1.25;
+    }
+
     .box-imagem{
       position:relative;overflow:hidden;min-height:212px;border-radius:22px;
       border:1px dashed rgba(58,122,88,.26);
@@ -258,7 +266,7 @@
       font:700 15px/1 'Montserrat',sans-serif;color:var(--verde-700);
     }
 
-    .msg-camera small{max-width:160px;font-size:13px;line-height:1.35}
+    .msg-camera small{max-width:170px;font-size:13px;line-height:1.35}
 
     .msg-camera::before{
       content:'FOTO';display:inline-flex;align-items:center;justify-content:center;
@@ -757,7 +765,7 @@
           <ul>
             <li><span>01</span> Página 1 com informações gerais e fotos do veículo.</li>
             <li><span>02</span> Páginas internas com 2 volumes por folha.</li>
-            <li><span>03</span> Placa com área maior e nitidez reforçada.</li>
+            <li><span>03</span> Agora com opção de câmera ou galeria no celular.</li>
           </ul>
         </div>
       </div>
@@ -845,28 +853,31 @@
           <div class="foto-col">
             <label>Lateral do caminhão carregado</label>
             <div class="box-imagem">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Capture a lateral completa do veículo carregado.</small></span>
-              <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
+              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
+              <input type="file" accept="image/*" onchange="preview(this)">
               <img alt="Foto lateral do caminhão carregado">
             </div>
+            <div class="foto-dica">Câmera ou galeria</div>
           </div>
 
           <div class="foto-col">
             <label>Carregamento</label>
             <div class="box-imagem">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Mostre a disposição da carga no momento do carregamento.</small></span>
-              <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
+              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
+              <input type="file" accept="image/*" onchange="preview(this)">
               <img alt="Foto do carregamento">
             </div>
+            <div class="foto-dica">Câmera ou galeria</div>
           </div>
 
           <div class="foto-col">
             <label>Placa</label>
             <div class="box-imagem">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Garanta a identificação visual completa da placa.</small></span>
-              <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
+              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
+              <input type="file" accept="image/*" onchange="preview(this)">
               <img alt="Foto da placa do veículo">
             </div>
+            <div class="foto-dica">Câmera ou galeria</div>
           </div>
         </div>
       </section>
@@ -1366,19 +1377,21 @@
             <div class="foto-col">
               <label>Foto etiqueta</label>
               <div class="box-imagem">
-                <span class="msg-camera"><strong>Registrar foto</strong><small>Mostre a etiqueta do volume de forma legível.</small></span>
-                <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
+                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
+                <input type="file" accept="image/*" onchange="preview(this)">
                 <img alt="Foto da etiqueta do volume">
               </div>
+              <div class="foto-dica">Câmera ou galeria</div>
             </div>
 
             <div class="foto-col">
               <label>${escaparHTML(labelSecundario)}</label>
               <div class="box-imagem">
-                <span class="msg-camera"><strong>Registrar foto</strong><small>Capture a evidência visual complementar deste volume.</small></span>
-                <input type="file" accept="image/*" capture="environment" onchange="preview(this)">
+                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
+                <input type="file" accept="image/*" onchange="preview(this)">
                 <img alt="Foto complementar do volume">
               </div>
+              <div class="foto-dica">Câmera ou galeria</div>
             </div>
           </div>
         </div>
