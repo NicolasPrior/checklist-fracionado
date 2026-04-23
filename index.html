@@ -227,11 +227,7 @@
     }
 
     .foto-col .foto-dica{
-      margin-top:8px;
-      text-align:center;
-      color:var(--texto-suave);
-      font-size:12px;
-      line-height:1.25;
+      margin-top:8px;text-align:center;color:var(--texto-suave);font-size:12px;line-height:1.25;
     }
 
     .box-imagem{
@@ -252,8 +248,7 @@
       max-width:100%;max-height:100%;
       width:auto;height:auto;
       z-index:2;display:none;
-      object-fit:contain;
-      object-position:center center;
+      object-fit:contain;object-position:center center;
       background:linear-gradient(180deg,#FDFEFD 0%,#F1F7F3 100%);
     }
 
@@ -411,48 +406,21 @@
     }
 
     #pdf-render-root{
-      position:fixed;
-      left:-100000px;
-      top:0;
-      width:794px;
-      z-index:-1;
-      pointer-events:none;
-      visibility:visible;
-      opacity:1;
+      position:fixed;left:-100000px;top:0;width:794px;z-index:-1;
+      pointer-events:none;visibility:visible;opacity:1;
     }
 
-    .pdf-document{
-      width:794px;
-      background:#FFFFFF;
-    }
-
-    .pdf-page{
-      width:794px;
-      height:1122px;
-      padding:9px;
-      overflow:hidden;
-      background:#FFFFFF;
-      margin:0;
-    }
-
+    .pdf-document{width:794px;background:#FFFFFF}
+    .pdf-page{width:794px;height:1122px;padding:9px;overflow:hidden;background:#FFFFFF;margin:0}
     .pdf-page + .pdf-page{margin-top:0}
 
     .pdf-sheet{
-      width:100%;
-      height:100%;
-      display:grid;
-      grid-template-rows:auto 1fr auto;
-      min-height:0;
-      border:1px solid #DDE8E0;
-      border-radius:18px;
-      background:#FFFFFF;
-      padding:7px 7px 5px;
-      overflow:hidden;
+      width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;min-height:0;
+      border:1px solid #DDE8E0;border-radius:18px;background:#FFFFFF;padding:7px 7px 5px;overflow:hidden;
     }
 
     .pdf-topline{
-      display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;
-      min-height:0;
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;min-height:0;
     }
 
     .pdf-brandline{
@@ -461,8 +429,7 @@
     }
 
     .pdf-brandline::before{
-      content:'';
-      width:20px;height:2px;border-radius:999px;
+      content:'';width:20px;height:2px;border-radius:999px;
       background:linear-gradient(90deg,var(--verde-700),rgba(58,122,88,.12));
     }
 
@@ -473,22 +440,12 @@
     }
 
     .pdf-main{
-      min-height:0;
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      gap:4px;
+      min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:4px;
     }
 
     .pdf-hero{
-      display:grid;
-      grid-template-columns:minmax(0,1.45fr) 170px;
-      gap:7px;
-      padding:7px;
-      border-radius:13px;
-      color:#fff;
-      background:linear-gradient(135deg,#3F7A5A,#6EA381);
-      flex-shrink:0;
+      display:grid;grid-template-columns:minmax(0,1.45fr) 170px;gap:7px;padding:7px;border-radius:13px;
+      color:#fff;background:linear-gradient(135deg,#3F7A5A,#6EA381);flex-shrink:0;
     }
 
     .pdf-hero-kicker{
@@ -521,11 +478,7 @@
     }
 
     .pdf-section{
-      padding:5px;
-      border-radius:12px;
-      border:1px solid #E2ECE5;
-      background:#FCFEFC;
-      flex-shrink:0;
+      padding:5px;border-radius:12px;border:1px solid #E2ECE5;background:#FCFEFC;flex-shrink:0;
     }
 
     .pdf-section-head{
@@ -538,8 +491,7 @@
     }
 
     .pdf-section-head span::before{
-      content:'';
-      width:14px;height:2px;border-radius:999px;
+      content:'';width:14px;height:2px;border-radius:999px;
       background:linear-gradient(90deg,var(--dourado-500),rgba(198,154,43,.12));
     }
 
@@ -556,16 +508,11 @@
     }
 
     .pdf-meta-card{
-      min-height:31px;
-      padding:4px 6px;
-      border-radius:9px;
-      border:1px solid #E5EEE8;
-      background:#FFFFFF;
+      min-height:31px;padding:4px 6px;border-radius:9px;border:1px solid #E5EEE8;background:#FFFFFF;
     }
 
     .pdf-meta-card.is-wide{
-      grid-column:1 / -1;
-      min-height:34px;
+      grid-column:1 / -1;min-height:34px;
     }
 
     .pdf-meta-card span{
@@ -582,50 +529,26 @@
     }
 
     .pdf-photo-card{
-      padding:4px;
-      border-radius:11px;
-      border:1px solid #E5EEE8;
-      background:#FFFFFF;
+      padding:4px;border-radius:11px;border:1px solid #E5EEE8;background:#FFFFFF;
     }
 
     .pdf-photo-card span{
-      display:block;
-      margin-bottom:3px;
-      text-align:center;
-      color:var(--texto-suave);
-      font:700 6px/1 'Montserrat',sans-serif;
-      letter-spacing:.11em;
-      text-transform:uppercase;
+      display:block;margin-bottom:3px;text-align:center;color:var(--texto-suave);
+      font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.11em;text-transform:uppercase;
     }
 
     .pdf-photo-frame{
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      height:210px;
-      border-radius:10px;
-      background:#F7FBF8;
-      border:1px solid #E6EFE8;
-      padding:3px;
+      overflow:hidden;display:flex;align-items:center;justify-content:center;height:210px;
+      border-radius:10px;background:#F7FBF8;border:1px solid #E6EFE8;padding:3px;
     }
 
     .pdf-photo-frame img{
-      display:block;
-      max-width:100% !important;
-      max-height:100% !important;
-      width:auto !important;
-      height:auto !important;
-      object-fit:contain !important;
-      object-position:center center !important;
-      background:#FFFFFF;
-      image-rendering:auto;
+      display:block;max-width:100% !important;max-height:100% !important;width:auto !important;height:auto !important;
+      object-fit:contain !important;object-position:center center !important;background:#FFFFFF;image-rendering:auto;
     }
 
     .pdf-truck-grid{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:4px;
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;
     }
 
     .pdf-truck-grid .pdf-photo-card.is-placa{
@@ -642,8 +565,7 @@
 
     .pdf-page-header{
       display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
-      margin-bottom:3px;padding:2px 2px 4px;border-bottom:1px solid #E0EAE3;
-      flex-shrink:0;
+      margin-bottom:3px;padding:2px 2px 4px;border-bottom:1px solid #E0EAE3;flex-shrink:0;
     }
 
     .pdf-page-header h2{
@@ -665,20 +587,12 @@
     }
 
     .pdf-volumes-list{
-      display:grid;
-      gap:3px;
-      align-content:start;
-      min-height:0;
-      overflow:hidden;
+      display:grid;gap:3px;align-content:start;min-height:0;overflow:hidden;
     }
 
     .pdf-volume-card{
-      padding:4px;
-      border-radius:12px;
-      border:1px solid #E2ECE5;
-      background:#FCFEFC;
-      break-inside:avoid;
-      page-break-inside:avoid;
+      padding:4px;border-radius:12px;border:1px solid #E2ECE5;background:#FCFEFC;
+      break-inside:avoid;page-break-inside:avoid;
     }
 
     .pdf-volume-top{
@@ -695,14 +609,11 @@
 
     .pdf-volume-badge{
       display:inline-flex;align-items:center;justify-content:center;min-height:18px;padding:0 7px;border-radius:999px;
-      background:#F0F7F2;
-      color:var(--verde-700);font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.12em;text-transform:uppercase;
+      background:#F0F7F2;color:var(--verde-700);font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.12em;text-transform:uppercase;
     }
 
     .pdf-volume-photos{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:3px;
+      display:grid;grid-template-columns:1fr;gap:3px;
     }
 
     .pdf-volume-card .pdf-photo-frame{
@@ -710,12 +621,8 @@
     }
 
     .pdf-footer{
-      margin-top:3px;
-      padding-top:4px;
-      border-top:1px solid #E0EAE3;
-      display:flex;align-items:center;justify-content:space-between;
-      gap:10px;color:var(--texto-suave);font-size:7px;
-      min-height:0;
+      margin-top:3px;padding-top:4px;border-top:1px solid #E0EAE3;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--texto-suave);font-size:7px;min-height:0;
     }
 
     .pdf-footer strong{
@@ -723,9 +630,7 @@
     }
 
     @media (max-width: 860px){
-      .hero-main,.dados-grid,#secao-caminhao .foto-wrapper,#container-volumes .foto-wrapper{
-        grid-template-columns:1fr;
-      }
+      .hero-main,.dados-grid,#secao-caminhao .foto-wrapper,#container-volumes .foto-wrapper{grid-template-columns:1fr}
       .panel-head,.header-volume{flex-direction:column;align-items:stretch}
       .status-note{min-width:0}
       .android-banner{align-items:stretch}
@@ -765,7 +670,7 @@
           <ul>
             <li><span>01</span> Página 1 com informações gerais e fotos do veículo.</li>
             <li><span>02</span> Páginas internas com 2 volumes por folha.</li>
-            <li><span>03</span> Agora com opção de câmera ou galeria no celular.</li>
+            <li><span>03</span> Pendentes salvos em IndexedDB.</li>
           </ul>
         </div>
       </div>
@@ -922,26 +827,106 @@
 
   <script>
     const STORAGE_KEY = 'checklists_pendentes';
-    let pendentes = carregarPendentes();
+    const DB_NAME = 'centrosucar_checklists_db';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'pendentes';
+
+    let dbInstance = null;
+    let pendentes = [];
     const { jsPDF } = window.jspdf;
 
-    function carregarPendentes() {
+    function abrirBanco() {
+      if (dbInstance) return Promise.resolve(dbInstance);
+
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+
+        request.onsuccess = () => {
+          dbInstance = request.result;
+          resolve(dbInstance);
+        };
+
+        request.onerror = () => reject(request.error || new Error('Não foi possível abrir o banco IndexedDB.'));
+      });
+    }
+
+    async function obterStore(modo = 'readonly') {
+      const db = await abrirBanco();
+      return db.transaction(STORE_NAME, modo).objectStore(STORE_NAME);
+    }
+
+    async function listarPendentesDB() {
+      const store = await obterStore('readonly');
+
+      return new Promise((resolve, reject) => {
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const dados = Array.isArray(request.result) ? request.result : [];
+          dados.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+          resolve(dados);
+        };
+
+        request.onerror = () => reject(request.error || new Error('Erro ao listar pendentes.'));
+      });
+    }
+
+    async function salvarPendenteDB(item) {
+      const store = await obterStore('readwrite');
+
+      return new Promise((resolve, reject) => {
+        const request = store.put(item);
+        request.onsuccess = () => resolve(item);
+        request.onerror = () => reject(request.error || new Error('Erro ao salvar pendente.'));
+      });
+    }
+
+    async function excluirPendenteDB(id) {
+      const store = await obterStore('readwrite');
+
+      return new Promise((resolve, reject) => {
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error || new Error('Erro ao excluir pendente.'));
+      });
+    }
+
+    async function migrarLocalStorageParaIndexedDB() {
       try {
-        const dados = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        return Array.isArray(dados) ? dados : [];
-      } catch {
-        return [];
+        const legado = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (!Array.isArray(legado) || !legado.length) return;
+
+        for (const item of legado) {
+          const snapshot = normalizarPendente(item);
+          const registro = {
+            id: item?.id || (Date.now() + Math.floor(Math.random() * 10000)),
+            dt: item?.dt || formatarDataHora(new Date()),
+            snapshot
+          };
+          await salvarPendenteDB(registro);
+        }
+
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (erro) {
+        console.error('Falha na migração do localStorage para IndexedDB:', erro);
       }
     }
 
-    function persistirPendentes() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pendentes));
+    async function recarregarPendentes() {
+      pendentes = await listarPendentesDB();
       atualizarContador();
     }
 
     function atualizarContador() {
       const span = document.getElementById('count-pendentes');
-      if (span) span.innerText = pendentes.length;
+      if (span) span.innerText = String(pendentes.length);
     }
 
     function escaparHTML(valor) {
@@ -994,16 +979,16 @@
     function obterConfiguracaoFotos() {
       const ambiente = detectarAmbientePDF();
       return {
-        larguraMaximaFoto: ambiente.mobile ? 5200 : 6500,
-        alturaMaximaFoto: ambiente.mobile ? 5200 : 6500,
-        qualidadeFoto: 1
+        larguraMaximaFoto: ambiente.mobile ? 3600 : 4600,
+        alturaMaximaFoto: ambiente.mobile ? 3600 : 4600,
+        qualidadeFoto: ambiente.mobile ? 0.9 : 0.96
       };
     }
 
     function obterConfiguracaoPDF() {
       const ambiente = detectarAmbientePDF();
       return {
-        escalaCanvas: ambiente.mobile ? 4.2 : 5.0
+        escalaCanvas: ambiente.mobile ? 3.2 : 4.0
       };
     }
 
@@ -1224,48 +1209,45 @@
       };
     }
 
-function salvarParaDepois() {
-  const snapshot = coletarEstadoAtual();
+    async function salvarParaDepois() {
+      const snapshot = coletarEstadoAtual();
 
-  if (!snapshot.campos.p) {
-    alert('Digite a placa antes de salvar no standby.');
-    return;
-  }
+      if (!snapshot.campos.p) {
+        alert('Digite a placa antes de salvar no standby.');
+        return;
+      }
 
-  try {
-    // 🔍 Teste real de escrita no localStorage
-    const testeKey = '__teste_storage__';
-    localStorage.setItem(testeKey, 'ok');
-    localStorage.removeItem(testeKey);
+      try {
+        const registro = {
+          id: Date.now(),
+          dt: formatarDataHora(new Date()),
+          snapshot
+        };
 
-    // ✅ Se passou aqui, pode salvar com segurança
-    pendentes.unshift({
-      id: Date.now(),
-      dt: formatarDataHora(new Date()),
-      snapshot
-    });
+        await salvarPendenteDB(registro);
+        await recarregarPendentes();
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pendentes));
+        alert('Checklist salvo no standby com sucesso.');
+        limparChecklist(false);
+      } catch (erro) {
+        console.error('Erro ao salvar no IndexedDB:', erro);
+        alert('Não foi possível salvar no standby neste aparelho.');
+      }
+    }
 
-    atualizarContador();
+    async function abrirPendentes() {
+      try {
+        await recarregarPendentes();
+      } catch (erro) {
+        console.error(erro);
+      }
 
-    alert('Checklist salvo no standby com sucesso.');
-    limparChecklist(false);
-
-  } catch (erro) {
-    console.error('Erro real ao salvar:', erro);
-
-    alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio ou bloqueado.');
-  }
-}
-
-    function abrirPendentes() {
       const corpo = document.getElementById('lista-pendentes-corpo');
 
       if (!pendentes.length) {
         corpo.innerHTML = '<p style="text-align:center; color:#617066; padding:24px 10px;">Nenhum checklist aguardando nota fiscal.</p>';
       } else {
-        corpo.innerHTML = pendentes.map((item, index) => {
+        corpo.innerHTML = pendentes.map((item) => {
           const snapshot = normalizarPendente(item);
           const campos = snapshot.campos || {};
           const placa = escaparHTML(campos.p || '-');
@@ -1278,8 +1260,8 @@ function salvarParaDepois() {
               <small>NF: ${nf}</small>
               <small>${escaparHTML(item.dt || '')} - Volumes cadastrados: ${volumes}</small>
               <div class="pendente-acoes">
-                <button type="button" class="pendente-retomar" onclick="recuperar(${index})">Retomar</button>
-                <button type="button" class="pendente-excluir" onclick="excluirItem(${index})">X</button>
+                <button type="button" class="pendente-retomar" onclick="recuperar(${item.id})">Retomar</button>
+                <button type="button" class="pendente-excluir" onclick="excluirItem(${item.id})">X</button>
               </div>
             </div>
           `;
@@ -1293,11 +1275,17 @@ function salvarParaDepois() {
       document.getElementById('modal-pendentes').style.display = 'none';
     }
 
-    function excluirItem(index) {
+    async function excluirItem(id) {
       if (!confirm('Deseja excluir este checklist pendente?')) return;
-      pendentes.splice(index, 1);
-      persistirPendentes();
-      abrirPendentes();
+
+      try {
+        await excluirPendenteDB(id);
+        await recarregarPendentes();
+        await abrirPendentes();
+      } catch (erro) {
+        console.error(erro);
+        alert('Não foi possível excluir este pendente.');
+      }
     }
 
     function aplicarEstadoAtual(snapshot) {
@@ -1320,14 +1308,19 @@ function salvarParaDepois() {
       sincronizarFotos();
     }
 
-    function recuperar(index) {
-      const item = pendentes[index];
+    async function recuperar(id) {
+      const item = pendentes.find(p => p.id === id);
       if (!item) return;
 
-      aplicarEstadoAtual(normalizarPendente(item));
-      pendentes.splice(index, 1);
-      persistirPendentes();
-      fecharPendentes();
+      try {
+        aplicarEstadoAtual(normalizarPendente(item));
+        await excluirPendenteDB(id);
+        await recarregarPendentes();
+        fecharPendentes();
+      } catch (erro) {
+        console.error(erro);
+        alert('Não foi possível recuperar este pendente.');
+      }
     }
 
     function mudarTipoCarga(interno = false) {
@@ -1336,7 +1329,7 @@ function salvarParaDepois() {
 
       document.getElementById('secao-caminhao').style.display = mostrar ? 'block' : 'none';
       document.getElementById('painel-volumes').style.display = mostrar ? 'block' : 'none';
-      document.getElementById('btn-add-vol').style.display = mostrar ? 'block' : 'none';
+      document.getElementById('btn-add-vol').style.display = mostrar ? 'block' : 'block';
 
       atualizarRotulosVolumes();
 
@@ -1346,6 +1339,7 @@ function salvarParaDepois() {
 
       if (!mostrar && !interno) {
         document.getElementById('container-volumes').innerHTML = '';
+        document.getElementById('btn-add-vol').style.display = 'none';
       }
     }
 
@@ -1680,15 +1674,7 @@ function salvarParaDepois() {
     }
 
     function limparChecklist(confirmarMensagem = true) {
-      aplicarCamposFormulario({
-        c: '',
-        t: '',
-        m: '',
-        p: '',
-        tp: '',
-        q: '',
-        nf: ''
-      });
+      aplicarCamposFormulario({ c:'', t:'', m:'', p:'', tp:'', q:'', nf:'' });
 
       document.getElementById('container-volumes').innerHTML = '';
       document.getElementById('secao-caminhao').style.display = 'none';
@@ -1811,14 +1797,12 @@ function salvarParaDepois() {
 
         setTimeout(() => {
           const desejaNovo = confirm('Deseja fazer um novo check list?');
-          if (desejaNovo) {
-            limparChecklist(true);
-          }
+          if (desejaNovo) limparChecklist(true);
         }, 450);
 
       } catch (erro) {
         console.error('Erro ao gerar PDF:', erro);
-        alert('Não foi possível gerar o PDF neste aparelho. Se travar no celular, me peça que eu preparo uma versão “alta qualidade equilibrada”.');
+        alert('Não foi possível gerar o PDF neste aparelho.');
       } finally {
         setTimeout(() => {
           loading.style.display = 'none';
@@ -1847,8 +1831,16 @@ function salvarParaDepois() {
       reordenar();
     });
 
-    window.addEventListener('load', () => {
-      atualizarContador();
+    window.addEventListener('load', async () => {
+      try {
+        await abrirBanco();
+        await migrarLocalStorageParaIndexedDB();
+        await recarregarPendentes();
+      } catch (erro) {
+        console.error('Erro ao iniciar IndexedDB:', erro);
+        alert('Não foi possível iniciar o armazenamento local deste aparelho.');
+      }
+
       sincronizarFotos();
 
       const ambiente = detectarAmbientePDF();
