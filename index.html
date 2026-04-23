@@ -1224,27 +1224,40 @@
       };
     }
 
-    function salvarParaDepois() {
-      const snapshot = coletarEstadoAtual();
+function salvarParaDepois() {
+  const snapshot = coletarEstadoAtual();
 
-      if (!snapshot.campos.p) {
-        alert('Digite a placa antes de salvar no standby.');
-        return;
-      }
+  if (!snapshot.campos.p) {
+    alert('Digite a placa antes de salvar no standby.');
+    return;
+  }
 
-      try {
-        pendentes.unshift({
-          id: Date.now(),
-          dt: formatarDataHora(new Date()),
-          snapshot
-        });
-        persistirPendentes();
-        alert('Checklist salvo no standby.');
-        limparChecklist(false);
-      } catch {
-        alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio.');
-      }
-    }
+  try {
+    // 🔍 Teste real de escrita no localStorage
+    const testeKey = '__teste_storage__';
+    localStorage.setItem(testeKey, 'ok');
+    localStorage.removeItem(testeKey);
+
+    // ✅ Se passou aqui, pode salvar com segurança
+    pendentes.unshift({
+      id: Date.now(),
+      dt: formatarDataHora(new Date()),
+      snapshot
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pendentes));
+
+    atualizarContador();
+
+    alert('Checklist salvo no standby com sucesso.');
+    limparChecklist(false);
+
+  } catch (erro) {
+    console.error('Erro real ao salvar:', erro);
+
+    alert('Não foi possível salvar. O armazenamento do navegador pode estar cheio ou bloqueado.');
+  }
+}
 
     function abrirPendentes() {
       const corpo = document.getElementById('lista-pendentes-corpo');
