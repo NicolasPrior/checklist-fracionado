@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Checklist de Carregamento - Centrosucar</title>
+  <title>Checklist de Carregamento - Dulcini S/A</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -14,20 +14,26 @@
 
   <style>
     :root{
-      --verde-900:#184B35;
-      --verde-800:#256246;
-      --verde-700:#3A7A58;
-      --verde-600:#5E9B76;
-      --verde-500:#86B998;
-      --verde-100:#EAF5EE;
-      --verde-050:#F7FBF8;
-      --dourado-500:#C69A2B;
-      --grafite:#233129;
-      --texto-suave:#6D7C73;
-      --borda:#DCE9E0;
+      --azul-900:#00359D;
+      --azul-800:#0C58A7;
+      --azul-700:#176DB6;
+      --teal-800:#005B6E;
+      --teal-700:#0A7A88;
+      --verde-800:#00813F;
+      --verde-700:#17A257;
+      --azul-050:#F3F8FD;
+      --azul-100:#E7F1FB;
+      --verde-050:#F3FBF6;
+      --verde-100:#E5F6EC;
+      --grafite:#18324A;
+      --texto-suave:#627A91;
+      --borda:#D8E6F0;
       --erro:#C53939;
-      --sombra-forte:0 30px 60px rgba(24,75,53,.10);
-      --sombra-media:0 18px 32px rgba(24,75,53,.08);
+      --sombra-forte:0 30px 60px rgba(0,53,157,.14);
+      --sombra-media:0 18px 32px rgba(0,91,110,.10);
+      --gradiente-marca:linear-gradient(135deg,var(--azul-900),var(--teal-800) 56%,var(--verde-800) 100%);
+      --gradiente-acao:linear-gradient(135deg,var(--azul-800),var(--teal-700));
+      --gradiente-suporte:linear-gradient(135deg,var(--teal-800),var(--verde-800));
     }
 
     *{margin:0;padding:0;box-sizing:border-box}
@@ -39,42 +45,64 @@
       color:var(--grafite);
       font-family:'Source Sans 3',sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(198,154,43,.06), transparent 36%),
-        radial-gradient(circle at top right, rgba(58,122,88,.08), transparent 34%),
-        linear-gradient(180deg,#F8FCF9 0%, #FCFEFD 50%, #F5FAF7 100%);
+        radial-gradient(circle at top left, rgba(0,53,157,.10), transparent 34%),
+        radial-gradient(circle at top right, rgba(0,91,110,.10), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(0,129,63,.10), transparent 34%),
+        linear-gradient(180deg,#F5FAFE 0%, #FBFDFE 54%, #F3FAF6 100%);
     }
 
     #btn-abrir-pendentes{
       position:fixed;top:20px;right:20px;z-index:20;
-      border:1px solid rgba(255,255,255,.22);
-      background:linear-gradient(135deg,var(--verde-900),var(--verde-700));
+      border:1px solid rgba(255,255,255,.24);
+      background:var(--gradiente-acao);
       color:#fff;padding:12px 18px;border-radius:999px;
       font:700 13px/1 'Montserrat',sans-serif;letter-spacing:.04em;
-      box-shadow:0 16px 30px rgba(24,75,53,.18);cursor:pointer;
+      box-shadow:0 16px 30px rgba(0,53,157,.18);cursor:pointer;
     }
 
     #count-pendentes{
       display:inline-flex;align-items:center;justify-content:center;
       min-width:22px;height:22px;margin-left:8px;padding:0 7px;
-      border-radius:999px;background:linear-gradient(135deg,var(--dourado-500),#E1BE63);
+      border-radius:999px;background:linear-gradient(135deg,var(--teal-700),var(--verde-700));
       color:#fff;font-size:11px;
     }
 
     #render-area{
       max-width:980px;margin:0 auto;border:1px solid rgba(255,255,255,.72);
-      border-radius:34px;overflow:hidden;background:rgba(255,255,255,.96);
+      border-radius:34px;overflow:hidden;background:rgba(255,255,255,.97);
       box-shadow:var(--sombra-forte);backdrop-filter:blur(12px);
     }
 
     .hero-app{
       padding:30px 30px 26px;color:#fff;
       background:
-        radial-gradient(circle at top right, rgba(246,236,208,.22), transparent 28%),
-        linear-gradient(135deg,var(--verde-800),var(--verde-700) 56%,#97B97A 100%);
+        radial-gradient(circle at top right, rgba(255,255,255,.14), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(255,255,255,.08), transparent 24%),
+        var(--gradiente-marca);
     }
 
     .hero-brand{
-      display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;
+      display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px;
+    }
+
+    .brand-lockup{
+      display:flex;align-items:center;gap:16px;
+    }
+
+    .hero-logo-card{
+      display:flex;align-items:center;justify-content:center;
+      width:94px;height:94px;padding:10px;border-radius:28px;
+      background:rgba(255,255,255,.96);
+      border:1px solid rgba(255,255,255,.40);
+      box-shadow:0 18px 34px rgba(2,30,72,.22);
+    }
+
+    .hero-logo-card img{
+      max-width:100%;max-height:100%;display:block;object-fit:contain;
+    }
+
+    .brand-copy{
+      display:grid;gap:10px;align-content:center;
     }
 
     .hero-pill{
@@ -85,10 +113,21 @@
 
     .hero-pill::before{
       content:'';width:10px;height:10px;border-radius:50%;
-      background:linear-gradient(135deg,#E1BE63,#fff);box-shadow:0 0 14px rgba(225,190,99,.45);
+      background:linear-gradient(135deg,#A1E3BF,#fff);box-shadow:0 0 14px rgba(161,227,191,.45);
     }
 
-    .hero-caption{font-size:13px;color:rgba(255,255,255,.82)}
+    .hero-caption{
+      max-width:460px;font-size:13px;line-height:1.45;color:rgba(255,255,255,.86);
+    }
+
+    .hero-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-height:40px;padding:0 16px;border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.14);
+      font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.16em;text-transform:uppercase;
+      text-align:center;
+    }
 
     .hero-main{
       display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.9fr);
@@ -97,11 +136,11 @@
 
     .hero-copy h1{
       font:800 34px/1.05 'Montserrat',sans-serif;
-      max-width:520px;margin-bottom:14px;
+      max-width:560px;margin-bottom:14px;
     }
 
     .hero-copy p{
-      max-width:560px;font-size:16px;line-height:1.55;color:rgba(255,255,255,.90);
+      max-width:580px;font-size:16px;line-height:1.55;color:rgba(255,255,255,.90);
     }
 
     .hero-guide{
@@ -118,12 +157,12 @@
     .hero-guide ul{list-style:none;display:grid;gap:10px}
     .hero-guide li{
       display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border-radius:16px;
-      background:rgba(255,255,255,.10);font-size:14px;color:rgba(255,255,255,.90);
+      background:rgba(255,255,255,.10);font-size:14px;color:rgba(255,255,255,.92);
     }
 
     .hero-guide li span{
       display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;
-      border-radius:10px;background:rgba(232,211,155,.22);color:#FFF6DA;
+      border-radius:10px;background:rgba(167,233,195,.20);color:#F5FFF8;
       font:700 12px/1 'Montserrat',sans-serif;
     }
 
@@ -131,13 +170,13 @@
 
     .android-banner{
       display:none;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px;
-      padding:18px 20px;border-radius:22px;border:1px solid rgba(198,154,43,.20);
-      background:linear-gradient(135deg,rgba(246,236,208,.50),rgba(255,255,255,.98));
-      box-shadow:0 14px 26px rgba(24,75,53,.06);
+      padding:18px 20px;border-radius:22px;border:1px solid rgba(0,91,110,.16);
+      background:linear-gradient(135deg,rgba(231,241,251,.92),rgba(243,251,246,.96));
+      box-shadow:0 14px 26px rgba(0,53,157,.06);
     }
 
     .android-banner strong{
-      display:block;margin-bottom:6px;color:var(--verde-900);
+      display:block;margin-bottom:6px;color:var(--azul-900);
       font:800 15px/1.1 'Montserrat',sans-serif;
     }
 
@@ -145,14 +184,14 @@
 
     .android-banner button{
       min-width:160px;height:48px;padding:0 18px;border:none;border-radius:16px;color:#fff;
-      background:linear-gradient(135deg,var(--verde-700),var(--verde-600));
-      box-shadow:0 14px 24px rgba(24,75,53,.12);cursor:pointer;
+      background:var(--gradiente-suporte);
+      box-shadow:0 14px 24px rgba(0,91,110,.12);cursor:pointer;
       font:700 12px/1 'Montserrat',sans-serif;letter-spacing:.06em;text-transform:uppercase;
     }
 
     .panel{
       margin-bottom:22px;padding:24px;border-radius:28px;border:1px solid var(--borda);
-      background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(247,251,248,.99));
+      background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(243,248,253,.92));
       box-shadow:var(--sombra-media);
     }
 
@@ -163,13 +202,13 @@
     }
 
     .panel-kicker{
-      display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--verde-700);
+      display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;color:var(--teal-800);
       font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.16em;text-transform:uppercase;
     }
 
     .panel-kicker::before{
       content:'';width:26px;height:2px;border-radius:999px;
-      background:linear-gradient(90deg,var(--dourado-500),rgba(198,154,43,0));
+      background:linear-gradient(90deg,var(--azul-800),rgba(0,129,63,0));
     }
 
     .panel h2,.panel h3,.header-volume h4{font-family:'Montserrat',sans-serif}
@@ -177,7 +216,7 @@
 
     .status-note{
       min-width:220px;padding:14px 16px;border-radius:18px;background:var(--verde-050);
-      border:1px solid rgba(58,122,88,.10);color:var(--texto-suave);font-size:14px;line-height:1.35;
+      border:1px solid rgba(0,129,63,.10);color:var(--texto-suave);font-size:14px;line-height:1.35;
     }
 
     .dados-grid{
@@ -195,7 +234,7 @@
     .input-shell{position:relative}
     .input-shell::before{
       content:'';position:absolute;inset:1px;border-radius:16px;
-      background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(244,249,246,.98));z-index:0;
+      background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(239,247,252,.98));z-index:0;
     }
 
     .campo input:not([type="file"]),
@@ -214,7 +253,7 @@
     #secao-caminhao,.volume-box{position:relative;overflow:hidden}
     #secao-caminhao::before,.volume-box::before{
       content:'';position:absolute;inset:0 0 auto;height:4px;
-      background:linear-gradient(90deg,var(--verde-700),var(--dourado-500));
+      background:linear-gradient(90deg,var(--azul-800),var(--teal-800),var(--verde-800));
     }
 
     .foto-wrapper{display:grid;gap:16px}
@@ -232,10 +271,10 @@
 
     .box-imagem{
       position:relative;overflow:hidden;min-height:212px;border-radius:22px;
-      border:1px dashed rgba(58,122,88,.26);
+      border:1px dashed rgba(0,91,110,.24);
       background:
-        radial-gradient(circle at top right, rgba(198,154,43,.10), transparent 25%),
-        linear-gradient(180deg,#FBFEFC 0%,#F1F8F3 100%);
+        radial-gradient(circle at top right, rgba(0,129,63,.10), transparent 25%),
+        linear-gradient(180deg,#FCFEFF 0%,#EFF7FB 100%);
       cursor:pointer;
     }
 
@@ -249,7 +288,7 @@
       width:auto;height:auto;
       z-index:2;display:none;
       object-fit:contain;object-position:center center;
-      background:linear-gradient(180deg,#FDFEFD 0%,#F1F7F3 100%);
+      background:linear-gradient(180deg,#FDFEFF 0%,#EEF6FA 100%);
     }
 
     .msg-camera{
@@ -258,7 +297,7 @@
     }
 
     .msg-camera strong{
-      font:700 15px/1 'Montserrat',sans-serif;color:var(--verde-700);
+      font:700 15px/1 'Montserrat',sans-serif;color:var(--azul-800);
     }
 
     .msg-camera small{max-width:170px;font-size:13px;line-height:1.35}
@@ -266,13 +305,13 @@
     .msg-camera::before{
       content:'FOTO';display:inline-flex;align-items:center;justify-content:center;
       min-width:70px;height:30px;padding:0 12px;border-radius:999px;
-      background:rgba(58,122,88,.08);color:var(--verde-700);
+      background:rgba(0,91,110,.08);color:var(--teal-800);
       font:700 10px/1 'Montserrat',sans-serif;letter-spacing:.16em;text-transform:uppercase;
     }
 
     .box-imagem.com-imagem{
-      border-style:solid;border-color:rgba(58,122,88,.20);
-      background:linear-gradient(180deg,#fff 0%,#F7FBF8 100%);
+      border-style:solid;border-color:rgba(0,91,110,.18);
+      background:linear-gradient(180deg,#fff 0%,#F3F8FD 100%);
     }
 
     .box-imagem.foto-pendente{
@@ -287,7 +326,7 @@
 
     .volume-title-wrap span{
       display:inline-flex;align-items:center;padding:8px 12px;margin-bottom:8px;border-radius:999px;
-      background:rgba(58,122,88,.08);color:var(--verde-700);
+      background:rgba(0,91,110,.08);color:var(--teal-800);
       font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;
     }
 
@@ -303,8 +342,8 @@
     .botoes-fixos{
       position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:15;display:flex;gap:12px;
       width:min(920px,calc(100% - 20px));padding:14px;border-radius:28px;
-      border:1px solid rgba(255,255,255,.70);background:rgba(255,255,255,.88);
-      box-shadow:0 18px 40px rgba(24,75,53,.12);backdrop-filter:blur(14px);
+      border:1px solid rgba(255,255,255,.70);background:rgba(255,255,255,.90);
+      box-shadow:0 18px 40px rgba(0,53,157,.12);backdrop-filter:blur(14px);
     }
 
     .btn{
@@ -313,35 +352,35 @@
     }
 
     .btn-add{
-      color:var(--verde-700);background:linear-gradient(180deg,#fff 0%,#F5FAF7 100%);
-      border:1px solid rgba(58,122,88,.16);box-shadow:0 8px 18px rgba(58,122,88,.08);
+      color:var(--azul-800);background:linear-gradient(180deg,#fff 0%,#F1F8FD 100%);
+      border:1px solid rgba(0,91,110,.14);box-shadow:0 8px 18px rgba(0,91,110,.08);
     }
 
     .btn-standby{
-      color:#785708;background:linear-gradient(180deg,#F9F0D7 0%,#F1E0AC 100%);
-      box-shadow:0 12px 24px rgba(198,154,43,.12);
+      color:#fff;background:var(--gradiente-suporte);
+      box-shadow:0 12px 24px rgba(0,91,110,.12);
     }
 
     .btn-pdf{
-      color:#fff;background:linear-gradient(135deg,var(--verde-700),var(--verde-600));
-      box-shadow:0 16px 28px rgba(24,75,53,.16);
+      color:#fff;background:var(--gradiente-acao);
+      box-shadow:0 16px 28px rgba(0,53,157,.16);
     }
 
     #modal-pendentes{
       display:none;position:fixed;inset:0;z-index:25;padding:20px;
-      background:rgba(8,17,11,.58);backdrop-filter:blur(10px);
+      background:rgba(9,27,44,.58);backdrop-filter:blur(10px);
     }
 
     .modal-conteudo{
       width:min(560px,100%);margin:42px auto 0;padding:28px;border-radius:30px;
       border:1px solid rgba(255,255,255,.60);
-      background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(246,250,247,.99));
+      background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(243,248,253,.99));
       box-shadow:0 30px 60px rgba(0,0,0,.18);
     }
 
     .modal-conteudo h3{
       margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--borda);
-      color:var(--verde-900);font:800 22px/1.1 'Montserrat',sans-serif;
+      color:var(--azul-900);font:800 22px/1.1 'Montserrat',sans-serif;
     }
 
     #lista-pendentes-corpo{
@@ -350,11 +389,11 @@
 
     .pendente-card{
       margin-bottom:12px;padding:16px;border-radius:20px;border:1px solid var(--borda);
-      background:linear-gradient(180deg,#fff 0%,#F8FBF9 100%);
+      background:linear-gradient(180deg,#fff 0%,#F4F9FD 100%);
     }
 
     .pendente-card strong{
-      display:block;color:var(--verde-900);font:700 16px/1.1 'Montserrat',sans-serif;margin-bottom:4px;
+      display:block;color:var(--azul-900);font:700 16px/1.1 'Montserrat',sans-serif;margin-bottom:4px;
     }
 
     .pendente-card small{
@@ -367,36 +406,36 @@
       font:700 12px/1 'Montserrat',sans-serif;letter-spacing:.05em;
     }
 
-    .pendente-retomar{flex:1;color:#fff;background:linear-gradient(135deg,var(--verde-700),var(--verde-600))}
+    .pendente-retomar{flex:1;color:#fff;background:var(--gradiente-acao)}
     .pendente-excluir{
       width:48px;color:var(--erro);background:rgba(197,57,57,.10);
       border:1px solid rgba(197,57,57,.18);
     }
 
     #loading{
-      display:none;position:fixed;inset:0;z-index:30;background:rgba(9,17,12,.42);backdrop-filter:blur(8px);
+      display:none;position:fixed;inset:0;z-index:30;background:rgba(9,27,44,.42);backdrop-filter:blur(8px);
     }
 
     .loading-card{
       position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
       width:min(360px,calc(100% - 30px));padding:24px;border-radius:24px;
-      background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(246,250,247,.99));
+      background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(243,248,253,.99));
       box-shadow:0 26px 50px rgba(0,0,0,.18);text-align:center;
     }
 
     .loading-card strong{
-      display:block;margin-bottom:6px;color:var(--verde-900);font:800 20px/1.1 'Montserrat',sans-serif;
+      display:block;margin-bottom:6px;color:var(--azul-900);font:800 20px/1.1 'Montserrat',sans-serif;
     }
 
     .loading-card p{color:var(--texto-suave);line-height:1.45}
 
     .loading-bar{
-      height:10px;margin-top:18px;overflow:hidden;border-radius:999px;background:rgba(58,122,88,.10);
+      height:10px;margin-top:18px;overflow:hidden;border-radius:999px;background:rgba(0,91,110,.10);
     }
 
     .loading-bar::after{
       content:'';display:block;width:40%;height:100%;border-radius:inherit;
-      background:linear-gradient(90deg,var(--verde-700),var(--dourado-500));
+      background:linear-gradient(90deg,var(--azul-800),var(--teal-800),var(--verde-800));
       animation:pulse-bar 1.1s linear infinite;
     }
 
@@ -416,26 +455,40 @@
 
     .pdf-sheet{
       width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;min-height:0;
-      border:1px solid #DDE8E0;border-radius:18px;background:#FFFFFF;padding:7px 7px 5px;overflow:hidden;
+      border:1px solid #DBE8F0;border-radius:18px;background:#FFFFFF;padding:7px 7px 5px;overflow:hidden;
     }
 
     .pdf-topline{
       display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;min-height:0;
     }
 
+    .pdf-brand-cluster{
+      display:inline-flex;align-items:center;gap:8px;
+    }
+
+    .pdf-brand-logo{
+      width:28px;height:28px;padding:3px;border-radius:9px;
+      border:1px solid #DDE9F2;background:#FFFFFF;
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    .pdf-brand-logo img{
+      max-width:100%;max-height:100%;display:block;object-fit:contain;
+    }
+
     .pdf-brandline{
-      display:inline-flex;align-items:center;gap:8px;color:var(--verde-700);
+      display:inline-flex;align-items:center;gap:8px;color:var(--teal-800);
       font:700 7px/1 'Montserrat',sans-serif;letter-spacing:.18em;text-transform:uppercase;
     }
 
     .pdf-brandline::before{
       content:'';width:20px;height:2px;border-radius:999px;
-      background:linear-gradient(90deg,var(--verde-700),rgba(58,122,88,.12));
+      background:linear-gradient(90deg,var(--azul-800),rgba(0,129,63,.18));
     }
 
     .pdf-pagecount{
       display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;
-      background:#F0F7F2;color:var(--verde-700);
+      background:#EDF5FC;color:var(--azul-800);
       font:700 7px/1 'Montserrat',sans-serif;letter-spacing:.12em;text-transform:uppercase;
     }
 
@@ -445,7 +498,7 @@
 
     .pdf-hero{
       display:grid;grid-template-columns:minmax(0,1.45fr) 170px;gap:7px;padding:7px;border-radius:13px;
-      color:#fff;background:linear-gradient(135deg,#3F7A5A,#6EA381);flex-shrink:0;
+      color:#fff;background:linear-gradient(135deg,var(--azul-800),var(--teal-800) 58%,var(--verde-800));flex-shrink:0;
     }
 
     .pdf-hero-kicker{
@@ -478,7 +531,7 @@
     }
 
     .pdf-section{
-      padding:5px;border-radius:12px;border:1px solid #E2ECE5;background:#FCFEFC;flex-shrink:0;
+      padding:5px;border-radius:12px;border:1px solid #E0EAF2;background:#FCFEFF;flex-shrink:0;
     }
 
     .pdf-section-head{
@@ -486,17 +539,17 @@
     }
 
     .pdf-section-head span{
-      display:inline-flex;align-items:center;gap:6px;margin-bottom:2px;color:var(--verde-700);
+      display:inline-flex;align-items:center;gap:6px;margin-bottom:2px;color:var(--teal-800);
       font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.16em;text-transform:uppercase;
     }
 
     .pdf-section-head span::before{
       content:'';width:14px;height:2px;border-radius:999px;
-      background:linear-gradient(90deg,var(--dourado-500),rgba(198,154,43,.12));
+      background:linear-gradient(90deg,var(--azul-800),rgba(0,129,63,.18));
     }
 
     .pdf-section-head h2{
-      color:var(--verde-900);font:800 11px/1.04 'Montserrat',sans-serif;
+      color:var(--azul-900);font:800 11px/1.04 'Montserrat',sans-serif;
     }
 
     .pdf-section-head p{
@@ -508,7 +561,7 @@
     }
 
     .pdf-meta-card{
-      min-height:31px;padding:4px 6px;border-radius:9px;border:1px solid #E5EEE8;background:#FFFFFF;
+      min-height:31px;padding:4px 6px;border-radius:9px;border:1px solid #E4EDF4;background:#FFFFFF;
     }
 
     .pdf-meta-card.is-wide{
@@ -529,7 +582,7 @@
     }
 
     .pdf-photo-card{
-      padding:4px;border-radius:11px;border:1px solid #E5EEE8;background:#FFFFFF;
+      padding:4px;border-radius:11px;border:1px solid #E4EDF4;background:#FFFFFF;
     }
 
     .pdf-photo-card span{
@@ -539,7 +592,7 @@
 
     .pdf-photo-frame{
       overflow:hidden;display:flex;align-items:center;justify-content:center;height:210px;
-      border-radius:10px;background:#F7FBF8;border:1px solid #E6EFE8;padding:3px;
+      border-radius:10px;background:#F3F8FD;border:1px solid #E6EEF4;padding:3px;
     }
 
     .pdf-photo-frame img{
@@ -565,11 +618,11 @@
 
     .pdf-page-header{
       display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
-      margin-bottom:3px;padding:2px 2px 4px;border-bottom:1px solid #E0EAE3;flex-shrink:0;
+      margin-bottom:3px;padding:2px 2px 4px;border-bottom:1px solid #E0EAF2;flex-shrink:0;
     }
 
     .pdf-page-header h2{
-      margin-bottom:1px;color:var(--verde-900);font:800 12px/1.02 'Montserrat',sans-serif;
+      margin-bottom:1px;color:var(--azul-900);font:800 12px/1.02 'Montserrat',sans-serif;
     }
 
     .pdf-page-header p{
@@ -582,7 +635,7 @@
 
     .pdf-tag{
       display:inline-flex;align-items:center;justify-content:center;min-height:18px;padding:0 7px;border-radius:999px;
-      background:#F0F7F2;color:var(--verde-700);
+      background:#EDF5FC;color:var(--azul-800);
       font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.10em;text-transform:uppercase;
     }
 
@@ -591,7 +644,7 @@
     }
 
     .pdf-volume-card{
-      padding:4px;border-radius:12px;border:1px solid #E2ECE5;background:#FCFEFC;
+      padding:4px;border-radius:12px;border:1px solid #E0EAF2;background:#FCFEFF;
       break-inside:avoid;page-break-inside:avoid;
     }
 
@@ -600,7 +653,7 @@
     }
 
     .pdf-volume-top h3{
-      color:var(--verde-900);font:800 11px/1.03 'Montserrat',sans-serif;
+      color:var(--azul-900);font:800 11px/1.03 'Montserrat',sans-serif;
     }
 
     .pdf-volume-top p{
@@ -609,7 +662,7 @@
 
     .pdf-volume-badge{
       display:inline-flex;align-items:center;justify-content:center;min-height:18px;padding:0 7px;border-radius:999px;
-      background:#F0F7F2;color:var(--verde-700);font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.12em;text-transform:uppercase;
+      background:#EDF5FC;color:var(--azul-800);font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.12em;text-transform:uppercase;
     }
 
     .pdf-volume-photos{
@@ -621,17 +674,18 @@
     }
 
     .pdf-footer{
-      margin-top:3px;padding-top:4px;border-top:1px solid #E0EAE3;
+      margin-top:3px;padding-top:4px;border-top:1px solid #E0EAF2;
       display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--texto-suave);font-size:7px;min-height:0;
     }
 
     .pdf-footer strong{
-      color:var(--verde-700);font:700 7px/1 'Montserrat',sans-serif;letter-spacing:.10em;text-transform:uppercase;
+      color:var(--teal-800);font:700 7px/1 'Montserrat',sans-serif;letter-spacing:.10em;text-transform:uppercase;
     }
 
     @media (max-width: 860px){
       .hero-main,.dados-grid,#secao-caminhao .foto-wrapper,#container-volumes .foto-wrapper{grid-template-columns:1fr}
-      .panel-head,.header-volume{flex-direction:column;align-items:stretch}
+      .panel-head,.header-volume,.hero-brand{flex-direction:column;align-items:stretch}
+      .brand-lockup{align-items:flex-start}
       .status-note{min-width:0}
       .android-banner{align-items:stretch}
       .android-banner button{width:100%}
@@ -642,6 +696,7 @@
       #btn-abrir-pendentes{top:12px;right:10px}
       .hero-app,.content-shell,.panel,.modal-conteudo{padding:20px}
       .hero-copy h1{font-size:28px}
+      .hero-logo-card{width:82px;height:82px;border-radius:24px}
       .botoes-fixos{width:calc(100% - 12px);padding:10px;gap:10px;border-radius:22px}
       .btn{height:52px;font-size:11px}
     }
@@ -655,22 +710,30 @@
   <main id="render-area">
     <section class="hero-app">
       <div class="hero-brand">
-        <div class="hero-pill">Centrosucar</div>
-        <div class="hero-caption">Relatório fotográfico de carregamento com estrutura pronta para PDF.</div>
+        <div class="brand-lockup">
+          <div class="hero-logo-card">
+            <img src="./Logo_Beija-flor_Transp_.jpg" alt="Logo Dulcini S/A">
+          </div>
+          <div class="brand-copy">
+            <div class="hero-pill">Dulcini S/A</div>
+            <div class="hero-caption">Checklist operacional de carregamento com identidade visual institucional, evidência fotográfica e geração de PDF pronta para uso.</div>
+          </div>
+        </div>
+        <div class="hero-badge">Padrão Visual Corporativo</div>
       </div>
 
       <div class="hero-main">
         <div class="hero-copy">
-          <h1>Checklist operacional com evidência visual e PDF institucional.</h1>
-          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento com paginação fixa: capa operacional na primeira página e 2 volumes por folha nas páginas internas.</p>
+          <h1>Checklist de carregamento com rastreabilidade visual no padrão Dulcini.</h1>
+          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento institucional com paginação fixa: capa operacional na primeira página e 2 volumes por folha nas páginas internas.</p>
         </div>
 
         <div class="hero-guide">
-          <strong>Estrutura do PDF</strong>
+          <strong>Fluxo do PDF</strong>
           <ul>
-            <li><span>01</span> Página 1 com informações gerais e fotos do veículo.</li>
-            <li><span>02</span> Páginas internas com 2 volumes por folha.</li>
-            <li><span>03</span> Pendentes salvos em IndexedDB.</li>
+            <li><span>01</span> Página 1 com dados gerais do carregamento e fotos do veículo.</li>
+            <li><span>02</span> Páginas internas com 2 volumes por folha e imagens ampliadas.</li>
+            <li><span>03</span> Pendentes salvos localmente para retomar quando a NF estiver disponível.</li>
           </ul>
         </div>
       </div>
@@ -690,7 +753,7 @@
           <div>
             <div class="panel-kicker">Dados da operação</div>
             <h2>Informações do carregamento</h2>
-            <p>Esses dados aparecem na primeira página do PDF e compõem o cabeçalho institucional do checklist.</p>
+            <p>Esses dados aparecem na primeira página do PDF e compõem o cabeçalho institucional do checklist Dulcini.</p>
           </div>
 
           <div class="status-note">
@@ -826,10 +889,12 @@
   <div id="pdf-render-root" aria-hidden="true"></div>
 
   <script>
-    const STORAGE_KEY = 'checklists_pendentes';
-    const DB_NAME = 'centrosucar_checklists_db';
+    const STORAGE_KEY = 'dulcini_checklists_pendentes';
+    const LEGACY_STORAGE_KEYS = [STORAGE_KEY, 'checklists_pendentes'];
+    const DB_NAME = 'dulcini_checklists_db';
     const DB_VERSION = 1;
     const STORE_NAME = 'pendentes';
+    const LOGO_PATH = './Logo_Beija-flor_Transp_.jpg';
 
     let dbInstance = null;
     let pendentes = [];
@@ -900,20 +965,22 @@
 
     async function migrarLocalStorageParaIndexedDB() {
       try {
-        const legado = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        if (!Array.isArray(legado) || !legado.length) return;
+        for (const chave of LEGACY_STORAGE_KEYS) {
+          const legado = JSON.parse(localStorage.getItem(chave) || '[]');
+          if (!Array.isArray(legado) || !legado.length) continue;
 
-        for (const item of legado) {
-          const snapshot = normalizarPendente(item);
-          const registro = {
-            id: item?.id || (Date.now() + Math.floor(Math.random() * 10000)),
-            dt: item?.dt || formatarDataHora(new Date()),
-            snapshot
-          };
-          await salvarPendenteDB(registro);
+          for (const item of legado) {
+            const snapshot = normalizarPendente(item);
+            const registro = {
+              id: item?.id || (Date.now() + Math.floor(Math.random() * 10000)),
+              dt: item?.dt || formatarDataHora(new Date()),
+              snapshot
+            };
+            await salvarPendenteDB(registro);
+          }
+
+          localStorage.removeItem(chave);
         }
-
-        localStorage.removeItem(STORAGE_KEY);
       } catch (erro) {
         console.error('Falha na migração do localStorage para IndexedDB:', erro);
       }
@@ -1245,7 +1312,7 @@
       const corpo = document.getElementById('lista-pendentes-corpo');
 
       if (!pendentes.length) {
-        corpo.innerHTML = '<p style="text-align:center; color:#617066; padding:24px 10px;">Nenhum checklist aguardando nota fiscal.</p>';
+        corpo.innerHTML = '<p style="text-align:center; color:#61788E; padding:24px 10px;">Nenhum checklist aguardando nota fiscal.</p>';
       } else {
         corpo.innerHTML = pendentes.map((item) => {
           const snapshot = normalizarPendente(item);
@@ -1329,7 +1396,7 @@
 
       document.getElementById('secao-caminhao').style.display = mostrar ? 'block' : 'none';
       document.getElementById('painel-volumes').style.display = mostrar ? 'block' : 'none';
-      document.getElementById('btn-add-vol').style.display = mostrar ? 'block' : 'block';
+      document.getElementById('btn-add-vol').style.display = mostrar ? 'block' : 'none';
 
       atualizarRotulosVolumes();
 
@@ -1557,7 +1624,12 @@
         <section class="pdf-page">
           <div class="pdf-sheet">
             <div class="pdf-topline">
-              <div class="pdf-brandline">Centrosucar • Checklist fotográfico</div>
+              <div class="pdf-brand-cluster">
+                <div class="pdf-brand-logo">
+                  <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
+                </div>
+                <div class="pdf-brandline">Dulcini S/A • Checklist fotográfico</div>
+              </div>
               <div class="pdf-pagecount">Página 1 / ${totalPaginas}</div>
             </div>
 
@@ -1566,7 +1638,7 @@
                 <div>
                   <div class="pdf-hero-kicker">Relatório operacional</div>
                   <h1>Checklist de carregamento com evidência visual.</h1>
-                  <p>Documento gerado com os dados do carregamento, imagens do veículo e comprovação fotográfica dos volumes conferidos.</p>
+                  <p>Documento gerado com os dados do carregamento, imagens do veículo e comprovação fotográfica dos volumes conferidos no padrão institucional da Dulcini S/A.</p>
                 </div>
 
                 <div class="pdf-hero-side">
@@ -1624,7 +1696,7 @@
 
             <div class="pdf-footer">
               <span>Relatório de carregamento</span>
-              <strong>Centrosucar</strong>
+              <strong>Dulcini S/A</strong>
             </div>
           </div>
         </section>
@@ -1638,7 +1710,12 @@
           <section class="pdf-page">
             <div class="pdf-sheet">
               <div class="pdf-topline">
-                <div class="pdf-brandline">Centrosucar • Volumes conferidos</div>
+                <div class="pdf-brand-cluster">
+                  <div class="pdf-brand-logo">
+                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
+                  </div>
+                  <div class="pdf-brandline">Dulcini S/A • Volumes conferidos</div>
+                </div>
                 <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
               </div>
 
@@ -1662,7 +1739,7 @@
 
               <div class="pdf-footer">
                 <span>Volumes ${i + 1}${dupla.length === 2 ? ` e ${i + 2}` : ''}</span>
-                <strong>Centrosucar</strong>
+                <strong>Dulcini S/A</strong>
               </div>
             </div>
           </section>
@@ -1769,7 +1846,7 @@
 
         const configPDF = obterConfiguracaoPDF();
         const campos = coletarCamposFormulario();
-        const nomeArquivo = `Checklist_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
+        const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
 
         atualizarStatusLoading('Convertendo páginas em PDF...');
         const doc = new jsPDF({
