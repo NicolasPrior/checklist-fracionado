@@ -517,12 +517,17 @@
 
     .pdf-document{width:794px;background:#FFFFFF}
     .pdf-page{width:794px;height:1122px;padding:9px;overflow:hidden;background:#FFFFFF;margin:0}
+    .pdf-page-cover{height:auto}
     .pdf-page + .pdf-page{margin-top:0}
 
     .pdf-sheet{
       position:relative;isolation:isolate;
       width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;min-height:0;
       border:1px solid #DBE8F0;border-radius:18px;background:#FFFFFF;padding:7px 7px 5px;overflow:hidden;
+    }
+
+    .pdf-page-cover .pdf-sheet{
+      height:auto;grid-template-rows:auto auto auto;
     }
 
     .pdf-sheet::before{
@@ -748,23 +753,6 @@
 
     .pdf-volume-card .pdf-photo-frame{
       height:205px;
-    }
-
-    .pdf-cover-preview-grid{
-      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;
-    }
-
-    .pdf-cover-preview-card{
-      padding:4px;border-radius:11px;border:1px solid #E4EDF4;background:#FFFFFF;
-    }
-
-    .pdf-cover-preview-card span{
-      display:block;margin-bottom:3px;text-align:center;color:var(--texto-suave);
-      font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.11em;text-transform:uppercase;
-    }
-
-    .pdf-cover-preview-card .pdf-photo-frame{
-      height:156px;
     }
 
     .pdf-footer{
@@ -1862,38 +1850,6 @@
       `;
     }
 
-    function montarPreviaCapaPDF(listaLacres = [], listaCarregamentos = []) {
-      const previews = [
-        ...listaLacres.slice(0, 2).map((registro) => ({ label: `Lacre ${registro.numero}`, src: registro.src })),
-        ...listaCarregamentos.slice(0, 2).map((registro) => ({ label: `Carregamento ${registro.numero}`, src: registro.src }))
-      ].filter((item) => item.src);
-
-      if (!previews.length) return '';
-
-      return `
-        <section class="pdf-section">
-          <div class="pdf-section-head">
-            <div>
-              <span>Prévia visual</span>
-              <h2>Amostra dos registros</h2>
-            </div>
-            <p>Resumo visual da operação antes do detalhamento completo nas páginas seguintes.</p>
-          </div>
-
-          <div class="pdf-cover-preview-grid">
-            ${previews.map((item) => `
-              <div class="pdf-cover-preview-card">
-                <span>${escaparHTML(item.label)}</span>
-                <div class="pdf-photo-frame">
-                  <img src="${item.src}" alt="${escaparHTML(item.label)}">
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </section>
-      `;
-    }
-
     function construirPaginasPDFLegado() {
       const { campos, caminhao, volumes, geradoEm } = obterDadosPDF();
       const root = document.getElementById('pdf-render-root');
@@ -2061,13 +2017,12 @@
       const { campos, registros, regra, geradoEm } = obterDadosPDF();
       const listaLacres = registros.lacres.map((src, index) => ({ numero: index + 1, src }));
       const listaCarregamentos = registros.carregamentos.map((src, index) => ({ numero: index + 1, src }));
-      const previaCapa = montarPreviaCapaPDF(listaLacres, listaCarregamentos);
       const root = document.getElementById('pdf-render-root');
       const paginas = [];
       const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-page">
+        <section class="pdf-page pdf-page-cover">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -2141,8 +2096,6 @@
                   ${montarMetaCard('Critério aplicado', regra, true)}
                 </div>
               </section>
-
-              ${previaCapa}
             </div>
 
             <div class="pdf-footer">
@@ -2336,12 +2289,16 @@
         const configPDF = obterConfiguracaoPDF();
         const campos = coletarCamposFormulario();
         const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
+        const obterAlturaPaginaPDF = (pagina) => {
+          if (!pagina.classList.contains('pdf-page-cover')) return 297;
+          return Number((210 * pagina.offsetHeight / pagina.offsetWidth).toFixed(2));
+        };
 
         atualizarStatusLoading('Convertendo páginas em PDF...');
         const doc = new jsPDF({
           orientation: 'portrait',
           unit: 'mm',
-          format: 'a4',
+          format: [210, obterAlturaPaginaPDF(paginas[0])],
           compress: false
         });
 
@@ -2353,8 +2310,10 @@
             configPDF.escalaCanvas
           );
 
-          if (i > 0) doc.addPage('a4', 'portrait');
-          doc.addImage(imagem, 'PNG', 0, 0, 210, 297);
+          const alturaPagina = obterAlturaPaginaPDF(paginas[i]);
+
+          if (i > 0) doc.addPage([210, alturaPagina], 'portrait');
+          doc.addImage(imagem, 'PNG', 0, 0, 210, alturaPagina);
         }
 
         atualizarStatusLoading('Salvando arquivo PDF...');
