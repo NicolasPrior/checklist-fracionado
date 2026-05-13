@@ -284,7 +284,7 @@
     }
 
     .box-imagem input{
-      position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:3;
+      position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;
     }
 
     .box-imagem img{
@@ -312,6 +312,26 @@
       min-width:70px;height:30px;padding:0 12px;border-radius:999px;
       background:rgba(0,91,110,.08);color:var(--teal-800);
       font:700 10px/1 'Montserrat',sans-serif;letter-spacing:.16em;text-transform:uppercase;
+    }
+
+    .box-acoes-foto{
+      display:none;position:absolute;left:12px;right:12px;bottom:12px;z-index:4;gap:8px;
+    }
+
+    .acao-foto{
+      flex:1;height:40px;border:none;border-radius:14px;cursor:pointer;
+      font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.06em;text-transform:uppercase;
+    }
+
+    .acao-camera{
+      color:#fff;background:var(--gradiente-suporte);
+      box-shadow:0 10px 18px rgba(0,91,110,.14);
+    }
+
+    .acao-galeria{
+      color:var(--azul-800);background:rgba(255,255,255,.94);
+      border:1px solid rgba(0,91,110,.16);
+      box-shadow:0 8px 16px rgba(0,53,157,.08);
     }
 
     .box-imagem.com-imagem{
@@ -707,6 +727,11 @@
       .android-banner button{width:100%}
     }
 
+    @media (hover:none), (pointer:coarse){
+      .box-acoes-foto{display:flex}
+      .msg-camera{padding:22px 22px 92px}
+    }
+
     @media (max-width: 680px){
       body{padding:16px 10px 130px}
       #btn-abrir-pendentes{top:12px;right:10px}
@@ -837,9 +862,14 @@
         <div class="foto-wrapper">
           <div class="foto-col">
             <label>Lateral do caminhão carregado</label>
-            <div class="box-imagem">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
-              <input type="file" accept="image/*" onchange="preview(this)">
+            <div class="box-imagem" onclick="abrirOrigemImagem(this)">
+              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
+              <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
+              <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
+              <div class="box-acoes-foto">
+                <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
+                <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
+              </div>
               <img alt="Foto lateral do caminhão carregado">
             </div>
             <div class="foto-dica">Câmera ou galeria</div>
@@ -847,9 +877,14 @@
 
           <div class="foto-col">
             <label>Carregamento</label>
-            <div class="box-imagem">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
-              <input type="file" accept="image/*" onchange="preview(this)">
+            <div class="box-imagem" onclick="abrirOrigemImagem(this)">
+              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
+              <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
+              <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
+              <div class="box-acoes-foto">
+                <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
+                <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
+              </div>
               <img alt="Foto do carregamento">
             </div>
             <div class="foto-dica">Câmera ou galeria</div>
@@ -857,9 +892,14 @@
 
           <div class="foto-col">
             <label>Placa</label>
-            <div class="box-imagem">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
-              <input type="file" accept="image/*" onchange="preview(this)">
+            <div class="box-imagem" onclick="abrirOrigemImagem(this)">
+              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
+              <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
+              <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
+              <div class="box-acoes-foto">
+                <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
+                <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
+              </div>
               <img alt="Foto da placa do veículo">
             </div>
             <div class="foto-dica">Câmera ou galeria</div>
@@ -1145,6 +1185,31 @@
       };
     }
 
+    function abrirInputImagem(box, origem = 'gallery') {
+      if (!box) return;
+
+      const seletor = origem === 'camera' ? '.input-camera' : '.input-galeria';
+      const input = box.querySelector(seletor);
+      if (!input) return;
+
+      input.value = '';
+      input.click();
+    }
+
+    function abrirOrigemImagem(box) {
+      const ambiente = detectarAmbientePDF();
+      abrirInputImagem(box, ambiente.android ? 'camera' : 'gallery');
+    }
+
+    function abrirCaptura(event, botao, origem) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      abrirInputImagem(botao.closest('.box-imagem'), origem);
+    }
+
     function obterConfiguracaoPDF() {
       const ambiente = detectarAmbientePDF();
       return {
@@ -1286,6 +1351,7 @@
         preencherBoxImagem(box, '');
         alert('Não foi possível processar essa foto.');
       } finally {
+        input.value = '';
         const resetMsg = box.querySelector('.msg-camera strong');
         if (resetMsg && !obterSrcBox(box)) resetMsg.innerText = 'Registrar foto';
       }
@@ -1543,9 +1609,14 @@
           <div class="foto-wrapper">
             <div class="foto-col">
               <label>Foto da etiqueta</label>
-              <div class="box-imagem">
-                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
-                <input type="file" accept="image/*" onchange="preview(this)">
+              <div class="box-imagem" onclick="abrirOrigemImagem(this)">
+                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
+                <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
+                <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
+                <div class="box-acoes-foto">
+                  <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
+                  <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
+                </div>
                 <img alt="Foto da etiqueta do volume">
               </div>
               <div class="foto-dica">Câmera ou galeria</div>
@@ -1553,9 +1624,14 @@
 
             <div class="foto-col">
               <label>${escaparHTML(labelSecundario)}</label>
-              <div class="box-imagem">
-                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
-                <input type="file" accept="image/*" onchange="preview(this)">
+              <div class="box-imagem" onclick="abrirOrigemImagem(this)">
+                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
+                <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
+                <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
+                <div class="box-acoes-foto">
+                  <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
+                  <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
+                </div>
                 <img alt="Foto complementar do volume">
               </div>
               <div class="foto-dica">Câmera ou galeria</div>
