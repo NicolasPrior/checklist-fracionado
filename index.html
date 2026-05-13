@@ -83,11 +83,11 @@
     }
 
     .hero-brand{
-      display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px;
+      display:flex;align-items:flex-start;justify-content:flex-start;gap:18px;margin-bottom:22px;
     }
 
     .brand-lockup{
-      display:flex;align-items:center;gap:16px;
+      display:flex;align-items:flex-start;gap:16px;
     }
 
     .hero-logo-card{
@@ -734,22 +734,22 @@
           </div>
           <div class="brand-copy">
             <div class="hero-pill">Dulcini S/A</div>
-            <div class="hero-caption">Checklist operacional de carregamento com identidade visual institucional, evidência fotográfica e geração de PDF pronta para uso.</div>
+            <div class="hero-caption">Checklist operacional de carregamento com registro fotográfico e geração de PDF.</div>
           </div>
         </div>
       </div>
 
       <div class="hero-main">
         <div class="hero-copy">
-          <h1>Checklist de carregamento com rastreabilidade visual no padrão Dulcini.</h1>
-          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento institucional com paginação fixa: capa operacional na primeira página e 2 volumes por folha nas páginas internas.</p>
+          <h1>Checklist de carregamento com rastreabilidade padrão Dulcini.</h1>
+          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento institucional com paginação fixa: capa operacional na primeira página e dois volumes por folha nas páginas internas.</p>
         </div>
 
         <div class="hero-guide">
           <strong>Fluxo do PDF</strong>
           <ul>
             <li><span>01</span> Página 1 com dados gerais do carregamento e fotos do veículo.</li>
-            <li><span>02</span> Páginas internas com 2 volumes por folha e imagens ampliadas.</li>
+            <li><span>02</span> Páginas internas com dois volumes por folha e imagens ampliadas.</li>
             <li><span>03</span> Pendentes salvos localmente para retomar quando a NF estiver disponível.</li>
           </ul>
         </div>
@@ -760,7 +760,7 @@
       <div class="android-banner" id="android-banner">
         <div>
           <strong>Abra no Chrome para salvar o PDF</strong>
-          <p>Se este link estiver aberto dentro do WhatsApp, toque no botão ao lado para abrir no Chrome do Android. Esse é o modo mais confiável para gerar o PDF no celular.</p>
+          <p>Se este link estiver aberto dentro do WhatsApp, toque no botão ao lado para abri-lo no Chrome do Android. Essa é a forma mais confiável de gerar o PDF no celular.</p>
         </div>
         <button type="button" onclick="abrirNoChromeAndroid()">Abrir no Chrome</button>
       </div>
@@ -770,11 +770,11 @@
           <div>
             <div class="panel-kicker">Dados da operação</div>
             <h2>Informações do carregamento</h2>
-            <p>Esses dados aparecem na primeira página do PDF e compõem o cabeçalho institucional do checklist Dulcini.</p>
+            <p>Esses dados aparecem na primeira página do PDF e compõem o cabeçalho institucional do checklist da Dulcini.</p>
           </div>
 
           <div class="status-note">
-            A quantidade informada deve bater com o número de volumes cadastrados para o PDF ser liberado.
+            A quantidade informada deve corresponder ao número de volumes cadastrados para que o PDF seja liberado.
           </div>
         </div>
 
@@ -803,7 +803,7 @@
             <label for="tipo-carga">Tipo de carga *</label>
             <div class="input-shell">
               <select id="tipo-carga" onchange="mudarTipoCarga()" required>
-                <option value="">Selecione o formato...</option>
+                <option value="">Selecione o tipo...</option>
                 <option value="Tambor">Tambor</option>
                 <option value="Container">Container</option>
                 <option value="Tambor do Cliente">Tambor do Cliente</option>
@@ -814,13 +814,13 @@
           </div>
 
           <div class="campo">
-            <label for="qtd-volumes">Qtd. volumes *</label>
+            <label for="qtd-volumes">Quantidade de volumes *</label>
             <div class="input-shell"><input type="number" id="qtd-volumes" min="1" placeholder="Ex: 10" required></div>
           </div>
 
           <div class="campo full">
             <label for="nota-fiscal">Número da nota fiscal *</label>
-            <div class="input-shell"><input type="text" id="nota-fiscal" placeholder="Aguardando faturamento..." required></div>
+            <div class="input-shell"><input type="text" id="nota-fiscal" placeholder="Informe quando disponível" required></div>
           </div>
         </div>
       </section>
@@ -872,7 +872,7 @@
           <div>
             <div class="panel-kicker">Etapa 2</div>
             <h3>Volumes conferidos</h3>
-            <p>No PDF, os volumes saem em duplas por página, com fotos ampliadas.</p>
+            <p>No PDF, os volumes são organizados em pares por página, com fotos ampliadas.</p>
           </div>
         </div>
 
@@ -883,7 +883,7 @@
 
   <div class="botoes-fixos">
     <button type="button" class="btn btn-add" id="btn-add-vol" onclick="addV()" style="display:none;">Adicionar volume</button>
-    <button type="button" class="btn btn-standby" onclick="salvarParaDepois()">Standby (NF)</button>
+    <button type="button" class="btn btn-standby" onclick="salvarParaDepois()">Salvar pendente</button>
     <button type="button" class="btn btn-pdf" onclick="gerarPDF()">Salvar PDF</button>
   </div>
 
@@ -909,6 +909,7 @@
     const STORAGE_KEY = 'dulcini_checklists_pendentes';
     const LEGACY_STORAGE_KEYS = [STORAGE_KEY, 'checklists_pendentes'];
     const DB_NAME = 'dulcini_checklists_db';
+    const LEGACY_DB_NAMES = ['centrosucar_checklists_db'];
     const DB_VERSION = 1;
     const STORE_NAME = 'pendentes';
     const LOGO_PATH = './Logo_Beija-flor_Transp_.jpg';
@@ -980,6 +981,14 @@
       });
     }
 
+    function normalizarRegistroPendente(item = {}) {
+      return {
+        id: item?.id || (Date.now() + Math.floor(Math.random() * 10000)),
+        dt: item?.dt || formatarDataHora(new Date()),
+        snapshot: normalizarPendente(item)
+      };
+    }
+
     async function migrarLocalStorageParaIndexedDB() {
       try {
         for (const chave of LEGACY_STORAGE_KEYS) {
@@ -987,19 +996,68 @@
           if (!Array.isArray(legado) || !legado.length) continue;
 
           for (const item of legado) {
-            const snapshot = normalizarPendente(item);
-            const registro = {
-              id: item?.id || (Date.now() + Math.floor(Math.random() * 10000)),
-              dt: item?.dt || formatarDataHora(new Date()),
-              snapshot
-            };
-            await salvarPendenteDB(registro);
+            await salvarPendenteDB(normalizarRegistroPendente(item));
           }
 
           localStorage.removeItem(chave);
         }
       } catch (erro) {
         console.error('Falha na migração do localStorage para IndexedDB:', erro);
+      }
+    }
+
+    async function listarPendentesBancoLegado(nomeBanco) {
+      return new Promise((resolve) => {
+        let criadoAgora = false;
+        const request = indexedDB.open(nomeBanco, DB_VERSION);
+
+        request.onupgradeneeded = () => {
+          criadoAgora = true;
+        };
+
+        request.onsuccess = () => {
+          const db = request.result;
+
+          if (criadoAgora || !db.objectStoreNames.contains(STORE_NAME)) {
+            db.close();
+            if (criadoAgora) indexedDB.deleteDatabase(nomeBanco);
+            resolve([]);
+            return;
+          }
+
+          const transaction = db.transaction(STORE_NAME, 'readonly');
+          const store = transaction.objectStore(STORE_NAME);
+          const getAllRequest = store.getAll();
+
+          getAllRequest.onsuccess = () => {
+            const dados = Array.isArray(getAllRequest.result) ? getAllRequest.result : [];
+            db.close();
+            resolve(dados);
+          };
+
+          getAllRequest.onerror = () => {
+            db.close();
+            resolve([]);
+          };
+        };
+
+        request.onerror = () => resolve([]);
+        request.onblocked = () => resolve([]);
+      });
+    }
+
+    async function migrarIndexedDBLegado() {
+      try {
+        for (const nomeBanco of LEGACY_DB_NAMES) {
+          if (!nomeBanco || nomeBanco === DB_NAME) continue;
+
+          const registros = await listarPendentesBancoLegado(nomeBanco);
+          for (const item of registros) {
+            await salvarPendenteDB(normalizarRegistroPendente(item));
+          }
+        }
+      } catch (erro) {
+        console.error('Falha na migração do IndexedDB legado:', erro);
       }
     }
 
@@ -1011,6 +1069,24 @@
     function atualizarContador() {
       const span = document.getElementById('count-pendentes');
       if (span) span.innerText = String(pendentes.length);
+    }
+
+    function atualizarTextosHero() {
+      const caption = document.querySelector('.hero-caption');
+      const titulo = document.querySelector('.hero-copy h1');
+      const descricao = document.querySelector('.hero-copy p');
+
+      if (caption) {
+        caption.innerText = 'Controle operacional para carregamentos, com registro fotográfico e emissão de relatório em PDF.';
+      }
+
+      if (titulo) {
+        titulo.innerText = 'Conferência de carregamento com rastreabilidade visual no padrão da Dulcini.';
+      }
+
+      if (descricao) {
+        descricao.innerText = 'Reúna os dados da operação, documente as evidências obrigatórias e gere um relatório institucional com capa inicial e páginas internas organizadas em pares de volumes.';
+      }
     }
 
     function escaparHTML(valor) {
@@ -1119,7 +1195,7 @@
     }
 
     function obterLabelSecundario() {
-      return document.getElementById('tipo-carga').value === 'Bag in Box' ? 'Foto carga' : 'Foto lacre';
+      return document.getElementById('tipo-carga').value === 'Bag in Box' ? 'Foto da carga' : 'Foto do lacre';
     }
 
     function obterSrcBox(box) {
@@ -1297,7 +1373,7 @@
       const snapshot = coletarEstadoAtual();
 
       if (!snapshot.campos.p) {
-        alert('Digite a placa antes de salvar no standby.');
+        alert('Digite a placa antes de salvar como pendente.');
         return;
       }
 
@@ -1311,11 +1387,11 @@
         await salvarPendenteDB(registro);
         await recarregarPendentes();
 
-        alert('Checklist salvo no standby com sucesso.');
+        alert('Checklist pendente salvo com sucesso.');
         limparChecklist(false);
       } catch (erro) {
         console.error('Erro ao salvar no IndexedDB:', erro);
-        alert('Não foi possível salvar no standby neste aparelho.');
+        alert('Não foi possível salvar o checklist pendente neste dispositivo.');
       }
     }
 
@@ -1335,7 +1411,7 @@
           const snapshot = normalizarPendente(item);
           const campos = snapshot.campos || {};
           const placa = escaparHTML(campos.p || '-');
-          const nf = escaparHTML(campos.nf || 'Sem NF');
+          const nf = escaparHTML(campos.nf || 'Sem nota fiscal');
           const volumes = Array.isArray(snapshot.volumes) ? snapshot.volumes.length : 0;
 
           return `
@@ -1345,7 +1421,7 @@
               <small>${escaparHTML(item.dt || '')} - Volumes cadastrados: ${volumes}</small>
               <div class="pendente-acoes">
                 <button type="button" class="pendente-retomar" onclick="recuperar(${item.id})">Retomar</button>
-                <button type="button" class="pendente-excluir" onclick="excluirItem(${item.id})">X</button>
+                <button type="button" class="pendente-excluir" aria-label="Excluir pendente" title="Excluir pendente" onclick="excluirItem(${item.id})">X</button>
               </div>
             </div>
           `;
@@ -1445,7 +1521,7 @@
       const tipo = document.getElementById('tipo-carga').value;
 
       if (!tipo && !silencioso) {
-        alert('Selecione o tipo de carga primeiro.');
+        alert('Selecione primeiro o tipo de carga.');
         return;
       }
 
@@ -1459,14 +1535,14 @@
             <div class="volume-title-wrap">
               <span class="volume-seq">Volume ${numero}</span>
               <h4 class="volume-nome">Conferência visual do volume ${numero}</h4>
-              <p>Esses cartões são levados em pares para as páginas internas do PDF.</p>
+              <p>Esses registros são organizados em pares nas páginas internas do PDF.</p>
             </div>
             <button type="button" class="btn-remover" onclick="removerVolume(this)">Remover</button>
           </div>
 
           <div class="foto-wrapper">
             <div class="foto-col">
-              <label>Foto etiqueta</label>
+              <label>Foto da etiqueta</label>
               <div class="box-imagem">
                 <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para tirar uma foto ou escolher da galeria.</small></span>
                 <input type="file" accept="image/*" onchange="preview(this)">
@@ -1611,20 +1687,20 @@
     }
 
     function montarVolumePDF(volume, tipoCarga) {
-      const labelSecundario = tipoCarga === 'Bag in Box' ? 'Foto carga' : 'Foto lacre';
+      const labelSecundario = tipoCarga === 'Bag in Box' ? 'Foto da carga' : 'Foto do lacre';
 
       return `
         <article class="pdf-volume-card">
           <div class="pdf-volume-top">
             <div>
               <h3>Volume ${volume.numero}</h3>
-              <p>Conferência visual do volume ${volume.numero} registrada para o checklist.</p>
+              <p>Conferência visual do volume ${volume.numero} registrada neste checklist.</p>
             </div>
             <div class="pdf-volume-badge">Volume ${volume.numero}</div>
           </div>
 
           <div class="pdf-volume-photos">
-            ${montarFotoPDF('Foto etiqueta', volume.fotos?.[0] || '')}
+            ${montarFotoPDF('Foto da etiqueta', volume.fotos?.[0] || '')}
             ${montarFotoPDF(labelSecundario, volume.fotos?.[1] || '')}
           </div>
         </article>
@@ -1664,7 +1740,7 @@
                     <strong>${escaparHTML(campos.tp || '-')}</strong>
                   </div>
                   <div class="pdf-highlight">
-                    <span>Qtd. volumes</span>
+                    <span>Volumes</span>
                     <strong>${escaparHTML(campos.q || '0')}</strong>
                   </div>
                   <div class="pdf-highlight">
@@ -1689,7 +1765,7 @@
                   ${montarMetaCard('Motorista', campos.m)}
                   ${montarMetaCard('Placa do veículo', campos.p)}
                   ${montarMetaCard('Tipo de carga', campos.tp)}
-                  ${montarMetaCard('Qtd. volumes', campos.q)}
+                  ${montarMetaCard('Quantidade de volumes', campos.q)}
                   ${montarMetaCard('Número da nota fiscal', campos.nf, true)}
                 </div>
               </section>
@@ -1890,13 +1966,13 @@
         baixarBlob(blob, nomeArquivo);
 
         setTimeout(() => {
-          const desejaNovo = confirm('Deseja fazer um novo check list?');
+          const desejaNovo = confirm('Deseja fazer um novo checklist?');
           if (desejaNovo) limparChecklist(true);
         }, 450);
 
       } catch (erro) {
         console.error('Erro ao gerar PDF:', erro);
-        alert('Não foi possível gerar o PDF neste aparelho.');
+        alert('Não foi possível gerar o PDF neste dispositivo.');
       } finally {
         setTimeout(() => {
           loading.style.display = 'none';
@@ -1927,12 +2003,14 @@
 
     window.addEventListener('load', async () => {
       try {
+        atualizarTextosHero();
         await abrirBanco();
         await migrarLocalStorageParaIndexedDB();
+        await migrarIndexedDBLegado();
         await recarregarPendentes();
       } catch (erro) {
         console.error('Erro ao iniciar IndexedDB:', erro);
-        alert('Não foi possível iniciar o armazenamento local deste aparelho.');
+        alert('Não foi possível iniciar o armazenamento local neste dispositivo.');
       }
 
       sincronizarFotos();
