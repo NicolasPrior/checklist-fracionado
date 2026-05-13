@@ -517,17 +517,12 @@
 
     .pdf-document{width:794px;background:#FFFFFF}
     .pdf-page{width:794px;height:1122px;padding:9px;overflow:hidden;background:#FFFFFF;margin:0}
-    .pdf-page-cover{height:auto}
     .pdf-page + .pdf-page{margin-top:0}
 
     .pdf-sheet{
       position:relative;isolation:isolate;
       width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;min-height:0;
       border:1px solid #DBE8F0;border-radius:18px;background:#FFFFFF;padding:7px 7px 5px;overflow:hidden;
-    }
-
-    .pdf-page-cover .pdf-sheet{
-      height:auto;grid-template-rows:auto auto auto;
     }
 
     .pdf-sheet::before{
@@ -2240,7 +2235,38 @@
         ctx.imageSmoothingQuality = 'high';
       }
 
-      return canvas.toDataURL('image/png');
+      return canvas;
+    }
+
+    function obterCanvasRecortado(canvasOriginal, alturaRecorte) {
+      const alturaFinal = Math.max(1, Math.min(canvasOriginal.height, Math.ceil(alturaRecorte)));
+      const canvasRecortado = document.createElement('canvas');
+      canvasRecortado.width = canvasOriginal.width;
+      canvasRecortado.height = alturaFinal;
+
+      const ctx = canvasRecortado.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(
+          canvasOriginal,
+          0, 0, canvasOriginal.width, alturaFinal,
+          0, 0, canvasRecortado.width, canvasRecortado.height
+        );
+      }
+
+      return canvasRecortado;
+    }
+
+    function obterAlturaCorteCapa(pagina, canvas) {
+      const footer = pagina.querySelector('.pdf-footer');
+      if (!footer) return canvas.height;
+
+      const pageRect = pagina.getBoundingClientRect();
+      const footerRect = footer.getBoundingClientRect();
+      const margemInferiorPx = 12;
+      const alturaDOM = (footerRect.bottom - pageRect.top) + margemInferiorPx;
+      const fatorEscala = canvas.height / pagina.offsetHeight;
+
+      return alturaDOM * fatorEscala;
     }
 
     function baixarBlob(blob, nomeArquivo) {
@@ -2289,31 +2315,40 @@
         const configPDF = obterConfiguracaoPDF();
         const campos = coletarCamposFormulario();
         const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
-        const obterAlturaPaginaPDF = (pagina) => {
-          if (!pagina.classList.contains('pdf-page-cover')) return 297;
-          return Number((210 * pagina.offsetHeight / pagina.offsetWidth).toFixed(2));
-        };
 
         atualizarStatusLoading('Convertendo páginas em PDF...');
         const doc = new jsPDF({
           orientation: 'portrait',
           unit: 'mm',
-          format: [210, obterAlturaPaginaPDF(paginas[0])],
+          format: 'a4',
           compress: false
         });
 
         for (let i = 0; i < paginas.length; i++) {
           atualizarStatusLoading(`Gerando página ${i + 1} de ${paginas.length}...`);
 
-          const imagem = await renderizarPaginaParaImagem(
+          const canvasPagina = await renderizarPaginaParaImagem(
             paginas[i],
             configPDF.escalaCanvas
           );
 
-          const alturaPagina = obterAlturaPaginaPDF(paginas[i]);
+          const isCapa = paginas[i].classList.contains('pdf-page-cover');
+          const canvasFinal = isCapa
+            ? obterCanvasRecortado(canvasPagina, obterAlturaCorteCapa(paginas[i], canvasPagina))
+            : canvasPagina;
+          const alturaPagina = isCapa
+            ? Number((210 * canvasFinal.height / canvasFinal.width).toFixed(2))
+            : 297;
 
-          if (i > 0) doc.addPage([210, alturaPagina], 'portrait');
-          doc.addImage(imagem, 'PNG', 0, 0, 210, alturaPagina);
+          if (i > 0) {
+            doc.addPage(isCapa ? [210, alturaPagina] : 'a4', 'portrait');
+          } else if (isCapa) {
+            doc.deletePage(1);
+            doc.addPage([210, alturaPagina], 'portrait');
+            doc.setPage(1);
+          }
+
+          doc.addImage(canvasFinal, 'PNG', 0, 0, 210, alturaPagina);
         }
 
         atualizarStatusLoading('Salvando arquivo PDF...');
