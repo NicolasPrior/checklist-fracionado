@@ -194,7 +194,7 @@
       position:relative;z-index:1;
     }
 
-    .panel:not(.volume-box)::after{
+    .panel:not(.registro-card)::after{
       content:'';position:absolute;right:16px;bottom:8px;width:180px;height:180px;
       background:url('./Logo_Beija-flor_Transp_.jpg') center/contain no-repeat;
       opacity:.055;pointer-events:none;z-index:0;
@@ -255,15 +255,56 @@
       box-shadow:0 0 0 4px rgba(197,57,57,.08)!important;
     }
 
-    #secao-caminhao,.volume-box{position:relative;overflow:hidden}
-    #secao-caminhao::before,.volume-box::before{
+    #painel-registros{position:relative;overflow:hidden}
+    #painel-registros::before{
       content:'';position:absolute;inset:0 0 auto;height:4px;z-index:2;
       background:linear-gradient(90deg,var(--azul-800),var(--teal-800),var(--verde-800));
     }
 
-    .foto-wrapper{display:grid;gap:16px}
-    #secao-caminhao .foto-wrapper{grid-template-columns:repeat(3,minmax(0,1fr))}
-    #container-volumes .foto-wrapper{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .photo-tabs{
+      display:flex;gap:10px;margin-bottom:18px;
+    }
+
+    .photo-tab{
+      flex:1;height:48px;border:none;border-radius:16px;cursor:pointer;
+      background:linear-gradient(180deg,#EFF6FB 0%,#E6F1F8 100%);
+      color:var(--azul-800);font:700 12px/1 'Montserrat',sans-serif;
+      letter-spacing:.08em;text-transform:uppercase;
+      border:1px solid rgba(0,91,110,.12);
+    }
+
+    .photo-tab.is-active{
+      color:#fff;background:var(--gradiente-acao);
+      box-shadow:0 14px 24px rgba(0,53,157,.14);
+      border-color:transparent;
+    }
+
+    .photo-panel{display:none}
+    .photo-panel.is-active{display:block}
+
+    .registro-grid{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;
+    }
+
+    .registro-card{
+      padding:18px;border-radius:24px;border:1px solid rgba(0,91,110,.12);
+      background:linear-gradient(180deg,#FFFFFF 0%,#F4F9FD 100%);
+      box-shadow:0 10px 20px rgba(0,53,157,.05);
+    }
+
+    .registro-head{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;
+    }
+
+    .registro-head p{
+      max-width:170px;color:var(--texto-suave);font-size:13px;line-height:1.35;text-align:right;
+    }
+
+    .registro-seq{
+      display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;
+      background:rgba(0,91,110,.08);color:var(--teal-800);
+      font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;
+    }
 
     .foto-col label{
       display:block;margin-bottom:10px;color:var(--texto-suave);
@@ -719,12 +760,14 @@
     }
 
     @media (max-width: 860px){
-      .hero-main,.dados-grid,#secao-caminhao .foto-wrapper,#container-volumes .foto-wrapper{grid-template-columns:1fr}
+      .hero-main,.dados-grid,.registro-grid{grid-template-columns:1fr}
       .panel-head,.header-volume,.hero-brand{flex-direction:column;align-items:stretch}
       .brand-lockup{align-items:flex-start}
       .status-note{min-width:0}
       .android-banner{align-items:stretch}
       .android-banner button{width:100%}
+      .registro-head{flex-direction:column}
+      .registro-head p{max-width:none;text-align:left}
     }
 
     @media (hover:none), (pointer:coarse){
@@ -739,7 +782,7 @@
       .hero-copy h1{font-size:28px}
       .hero-logo-card{flex-basis:72px;width:72px;height:72px;border-radius:20px}
       .hero-logo-card img{width:120%;height:120%;transform:translate(4px,-8px)}
-      .panel:not(.volume-box)::after{width:132px;height:132px;right:10px;bottom:10px}
+      .panel:not(.registro-card)::after{width:132px;height:132px;right:10px;bottom:10px}
       .botoes-fixos{width:calc(100% - 12px);padding:10px;gap:10px;border-radius:22px}
       .btn{height:52px;font-size:11px}
     }
@@ -767,14 +810,14 @@
       <div class="hero-main">
         <div class="hero-copy">
           <h1>Checklist de carregamento com rastreabilidade padrão Dulcini.</h1>
-          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento institucional com paginação fixa: capa operacional na primeira página e dois volumes por folha nas páginas internas.</p>
+          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento institucional com capa inicial e páginas internas organizadas em pares de registros.</p>
         </div>
 
         <div class="hero-guide">
           <strong>Fluxo do PDF</strong>
           <ul>
-            <li><span>01</span> Página 1 com dados gerais do carregamento e fotos do veículo.</li>
-            <li><span>02</span> Páginas internas com dois volumes por folha e imagens ampliadas.</li>
+            <li><span>01</span> Página 1 com os dados gerais da operação e o resumo fotográfico.</li>
+            <li><span>02</span> Páginas internas com registros de lacres e carregamento organizados em pares.</li>
             <li><span>03</span> Pendentes salvos localmente para retomar quando a NF estiver disponível.</li>
           </ul>
         </div>
@@ -798,8 +841,8 @@
             <p>Esses dados aparecem na primeira página do PDF e compõem o cabeçalho institucional do checklist da Dulcini.</p>
           </div>
 
-          <div class="status-note">
-            A quantidade informada deve corresponder ao número de volumes cadastrados para que o PDF seja liberado.
+          <div class="status-note" id="status-registros">
+            Para cargas do tipo container, cada unidade gera dois registros de lacre e um de carregamento.
           </div>
         </div>
 
@@ -817,6 +860,16 @@
           <div class="campo">
             <label for="m">Motorista *</label>
             <div class="input-shell"><input type="text" id="m" placeholder="Nome completo" required></div>
+          </div>
+
+          <div class="campo">
+            <label for="colaborador-responsavel">Colaborador Responsável *</label>
+            <div class="input-shell"><input type="text" id="colaborador-responsavel" placeholder="Nome do responsável" required></div>
+          </div>
+
+          <div class="campo">
+            <label for="data-carregamento">Data do carregamento</label>
+            <div class="input-shell"><input type="text" id="data-carregamento" readonly></div>
           </div>
 
           <div class="campo">
@@ -850,79 +903,32 @@
         </div>
       </section>
 
-      <section id="secao-caminhao" class="panel" style="display:none;">
-        <div class="header-volume">
-          <div class="volume-title-wrap">
-            <span>Etapa 1</span>
-            <h4>Fotos do veículo</h4>
-            <p>Essas imagens ocupam a primeira página do PDF.</p>
-          </div>
-        </div>
-
-        <div class="foto-wrapper">
-          <div class="foto-col">
-            <label>Lateral do caminhão carregado</label>
-            <div class="box-imagem" onclick="abrirOrigemImagem(this)">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
-              <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
-              <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
-              <div class="box-acoes-foto">
-                <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
-                <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
-              </div>
-              <img alt="Foto lateral do caminhão carregado">
-            </div>
-            <div class="foto-dica">Câmera ou galeria</div>
-          </div>
-
-          <div class="foto-col">
-            <label>Carregamento</label>
-            <div class="box-imagem" onclick="abrirOrigemImagem(this)">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
-              <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
-              <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
-              <div class="box-acoes-foto">
-                <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
-                <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
-              </div>
-              <img alt="Foto do carregamento">
-            </div>
-            <div class="foto-dica">Câmera ou galeria</div>
-          </div>
-
-          <div class="foto-col">
-            <label>Placa</label>
-            <div class="box-imagem" onclick="abrirOrigemImagem(this)">
-              <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
-              <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
-              <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
-              <div class="box-acoes-foto">
-                <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
-                <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
-              </div>
-              <img alt="Foto da placa do veículo">
-            </div>
-            <div class="foto-dica">Câmera ou galeria</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel" id="painel-volumes" style="display:none;">
+      <section class="panel" id="painel-registros" style="display:none;">
         <div class="panel-head">
           <div>
-            <div class="panel-kicker">Etapa 2</div>
-            <h3>Volumes conferidos</h3>
-            <p>No PDF, os volumes são organizados em pares por página, com fotos ampliadas.</p>
+            <div class="panel-kicker">Etapa 1</div>
+            <h3>Registro fotográfico</h3>
+            <p>Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamento para concluir o registro da operação. Em cargas do tipo container, cada unidade gera dois lacres e um carregamento.</p>
           </div>
         </div>
 
-        <div id="container-volumes"></div>
+        <div class="photo-tabs">
+          <button type="button" class="photo-tab is-active" data-aba-foto="lacres" onclick="alternarAbaFotos('lacres', this)">Lacres</button>
+          <button type="button" class="photo-tab" data-aba-foto="carregamentos" onclick="alternarAbaFotos('carregamentos', this)">Carregamento</button>
+        </div>
+
+        <div class="photo-panel is-active" id="aba-lacres">
+          <div class="registro-grid" id="container-lacres"></div>
+        </div>
+
+        <div class="photo-panel" id="aba-carregamentos">
+          <div class="registro-grid" id="container-carregamentos"></div>
+        </div>
       </section>
     </div>
   </main>
 
   <div class="botoes-fixos">
-    <button type="button" class="btn btn-add" id="btn-add-vol" onclick="addV()" style="display:none;">Adicionar volume</button>
     <button type="button" class="btn btn-standby" onclick="salvarParaDepois()">Salvar pendente</button>
     <button type="button" class="btn btn-pdf" onclick="gerarPDF()">Salvar PDF</button>
   </div>
@@ -1125,7 +1131,7 @@
       }
 
       if (descricao) {
-        descricao.innerText = 'Reúna os dados da operação, documente as evidências obrigatórias e gere um relatório institucional com capa inicial e páginas internas organizadas em pares de volumes.';
+        descricao.innerText = 'Reúna os dados da operação, documente as evidências obrigatórias e gere um relatório institucional com capa inicial e páginas internas organizadas em pares de registros.';
       }
     }
 
@@ -1357,11 +1363,30 @@
       }
     }
 
+    function formatarDataCampo(data = new Date()) {
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(data);
+    }
+
+    function atualizarCampoDataCarregamento(valor = '') {
+      const input = document.getElementById('data-carregamento');
+      if (input) input.value = valor || formatarDataCampo(new Date());
+    }
+
+    function tipoDuplicaRegistros(tipo = '') {
+      return tipo === 'Container' || tipo === 'Container do Cliente';
+    }
+
     function coletarCamposFormulario() {
       return {
         c: document.getElementById('c').value.trim(),
         t: document.getElementById('t').value.trim(),
         m: document.getElementById('m').value.trim(),
+        cr: document.getElementById('colaborador-responsavel').value.trim(),
+        dc: document.getElementById('data-carregamento').value.trim(),
         p: document.getElementById('p').value.trim(),
         tp: document.getElementById('tipo-carga').value,
         q: document.getElementById('qtd-volumes').value.trim(),
@@ -1373,31 +1398,172 @@
       document.getElementById('c').value = campos.c || '';
       document.getElementById('t').value = campos.t || '';
       document.getElementById('m').value = campos.m || '';
+      document.getElementById('colaborador-responsavel').value = campos.cr || '';
+      atualizarCampoDataCarregamento(campos.dc || '');
       document.getElementById('p').value = campos.p || '';
       document.getElementById('tipo-carga').value = campos.tp || '';
       document.getElementById('qtd-volumes').value = campos.q || '';
       document.getElementById('nota-fiscal').value = campos.nf || '';
     }
 
-    function coletarVolumes() {
-      return Array.from(document.querySelectorAll('#container-volumes .volume-box')).map((volumeBox, index) => ({
-        numero: index + 1,
-        fotos: Array.from(volumeBox.querySelectorAll('.box-imagem')).map(obterSrcBox)
-      }));
+    function obterQuantidadeRegistrosEsperada(campos = null) {
+      const dados = campos || coletarCamposFormulario();
+      const qtd = parseInt(dados.q || '0', 10);
+
+      if (!dados.tp || !qtd || qtd < 1) {
+        return { lacres: 0, carregamentos: 0 };
+      }
+
+      if (tipoDuplicaRegistros(dados.tp)) {
+        return { lacres: qtd * 2, carregamentos: qtd };
+      }
+
+      return { lacres: qtd, carregamentos: qtd };
+    }
+
+    function normalizarColecoesFotos(registros = null) {
+      if (!registros) {
+        return { lacres: [], carregamentos: [] };
+      }
+
+      if (Array.isArray(registros.lacres) || Array.isArray(registros.carregamentos)) {
+        return {
+          lacres: Array.isArray(registros.lacres) ? registros.lacres : [],
+          carregamentos: Array.isArray(registros.carregamentos) ? registros.carregamentos : []
+        };
+      }
+
+      if (Array.isArray(registros)) {
+        return {
+          lacres: registros.map((item) => item?.lacre || '').filter((_, index) => index < registros.length),
+          carregamentos: registros.map((item) => item?.carregamento || '').filter((_, index) => index < registros.length)
+        };
+      }
+
+      return { lacres: [], carregamentos: [] };
+    }
+
+    function criarMarkupBoxImagem(tipo, numero, alt) {
+      return `
+        <div class="box-imagem" data-foto-tipo="${escaparHTML(tipo)}" data-foto-numero="${numero}" onclick="abrirOrigemImagem(this)">
+          <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
+          <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
+          <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
+          <div class="box-acoes-foto">
+            <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
+            <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
+          </div>
+          <img alt="${escaparHTML(alt)}">
+        </div>
+      `;
+    }
+
+    function criarCardRegistro(tipo, numero) {
+      const titulo = tipo === 'lacre' ? `Lacre ${numero}` : `Carregamento ${numero}`;
+      const descricao = tipo === 'lacre'
+        ? 'Registre o lacre correspondente a esta posição.'
+        : 'Registre o carregamento correspondente a esta posição.';
+      const alt = tipo === 'lacre'
+        ? `Foto do lacre ${numero}`
+        : `Foto do carregamento ${numero}`;
+
+      return `
+        <article class="registro-card">
+          <div class="registro-head">
+            <span class="registro-seq">${escaparHTML(titulo)}</span>
+            <p>${escaparHTML(descricao)}</p>
+          </div>
+          ${criarMarkupBoxImagem(tipo, numero, alt)}
+          <div class="foto-dica">Câmera ou galeria</div>
+        </article>
+      `;
+    }
+
+    function alternarAbaFotos(aba = 'lacres', botao = null) {
+      document.querySelectorAll('.photo-tab').forEach((tab) => {
+        tab.classList.toggle('is-active', tab.dataset.abaFoto === aba);
+      });
+
+      document.querySelectorAll('.photo-panel').forEach((panel) => {
+        panel.classList.toggle('is-active', panel.id === `aba-${aba}`);
+      });
+
+      if (botao) botao.blur();
+    }
+
+    function atualizarResumoRegistros(quantidades = { lacres: 0, carregamentos: 0 }) {
+      const status = document.getElementById('status-registros');
+      if (!status) return;
+
+      const campos = coletarCamposFormulario();
+      const qtdInformada = parseInt(campos.q || '0', 10);
+
+      if (!campos.tp || !qtdInformada) {
+        status.innerText = 'Informe o tipo de carga e a quantidade para gerar automaticamente os registros fotográficos.';
+        return;
+      }
+
+      if (tipoDuplicaRegistros(campos.tp)) {
+        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'container' : 'containers'}, serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento.`;
+        return;
+      }
+
+      status.innerText = `Serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento para concluir esta operação.`;
+    }
+
+    function renderizarColecaoFotos(containerId, tipo, total, fotos = []) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = Array.from({ length: total }, (_, index) => criarCardRegistro(tipo, index + 1)).join('');
+
+      container.querySelectorAll('.box-imagem').forEach((box, index) => {
+        const src = fotos[index] || '';
+        preencherBoxImagem(box, src);
+      });
+    }
+
+    function sincronizarRegistrosFotograficos(registros = null) {
+      const colecoes = normalizarColecoesFotos(registros || coletarRegistros());
+      const quantidades = obterQuantidadeRegistrosEsperada();
+      const totalLacres = quantidades.lacres || colecoes.lacres.length;
+      const totalCarregamentos = quantidades.carregamentos || colecoes.carregamentos.length;
+      const painel = document.getElementById('painel-registros');
+      const lacres = document.getElementById('container-lacres');
+      const carregamentos = document.getElementById('container-carregamentos');
+
+      if (!painel || !lacres || !carregamentos) return;
+
+      painel.style.display = (totalLacres > 0 || totalCarregamentos > 0) ? 'block' : 'none';
+
+      if (!totalLacres && !totalCarregamentos) {
+        lacres.innerHTML = '';
+        carregamentos.innerHTML = '';
+        atualizarResumoRegistros({ lacres: 0, carregamentos: 0 });
+        return;
+      }
+
+      renderizarColecaoFotos('container-lacres', 'lacre', totalLacres, colecoes.lacres);
+      renderizarColecaoFotos('container-carregamentos', 'carregamento', totalCarregamentos, colecoes.carregamentos);
+      atualizarResumoRegistros({
+        lacres: totalLacres,
+        carregamentos: totalCarregamentos
+      });
+      sincronizarFotos(painel);
+    }
+
+    function coletarRegistros() {
+      return {
+        lacres: Array.from(document.querySelectorAll('#container-lacres .box-imagem')).map(obterSrcBox),
+        carregamentos: Array.from(document.querySelectorAll('#container-carregamentos .box-imagem')).map(obterSrcBox)
+      };
     }
 
     function coletarEstadoAtual() {
       return {
         campos: coletarCamposFormulario(),
-        caminhao: Array.from(document.querySelectorAll('#secao-caminhao .box-imagem')).map(obterSrcBox),
-        volumes: coletarVolumes()
+        registros: coletarRegistros()
       };
-    }
-
-    function extrairFotosDoHTML(html = '') {
-      const temp = document.createElement('div');
-      temp.innerHTML = html;
-      return Array.from(temp.querySelectorAll('.box-imagem img')).map((img) => img.getAttribute('src') || '');
     }
 
     function extrairVolumesLegado(html = '') {
@@ -1409,14 +1575,43 @@
       }));
     }
 
+    function converterVolumesParaRegistros(volumes = []) {
+      if (!Array.isArray(volumes)) {
+        return { lacres: [], carregamentos: [] };
+      }
+
+      return {
+        lacres: volumes.map((volume) => volume?.fotos?.[1] || volume?.fotos?.[0] || ''),
+        carregamentos: []
+      };
+    }
+
     function normalizarPendente(item) {
-      if (item && item.snapshot) return item.snapshot;
+      if (item?.snapshot?.registros) {
+        return {
+          campos: item.snapshot.campos || {},
+          registros: normalizarColecoesFotos(item.snapshot.registros)
+        };
+      }
+
+      if (item?.snapshot?.volumes) {
+        return {
+          campos: item.snapshot.campos || {},
+          registros: converterVolumesParaRegistros(item.snapshot.volumes)
+        };
+      }
+
+      if (item && item.campos && Array.isArray(item.registros)) {
+        return {
+          campos: item.campos,
+          registros: normalizarColecoesFotos(item.registros)
+        };
+      }
 
       if (item && item.campos && Array.isArray(item.volumes)) {
         return {
           campos: item.campos,
-          caminhao: item.caminhao || [],
-          volumes: item.volumes || []
+          registros: converterVolumesParaRegistros(item.volumes)
         };
       }
 
@@ -1425,21 +1620,22 @@
           c: item?.c || '',
           t: item?.t || '',
           m: item?.m || '',
+          cr: item?.cr || '',
+          dc: item?.dc || '',
           p: item?.p || '',
           tp: item?.tp || '',
           q: item?.q || '',
           nf: item?.nf || ''
         },
-        caminhao: extrairFotosDoHTML(item?.htmlCam || ''),
-        volumes: extrairVolumesLegado(item?.htmlVol || '')
+        registros: converterVolumesParaRegistros(extrairVolumesLegado(item?.htmlVol || ''))
       };
     }
 
     async function salvarParaDepois() {
       const snapshot = coletarEstadoAtual();
 
-      if (!snapshot.campos.p) {
-        alert('Digite a placa antes de salvar como pendente.');
+      if (!snapshot.campos.p || !snapshot.campos.cr) {
+        alert('Preencha a placa e o colaborador responsável antes de salvar como pendente.');
         return;
       }
 
@@ -1478,13 +1674,15 @@
           const campos = snapshot.campos || {};
           const placa = escaparHTML(campos.p || '-');
           const nf = escaparHTML(campos.nf || 'Sem nota fiscal');
-          const volumes = Array.isArray(snapshot.volumes) ? snapshot.volumes.length : 0;
+          const colecoes = normalizarColecoesFotos(snapshot.registros);
+          const totalLacres = colecoes.lacres.length;
+          const totalCarregamentos = colecoes.carregamentos.length;
 
           return `
             <div class="pendente-card">
               <strong>Placa ${placa}</strong>
               <small>NF: ${nf}</small>
-              <small>${escaparHTML(item.dt || '')} - Volumes cadastrados: ${volumes}</small>
+              <small>${escaparHTML(item.dt || '')} - Lacres: ${totalLacres} | Carregamentos: ${totalCarregamentos}</small>
               <div class="pendente-acoes">
                 <button type="button" class="pendente-retomar" onclick="recuperar(${item.id})">Retomar</button>
                 <button type="button" class="pendente-excluir" aria-label="Excluir pendente" title="Excluir pendente" onclick="excluirItem(${item.id})">X</button>
@@ -1516,22 +1714,8 @@
 
     function aplicarEstadoAtual(snapshot) {
       aplicarCamposFormulario(snapshot.campos || {});
-      document.getElementById('container-volumes').innerHTML = '';
-      mudarTipoCarga(true);
-
-      if (Array.isArray(snapshot.caminhao)) {
-        document.querySelectorAll('#secao-caminhao .box-imagem').forEach((box, index) => {
-          preencherBoxImagem(box, snapshot.caminhao[index] || '');
-        });
-      }
-
-      if (Array.isArray(snapshot.volumes) && snapshot.volumes.length) {
-        document.getElementById('container-volumes').innerHTML = '';
-        snapshot.volumes.forEach((volume) => addV(volume, true));
-      }
-
-      reordenar();
-      sincronizarFotos();
+      sincronizarRegistrosFotograficos(snapshot.registros || []);
+      alternarAbaFotos('lacres');
     }
 
     async function recuperar(id) {
@@ -1549,142 +1733,16 @@
       }
     }
 
-    function mudarTipoCarga(interno = false) {
-      const tipo = document.getElementById('tipo-carga').value;
-      const mostrar = tipo !== '';
-
-      document.getElementById('secao-caminhao').style.display = mostrar ? 'block' : 'none';
-      document.getElementById('painel-volumes').style.display = mostrar ? 'block' : 'none';
-      document.getElementById('btn-add-vol').style.display = mostrar ? 'block' : 'none';
-
-      atualizarRotulosVolumes();
-
-      if (mostrar && !document.querySelector('#container-volumes .volume-box')) {
-        addV(null, true);
-      }
-
-      if (!mostrar && !interno) {
-        document.getElementById('container-volumes').innerHTML = '';
-        document.getElementById('btn-add-vol').style.display = 'none';
-      }
-    }
-
-    function atualizarRotulosVolumes() {
-      const labelSecundario = obterLabelSecundario();
-
-      document.querySelectorAll('#container-volumes .volume-box').forEach((volumeBox, index) => {
-        const span = volumeBox.querySelector('.volume-seq');
-        const titulo = volumeBox.querySelector('.volume-nome');
-        const labels = volumeBox.querySelectorAll('.foto-col label');
-
-        if (span) span.innerText = `Volume ${index + 1}`;
-        if (titulo) titulo.innerText = `Conferência visual do volume ${index + 1}`;
-        if (labels[1]) labels[1].innerText = labelSecundario;
-      });
-    }
-
-    function addV(volumeData = null, silencioso = false) {
-      const tipo = document.getElementById('tipo-carga').value;
-
-      if (!tipo && !silencioso) {
-        alert('Selecione primeiro o tipo de carga.');
-        return;
-      }
-
-      const container = document.getElementById('container-volumes');
-      const numero = container.querySelectorAll('.volume-box').length + 1;
-      const labelSecundario = obterLabelSecundario();
-
-      const html = `
-        <div class="volume-box panel">
-          <div class="header-volume">
-            <div class="volume-title-wrap">
-              <span class="volume-seq">Volume ${numero}</span>
-              <h4 class="volume-nome">Conferência visual do volume ${numero}</h4>
-              <p>Esses registros são organizados em pares nas páginas internas do PDF.</p>
-            </div>
-            <button type="button" class="btn-remover" onclick="removerVolume(this)">Remover</button>
-          </div>
-
-          <div class="foto-wrapper">
-            <div class="foto-col">
-              <label>Foto da etiqueta</label>
-              <div class="box-imagem" onclick="abrirOrigemImagem(this)">
-                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
-                <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
-                <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
-                <div class="box-acoes-foto">
-                  <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
-                  <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
-                </div>
-                <img alt="Foto da etiqueta do volume">
-              </div>
-              <div class="foto-dica">Câmera ou galeria</div>
-            </div>
-
-            <div class="foto-col">
-              <label>${escaparHTML(labelSecundario)}</label>
-              <div class="box-imagem" onclick="abrirOrigemImagem(this)">
-                <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
-                <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
-                <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
-                <div class="box-acoes-foto">
-                  <button type="button" class="acao-foto acao-camera" onclick="abrirCaptura(event, this, 'camera')">Câmera</button>
-                  <button type="button" class="acao-foto acao-galeria" onclick="abrirCaptura(event, this, 'gallery')">Galeria</button>
-                </div>
-                <img alt="Foto complementar do volume">
-              </div>
-              <div class="foto-dica">Câmera ou galeria</div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      container.insertAdjacentHTML('beforeend', html);
-      const novoVolume = container.lastElementChild;
-
-      if (volumeData && Array.isArray(volumeData.fotos)) {
-        novoVolume.querySelectorAll('.box-imagem').forEach((box, index) => {
-          preencherBoxImagem(box, volumeData.fotos[index] || '');
-        });
-      }
-
-      reordenar();
-      sincronizarFotos(novoVolume);
-    }
-
-    function removerVolume(botao) {
-      const volume = botao.closest('.volume-box');
-      if (volume) {
-        volume.remove();
-        reordenar();
-      }
-    }
-
-    function reordenar() {
-      const volumes = Array.from(document.querySelectorAll('#container-volumes .volume-box'));
-
-      volumes.forEach((volumeBox, index) => {
-        const span = volumeBox.querySelector('.volume-seq');
-        const titulo = volumeBox.querySelector('.volume-nome');
-        if (span) span.innerText = `Volume ${index + 1}`;
-        if (titulo) titulo.innerText = `Conferência visual do volume ${index + 1}`;
-      });
-
-      document.querySelectorAll('.btn-remover').forEach((botao) => {
-        botao.style.display = volumes.length > 1 ? 'inline-flex' : 'none';
-      });
-
-      atualizarRotulosVolumes();
+    function mudarTipoCarga() {
+      sincronizarRegistrosFotograficos();
+      alternarAbaFotos('lacres');
     }
 
     function listarFotosFaltantes() {
-      const boxesVisiveis = Array.from(document.querySelectorAll('#render-area .box-imagem'))
-        .filter((box) => box.offsetParent !== null);
-
+      const boxes = Array.from(document.querySelectorAll('#painel-registros .box-imagem'));
       const faltantes = [];
 
-      boxesVisiveis.forEach((box) => {
+      boxes.forEach((box) => {
         if (obterSrcBox(box)) {
           box.classList.remove('foto-pendente');
           return;
@@ -1692,13 +1750,12 @@
 
         box.classList.add('foto-pendente');
 
-        const secao = box.closest('.volume-box, #secao-caminhao');
-        const titulo = secao && secao.id === 'secao-caminhao'
-          ? 'Fotos do veículo'
-          : (secao ? (secao.querySelector('.volume-seq')?.innerText || 'Volume') : 'Foto');
+        const numero = box.dataset.fotoNumero || '?';
+        const tipo = box.dataset.fotoTipo === 'carregamento'
+          ? 'Carregamento'
+          : 'Lacres';
 
-        const legenda = box.closest('.foto-col').querySelector('label').innerText.trim();
-        faltantes.push(`${titulo} - ${legenda}`);
+        faltantes.push(`${tipo} - Registro ${numero}`);
       });
 
       return faltantes;
@@ -1722,22 +1779,25 @@
     }
 
     function validarQuantidadeVolumes() {
-      const qtdInformada = parseInt(document.getElementById('qtd-volumes').value || '0', 10);
-      const qtdAtual = document.querySelectorAll('#container-volumes .volume-box').length;
+      const qtdEsperada = obterQuantidadeRegistrosEsperada();
+      const qtdAtual = normalizarColecoesFotos(coletarRegistros());
 
-      if (!qtdInformada || qtdInformada < 1) return false;
-      return qtdInformada === qtdAtual;
+      if (!qtdEsperada.lacres || !qtdEsperada.carregamentos) return false;
+      return qtdEsperada.lacres === qtdAtual.lacres.length
+        && qtdEsperada.carregamentos === qtdAtual.carregamentos.length;
     }
 
     function obterDadosPDF() {
       const campos = coletarCamposFormulario();
-      const caminhao = Array.from(document.querySelectorAll('#secao-caminhao .box-imagem')).map(obterSrcBox);
-      const volumes = coletarVolumes();
+      const registros = normalizarColecoesFotos(coletarRegistros());
+      const regra = tipoDuplicaRegistros(campos.tp)
+        ? 'Cada container exige dois registros de lacre e um registro de carregamento.'
+        : 'Cada volume exige um registro de lacre e um de carregamento.';
 
       return {
         campos,
-        caminhao,
-        volumes,
+        registros,
+        regra,
         geradoEm: formatarDataExtensa(new Date())
       };
     }
@@ -1762,28 +1822,30 @@
       `;
     }
 
-    function montarVolumePDF(volume, tipoCarga) {
-      const labelSecundario = tipoCarga === 'Bag in Box' ? 'Foto da carga' : 'Foto do lacre';
+    function montarRegistroPDF(tipo, numero, src) {
+      const titulo = tipo === 'lacre' ? `Lacre ${numero}` : `Carregamento ${numero}`;
+      const descricao = tipo === 'lacre'
+        ? `Registro fotográfico do lacre ${numero}.`
+        : `Registro fotográfico do carregamento ${numero}.`;
 
       return `
         <article class="pdf-volume-card">
           <div class="pdf-volume-top">
             <div>
-              <h3>Volume ${volume.numero}</h3>
-              <p>Conferência visual do volume ${volume.numero} registrada neste checklist.</p>
+              <h3>${titulo}</h3>
+              <p>${descricao}</p>
             </div>
-            <div class="pdf-volume-badge">Volume ${volume.numero}</div>
+            <div class="pdf-volume-badge">${titulo}</div>
           </div>
 
           <div class="pdf-volume-photos">
-            ${montarFotoPDF('Foto da etiqueta', volume.fotos?.[0] || '')}
-            ${montarFotoPDF(labelSecundario, volume.fotos?.[1] || '')}
+            ${montarFotoPDF(titulo, src || '')}
           </div>
         </article>
       `;
     }
 
-    function construirPaginasPDF() {
+    function construirPaginasPDFLegado() {
       const { campos, caminhao, volumes, geradoEm } = obterDadosPDF();
       const root = document.getElementById('pdf-render-root');
       const paginas = [];
@@ -1919,7 +1981,7 @@
       return root;
     }
 
-    function limparChecklist(confirmarMensagem = true) {
+    function limparChecklistLegado(confirmarMensagem = true) {
       aplicarCamposFormulario({ c:'', t:'', m:'', p:'', tp:'', q:'', nf:'' });
 
       document.getElementById('container-volumes').innerHTML = '';
@@ -1937,6 +1999,212 @@
       fecharPendentes();
 
       reordenar();
+      sincronizarFotos();
+
+      if (confirmarMensagem) {
+        setTimeout(() => {
+          document.getElementById('c').focus();
+        }, 100);
+      }
+    }
+
+    function construirPaginasPDF() {
+      const { campos, registros, regra, geradoEm } = obterDadosPDF();
+      const listaLacres = registros.lacres.map((src, index) => ({ numero: index + 1, src }));
+      const listaCarregamentos = registros.carregamentos.map((src, index) => ({ numero: index + 1, src }));
+      const root = document.getElementById('pdf-render-root');
+      const paginas = [];
+      const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
+
+      paginas.push(`
+        <section class="pdf-page">
+          <div class="pdf-sheet">
+            <div class="pdf-topline">
+              <div class="pdf-brand-cluster">
+                <div class="pdf-brand-logo">
+                  <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
+                </div>
+                <div class="pdf-brandline">Dulcini S/A • Checklist fotográfico</div>
+              </div>
+              <div class="pdf-pagecount">Página 1 / ${totalPaginas}</div>
+            </div>
+
+            <div class="pdf-main">
+              <div class="pdf-hero">
+                <div>
+                  <div class="pdf-hero-kicker">Relatório operacional</div>
+                  <h1>Checklist de carregamento com evidência visual.</h1>
+                  <p>Documento gerado com os dados do carregamento e a comprovação fotográfica dos lacres e do carregamento no padrão institucional da Dulcini S/A.</p>
+                </div>
+
+                <div class="pdf-hero-side">
+                  <div class="pdf-highlight">
+                    <span>Tipo de carga</span>
+                    <strong>${escaparHTML(campos.tp || '-')}</strong>
+                  </div>
+                  <div class="pdf-highlight">
+                    <span>Data do carregamento</span>
+                    <strong>${escaparHTML(campos.dc || '-')}</strong>
+                  </div>
+                  <div class="pdf-highlight">
+                    <span>Registros</span>
+                    <strong>${escaparHTML(String(listaLacres.length + listaCarregamentos.length))}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <section class="pdf-section">
+                <div class="pdf-section-head">
+                  <div>
+                    <span>Dados principais</span>
+                    <h2>Informações da operação</h2>
+                  </div>
+                  <p>Os dados abaixo compõem a identificação principal deste carregamento.</p>
+                </div>
+
+                <div class="pdf-meta-grid">
+                  ${montarMetaCard('Cliente', campos.c)}
+                  ${montarMetaCard('Transportadora', campos.t)}
+                  ${montarMetaCard('Motorista', campos.m)}
+                  ${montarMetaCard('Colaborador responsável', campos.cr)}
+                  ${montarMetaCard('Placa do veículo', campos.p)}
+                  ${montarMetaCard('Tipo de carga', campos.tp)}
+                  ${montarMetaCard('Quantidade de volumes', campos.q)}
+                  ${montarMetaCard('Data do carregamento', campos.dc)}
+                  ${montarMetaCard('Número da nota fiscal', campos.nf, true)}
+                </div>
+              </section>
+
+              <section class="pdf-section">
+                <div class="pdf-section-head">
+                  <div>
+                    <span>Estrutura fotográfica</span>
+                    <h2>Lacres e carregamento</h2>
+                  </div>
+                  <p>Os registros abaixo seguem a regra operacional definida para esta carga.</p>
+                </div>
+
+                <div class="pdf-meta-grid">
+                  ${montarMetaCard('Registros de lacre', String(listaLacres.length || 0))}
+                  ${montarMetaCard('Registros de carregamento', String(listaCarregamentos.length || 0))}
+                  ${montarMetaCard('Emitido em', geradoEm)}
+                  ${montarMetaCard('Critério aplicado', regra, true)}
+                </div>
+              </section>
+            </div>
+
+            <div class="pdf-footer">
+              <span>Relatório de carregamento</span>
+              <strong>Dulcini S/A</strong>
+            </div>
+          </div>
+        </section>
+      `);
+
+      for (let i = 0; i < listaLacres.length; i += 2) {
+        const dupla = listaLacres.slice(i, i + 2);
+        const paginaAtual = paginas.length + 1;
+
+        paginas.push(`
+          <section class="pdf-page">
+            <div class="pdf-sheet">
+              <div class="pdf-topline">
+                <div class="pdf-brand-cluster">
+                  <div class="pdf-brand-logo">
+                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
+                  </div>
+                  <div class="pdf-brandline">Dulcini S/A • Registros fotográficos</div>
+                </div>
+                <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
+              </div>
+
+              <div class="pdf-main">
+                <div class="pdf-page-header">
+                  <div>
+                    <h2>Lacres registrados</h2>
+                    <p>Relação fotográfica dos lacres vinculados a esta operação.</p>
+                  </div>
+                  <div class="pdf-page-tags">
+                    <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
+                    <div class="pdf-tag">Data ${escaparHTML(campos.dc || '-')}</div>
+                    <div class="pdf-tag">NF ${escaparHTML(campos.nf || '-')}</div>
+                  </div>
+                </div>
+
+                <div class="pdf-volumes-list">
+                  ${dupla.map((registro) => montarRegistroPDF('lacre', registro.numero, registro.src)).join('')}
+                </div>
+              </div>
+
+              <div class="pdf-footer">
+                <span>Lacres ${i + 1}${dupla.length === 2 ? ` e ${i + 2}` : ''}</span>
+                <strong>Dulcini S/A</strong>
+              </div>
+            </div>
+          </section>
+        `);
+      }
+
+      for (let i = 0; i < listaCarregamentos.length; i += 2) {
+        const dupla = listaCarregamentos.slice(i, i + 2);
+        const paginaAtual = paginas.length + 1;
+
+        paginas.push(`
+          <section class="pdf-page">
+            <div class="pdf-sheet">
+              <div class="pdf-topline">
+                <div class="pdf-brand-cluster">
+                  <div class="pdf-brand-logo">
+                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
+                  </div>
+                  <div class="pdf-brandline">Dulcini S/A • Registros fotográficos</div>
+                </div>
+                <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
+              </div>
+
+              <div class="pdf-main">
+                <div class="pdf-page-header">
+                  <div>
+                    <h2>Carregamentos registrados</h2>
+                    <p>Relação fotográfica das etapas de carregamento desta operação.</p>
+                  </div>
+                  <div class="pdf-page-tags">
+                    <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
+                    <div class="pdf-tag">Data ${escaparHTML(campos.dc || '-')}</div>
+                    <div class="pdf-tag">NF ${escaparHTML(campos.nf || '-')}</div>
+                  </div>
+                </div>
+
+                <div class="pdf-volumes-list">
+                  ${dupla.map((registro) => montarRegistroPDF('carregamento', registro.numero, registro.src)).join('')}
+                </div>
+              </div>
+
+              <div class="pdf-footer">
+                <span>Carregamentos ${i + 1}${dupla.length === 2 ? ` e ${i + 2}` : ''}</span>
+                <strong>Dulcini S/A</strong>
+              </div>
+            </div>
+          </section>
+        `);
+      }
+
+      root.innerHTML = `<div class="pdf-document">${paginas.join('')}</div>`;
+      return root;
+    }
+
+    function limparChecklist(confirmarMensagem = true) {
+      aplicarCamposFormulario({ c:'', t:'', m:'', cr:'', dc:'', p:'', tp:'', q:'', nf:'' });
+      atualizarCampoDataCarregamento();
+
+      document.getElementById('container-lacres').innerHTML = '';
+      document.getElementById('container-carregamentos').innerHTML = '';
+      document.getElementById('painel-registros').style.display = 'none';
+      document.getElementById('pdf-render-root').innerHTML = '';
+      fecharPendentes();
+
+      atualizarResumoRegistros({ lacres: 0, carregamentos: 0 });
+      alternarAbaFotos('lacres');
       sincronizarFotos();
 
       if (confirmarMensagem) {
@@ -1992,7 +2260,7 @@
         }
 
         if (!validarQuantidadeVolumes()) {
-          alert('A quantidade de volumes informada deve ser igual à quantidade de volumes cadastrados.');
+          alert('A quantidade informada não corresponde à quantidade de registros fotográficos exigidos para este tipo de carga.');
           return;
         }
 
@@ -2057,29 +2325,20 @@
     }
 
     document.getElementById('qtd-volumes').addEventListener('change', () => {
-      const qtd = parseInt(document.getElementById('qtd-volumes').value || '0', 10);
-      const container = document.getElementById('container-volumes');
+      sincronizarRegistrosFotograficos();
+      alternarAbaFotos('lacres');
+    });
 
-      if (!document.getElementById('tipo-carga').value || !qtd || qtd < 1) return;
-
-      let atual = container.querySelectorAll('.volume-box').length;
-
-      while (atual < qtd) {
-        addV(null, true);
-        atual++;
-      }
-
-      while (atual > qtd && atual > 1) {
-        container.lastElementChild?.remove();
-        atual--;
-      }
-
-      reordenar();
+    document.getElementById('qtd-volumes').addEventListener('input', () => {
+      sincronizarRegistrosFotograficos();
     });
 
     window.addEventListener('load', async () => {
       try {
         atualizarTextosHero();
+        atualizarCampoDataCarregamento();
+        atualizarResumoRegistros({ lacres: 0, carregamentos: 0 });
+        alternarAbaFotos('lacres');
         await abrirBanco();
         await migrarLocalStorageParaIndexedDB();
         await migrarIndexedDBLegado();
