@@ -1845,7 +1845,7 @@
       const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-page pdf-page--compact">
+        <section class="pdf-page">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -2043,8 +2043,9 @@
     }
 
     async function renderizarPaginaParaImagem(pagina, escalaCanvas) {
-      const largura = pagina.scrollWidth || pagina.offsetWidth;
-      const altura = pagina.scrollHeight || pagina.offsetHeight;
+      const rect = pagina.getBoundingClientRect();
+      const largura = Math.ceil(rect.width);
+      const altura = Math.ceil(rect.height);
 
       const canvas = await html2canvas(pagina, {
         scale: escalaCanvas,
@@ -2053,8 +2054,8 @@
         backgroundColor: '#FFFFFF',
         logging: false,
         removeContainer: true,
-        scrollX: -window.scrollX,
-        scrollY: -window.scrollY,
+        scrollX: 0,
+        scrollY: 0,
         width: largura,
         height: altura,
         windowWidth: largura,
@@ -2070,15 +2071,8 @@
       return canvas;
     }
 
-    function obterDimensoesPaginaPDF(pagina, canvas) {
-      const larguraMm = 210;
-
-      if (!pagina.classList.contains('pdf-page--compact')) {
-        return { larguraMm, alturaMm: 297 };
-      }
-
-      const alturaMm = Number(((canvas.height * larguraMm) / canvas.width).toFixed(2));
-      return { larguraMm, alturaMm: Math.max(10, alturaMm) };
+    function obterDimensoesPaginaPDF() {
+      return { larguraMm: 210, alturaMm: 297 };
     }
 
     function baixarBlob(blob, nomeArquivo) {
@@ -2143,17 +2137,15 @@
             configPDF.escalaCanvas
           );
 
-          const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], canvasPagina);
+          const { larguraMm, alturaMm } = obterDimensoesPaginaPDF();
 
           if (!doc) {
             doc = new jsPDF({
               orientation: 'portrait',
               unit: 'mm',
-              format: [larguraMm, alturaMm],
+              format: 'a4',
               compress: false
             });
-          } else if (paginas[i].classList.contains('pdf-page--compact')) {
-            doc.addPage([larguraMm, alturaMm], 'portrait');
           } else {
             doc.addPage('a4', 'portrait');
           }
