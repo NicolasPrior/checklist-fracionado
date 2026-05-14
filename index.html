@@ -555,11 +555,16 @@
       min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:4px;
     }
 
-    .pdf-page--cover .pdf-main{
+    .pdf-page--compact{
+      height:auto;
       min-height:0;
-      overflow:hidden;
-      display:grid;
-      grid-template-rows:auto auto auto minmax(0,1fr);
+      overflow:visible;
+    }
+
+    .pdf-page--compact .pdf-sheet{
+      height:auto;
+      min-height:0;
+      grid-template-rows:auto auto auto;
     }
 
     .pdf-hero{
@@ -723,20 +728,10 @@
       height:205px;
     }
 
-    .pdf-cover-gallery{
-      display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0;
-    }
-
-    .pdf-cover-grid{
-      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;min-height:0;
-    }
-
-    .pdf-cover-grid .pdf-photo-card{
-      display:flex;flex-direction:column;min-height:0;
-    }
-
-    .pdf-cover-grid .pdf-photo-frame{
-      flex:1;height:auto;min-height:170px;
+    .pdf-page--compact .pdf-main{
+      overflow:visible;
+      min-height:0;
+      flex:none;
     }
 
     .pdf-footer{
@@ -774,10 +769,6 @@
       .panel:not(.registro-card)::after{width:132px;height:132px;right:10px;bottom:10px}
       .botoes-fixos{width:calc(100% - 12px);padding:10px;gap:10px;border-radius:22px}
       .btn{height:52px;font-size:11px}
-    }
-
-    @media (max-width: 520px){
-      .pdf-cover-grid{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -1849,16 +1840,12 @@
       const { campos, registros, regra, geradoEm } = obterDadosPDF();
       const listaLacres = registros.lacres.map((src, index) => ({ numero: index + 1, src }));
       const listaCarregamentos = registros.carregamentos.map((src, index) => ({ numero: index + 1, src }));
-      const quantidadeLacresNaCapa = listaLacres.length ? 1 : 0;
-      const quantidadeCarregamentosNaCapa = listaCarregamentos.length ? 1 : 0;
-      const lacresRestantes = listaLacres.slice(quantidadeLacresNaCapa);
-      const carregamentosRestantes = listaCarregamentos.slice(quantidadeCarregamentosNaCapa);
       const root = document.getElementById('pdf-render-root');
       const paginas = [];
-      const totalPaginas = Math.max(1, 1 + Math.ceil(lacresRestantes.length / 2) + Math.ceil(carregamentosRestantes.length / 2));
+      const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-page pdf-page--cover">
+        <section class="pdf-page pdf-page--compact">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -1932,21 +1919,6 @@
                   ${montarMetaCard('Critério aplicado', regra, true)}
                 </div>
               </section>
-
-              <section class="pdf-section pdf-cover-gallery">
-                <div class="pdf-section-head">
-                  <div>
-                    <span>Prévia visual</span>
-                    <h2>Primeiros registros da operação</h2>
-                  </div>
-                  <p>Essa página aproveita o espaço final para destacar as primeiras evidências coletadas.</p>
-                </div>
-
-                <div class="pdf-cover-grid">
-                  ${montarFotoPDF('Primeiro lacre registrado', listaLacres[0]?.src || '')}
-                  ${montarFotoPDF('Primeiro carregamento registrado', listaCarregamentos[0]?.src || '')}
-                </div>
-              </section>
             </div>
 
             <div class="pdf-footer">
@@ -1957,8 +1929,8 @@
         </section>
       `);
 
-      for (let i = 0; i < lacresRestantes.length; i += 2) {
-        const dupla = lacresRestantes.slice(i, i + 2);
+      for (let i = 0; i < listaLacres.length; i += 2) {
+        const dupla = listaLacres.slice(i, i + 2);
         const paginaAtual = paginas.length + 1;
 
         paginas.push(`
@@ -2001,8 +1973,8 @@
         `);
       }
 
-      for (let i = 0; i < carregamentosRestantes.length; i += 2) {
-        const dupla = carregamentosRestantes.slice(i, i + 2);
+      for (let i = 0; i < listaCarregamentos.length; i += 2) {
+        const dupla = listaCarregamentos.slice(i, i + 2);
         const paginaAtual = paginas.length + 1;
 
         paginas.push(`
@@ -2098,6 +2070,17 @@
       return canvas;
     }
 
+    function obterDimensoesPaginaPDF(pagina, canvas) {
+      const larguraMm = 210;
+
+      if (!pagina.classList.contains('pdf-page--compact')) {
+        return { larguraMm, alturaMm: 297 };
+      }
+
+      const alturaMm = Number(((canvas.height * larguraMm) / canvas.width).toFixed(2));
+      return { larguraMm, alturaMm: Math.max(10, alturaMm) };
+    }
+
     function baixarBlob(blob, nomeArquivo) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2150,12 +2133,7 @@
         const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
 
         atualizarStatusLoading('Convertendo páginas em PDF...');
-        const doc = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4',
-          compress: false
-        });
+        let doc = null;
 
         for (let i = 0; i < paginas.length; i++) {
           atualizarStatusLoading(`Gerando página ${i + 1} de ${paginas.length}...`);
@@ -2165,8 +2143,22 @@
             configPDF.escalaCanvas
           );
 
-          if (i > 0) doc.addPage('a4', 'portrait');
-          doc.addImage(canvasPagina, 'PNG', 0, 0, 210, 297);
+          const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], canvasPagina);
+
+          if (!doc) {
+            doc = new jsPDF({
+              orientation: 'portrait',
+              unit: 'mm',
+              format: [larguraMm, alturaMm],
+              compress: false
+            });
+          } else if (paginas[i].classList.contains('pdf-page--compact')) {
+            doc.addPage([larguraMm, alturaMm], 'portrait');
+          } else {
+            doc.addPage('a4', 'portrait');
+          }
+
+          doc.addImage(canvasPagina, 'PNG', 0, 0, larguraMm, alturaMm);
         }
 
         atualizarStatusLoading('Salvando arquivo PDF...');
