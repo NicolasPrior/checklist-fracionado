@@ -511,8 +511,14 @@
     }
 
     #pdf-render-root{
-      position:fixed;left:-100000px;top:0;width:794px;z-index:-1;
-      pointer-events:none;visibility:visible;opacity:1;
+      position:fixed;
+      left:-9999px;
+      top:0;
+      width:794px;
+      z-index:-1;
+      pointer-events:none;
+      visibility:visible;
+      opacity:1;
     }
 
     .pdf-document{width:794px;background:#FFFFFF}
@@ -1252,6 +1258,17 @@
           img.addEventListener('error', finalizar, { once: true });
         });
       }));
+    }
+
+    async function aguardarLayoutPDF(container) {
+      if (document.fonts?.ready) {
+        try {
+          await document.fonts.ready;
+        } catch {}
+      }
+
+      await aguardarImagensCarregadas(container);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }
 
     function abrirNoChromeAndroid() {
@@ -2215,18 +2232,22 @@
     }
 
     async function renderizarPaginaParaImagem(pagina, escalaCanvas) {
+      const largura = pagina.scrollWidth || pagina.offsetWidth;
+      const altura = pagina.scrollHeight || pagina.offsetHeight;
+
       const canvas = await html2canvas(pagina, {
         scale: escalaCanvas,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#FFFFFF',
         logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        width: pagina.offsetWidth,
-        height: pagina.offsetHeight,
-        windowWidth: pagina.scrollWidth,
-        windowHeight: pagina.scrollHeight
+        removeContainer: true,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
+        width: largura,
+        height: altura,
+        windowWidth: largura,
+        windowHeight: altura
       });
 
       const ctx = canvas.getContext('2d');
@@ -2251,6 +2272,7 @@
 
     async function gerarPDF() {
       const loading = document.getElementById('loading');
+      const scrollOriginal = { x: window.scrollX, y: window.scrollY };
       loading.style.display = 'block';
 
       try {
@@ -2270,11 +2292,14 @@
           return;
         }
 
+        window.scrollTo(0, 0);
+        await esperar(120);
+
         atualizarStatusLoading('Montando as páginas do checklist...');
         const root = construirPaginasPDF();
 
-        await esperar(300);
-        await aguardarImagensCarregadas(root);
+        await esperar(180);
+        await aguardarLayoutPDF(root);
 
         const paginas = Array.from(root.querySelectorAll('.pdf-page'));
         if (!paginas.length) {
@@ -2318,6 +2343,7 @@
         console.error('Erro ao gerar PDF:', erro);
         alert('Não foi possível gerar o PDF neste dispositivo.');
       } finally {
+        window.scrollTo(scrollOriginal.x, scrollOriginal.y);
         setTimeout(() => {
           loading.style.display = 'none';
         }, 650);
