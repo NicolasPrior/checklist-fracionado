@@ -2318,14 +2318,29 @@
         const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
 
         atualizarStatusLoading('Convertendo páginas em PDF...');
+        const primeiraPagina = paginas[0];
+        const primeiraCanvasOriginal = await renderizarPaginaParaImagem(
+          primeiraPagina,
+          configPDF.escalaCanvas
+        );
+        const primeiraIsCapa = primeiraPagina.classList.contains('pdf-page-cover');
+        const primeiraCanvasFinal = primeiraIsCapa
+          ? obterCanvasRecortado(primeiraCanvasOriginal, obterAlturaCorteCapa(primeiraPagina, primeiraCanvasOriginal))
+          : primeiraCanvasOriginal;
+        const primeiraAlturaPagina = primeiraIsCapa
+          ? Number((210 * primeiraCanvasFinal.height / primeiraCanvasFinal.width).toFixed(2))
+          : 297;
+
         const doc = new jsPDF({
           orientation: 'portrait',
           unit: 'mm',
-          format: 'a4',
+          format: primeiraIsCapa ? [210, primeiraAlturaPagina] : 'a4',
           compress: false
         });
 
-        for (let i = 0; i < paginas.length; i++) {
+        doc.addImage(primeiraCanvasFinal, 'PNG', 0, 0, 210, primeiraAlturaPagina);
+
+        for (let i = 1; i < paginas.length; i++) {
           atualizarStatusLoading(`Gerando página ${i + 1} de ${paginas.length}...`);
 
           const canvasPagina = await renderizarPaginaParaImagem(
@@ -2333,23 +2348,8 @@
             configPDF.escalaCanvas
           );
 
-          const isCapa = paginas[i].classList.contains('pdf-page-cover');
-          const canvasFinal = isCapa
-            ? obterCanvasRecortado(canvasPagina, obterAlturaCorteCapa(paginas[i], canvasPagina))
-            : canvasPagina;
-          const alturaPagina = isCapa
-            ? Number((210 * canvasFinal.height / canvasFinal.width).toFixed(2))
-            : 297;
-
-          if (i > 0) {
-            doc.addPage(isCapa ? [210, alturaPagina] : 'a4', 'portrait');
-          } else if (isCapa) {
-            doc.deletePage(1);
-            doc.addPage([210, alturaPagina], 'portrait');
-            doc.setPage(1);
-          }
-
-          doc.addImage(canvasFinal, 'PNG', 0, 0, 210, alturaPagina);
+          doc.addPage('a4', 'portrait');
+          doc.addImage(canvasPagina, 'PNG', 0, 0, 210, 297);
         }
 
         atualizarStatusLoading('Salvando arquivo PDF...');
