@@ -516,9 +516,10 @@
     }
 
     .pdf-document{width:794px;background:#FFFFFF}
-    .pdf-page{width:794px;height:1122px;padding:9px;overflow:hidden;background:#FFFFFF;margin:0}
+    .pdf-render-page{width:794px;padding:9px;background:#FFFFFF;margin:0}
+    .pdf-page{height:1122px;overflow:hidden}
     .pdf-page-cover{height:auto;overflow:visible}
-    .pdf-page + .pdf-page{margin-top:0}
+    .pdf-render-page + .pdf-render-page{margin-top:0}
 
     .pdf-sheet{
       position:relative;isolation:isolate;
@@ -2026,7 +2027,7 @@
       const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-page pdf-page-cover">
+        <section class="pdf-render-page pdf-page-cover">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -2115,7 +2116,7 @@
         const paginaAtual = paginas.length + 1;
 
         paginas.push(`
-          <section class="pdf-page">
+          <section class="pdf-render-page pdf-page">
             <div class="pdf-sheet">
               <div class="pdf-topline">
                 <div class="pdf-brand-cluster">
@@ -2159,7 +2160,7 @@
         const paginaAtual = paginas.length + 1;
 
         paginas.push(`
-          <section class="pdf-page">
+          <section class="pdf-render-page pdf-page">
             <div class="pdf-sheet">
               <div class="pdf-topline">
                 <div class="pdf-brand-cluster">
@@ -2285,7 +2286,7 @@
         await esperar(300);
         await aguardarImagensCarregadas(root);
 
-        const paginas = Array.from(root.querySelectorAll('.pdf-page'));
+        const paginas = Array.from(root.querySelectorAll('.pdf-render-page'));
         if (!paginas.length) {
           throw new Error('Nenhuma página foi montada.');
         }
