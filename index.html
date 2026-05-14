@@ -518,29 +518,12 @@
     .pdf-document{width:794px;background:#FFFFFF}
     .pdf-render-page{width:794px;padding:9px;background:#FFFFFF;margin:0}
     .pdf-page{height:1122px;overflow:hidden}
-    .pdf-page-cover{height:auto;overflow:visible}
     .pdf-render-page + .pdf-render-page{margin-top:0}
 
     .pdf-sheet{
       position:relative;isolation:isolate;
       width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;min-height:0;
       border:1px solid #DBE8F0;border-radius:18px;background:#FFFFFF;padding:7px 7px 5px;overflow:hidden;
-    }
-
-    .pdf-page-cover .pdf-sheet{
-      height:auto;grid-template-rows:auto auto auto;
-    }
-
-    .pdf-page-cover .pdf-main{
-      min-height:auto;
-    }
-
-    .pdf-page-cover .pdf-sheet::before{
-      display:none;
-    }
-
-    .pdf-page-cover .pdf-footer{
-      display:none;
     }
 
     .pdf-sheet::before{
@@ -2035,7 +2018,7 @@
       const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-render-page pdf-page-cover">
+        <section class="pdf-render-page pdf-page pdf-page-cover">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -2233,11 +2216,6 @@
     }
 
     async function renderizarPaginaParaImagem(pagina, escalaCanvas) {
-      const larguraRender = pagina.scrollWidth || pagina.offsetWidth;
-      const alturaRender = pagina.classList.contains('pdf-page-cover')
-        ? (pagina.scrollHeight || pagina.offsetHeight)
-        : pagina.offsetHeight;
-
       const canvas = await html2canvas(pagina, {
         scale: escalaCanvas,
         useCORS: true,
@@ -2246,10 +2224,10 @@
         logging: false,
         scrollX: 0,
         scrollY: 0,
-        width: larguraRender,
-        height: alturaRender,
-        windowWidth: larguraRender,
-        windowHeight: alturaRender
+        width: pagina.offsetWidth,
+        height: pagina.offsetHeight,
+        windowWidth: pagina.scrollWidth,
+        windowHeight: pagina.scrollHeight
       });
 
       const ctx = canvas.getContext('2d');
@@ -2309,26 +2287,14 @@
         const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
 
         atualizarStatusLoading('Convertendo páginas em PDF...');
-        const primeiraPagina = paginas[0];
-        const primeiraCanvasOriginal = await renderizarPaginaParaImagem(
-          primeiraPagina,
-          configPDF.escalaCanvas
-        );
-        const primeiraIsCapa = primeiraPagina.classList.contains('pdf-page-cover');
-        const primeiraAlturaPagina = primeiraIsCapa
-          ? Number((210 * primeiraCanvasOriginal.height / primeiraCanvasOriginal.width).toFixed(2))
-          : 297;
-
         const doc = new jsPDF({
           orientation: 'portrait',
           unit: 'mm',
-          format: primeiraIsCapa ? [210, primeiraAlturaPagina] : 'a4',
+          format: 'a4',
           compress: false
         });
 
-        doc.addImage(primeiraCanvasOriginal, 'PNG', 0, 0, 210, primeiraAlturaPagina);
-
-        for (let i = 1; i < paginas.length; i++) {
+        for (let i = 0; i < paginas.length; i++) {
           atualizarStatusLoading(`Gerando página ${i + 1} de ${paginas.length}...`);
 
           const canvasPagina = await renderizarPaginaParaImagem(
@@ -2336,7 +2302,7 @@
             configPDF.escalaCanvas
           );
 
-          doc.addPage('a4', 'portrait');
+          if (i > 0) doc.addPage('a4', 'portrait');
           doc.addImage(canvasPagina, 'PNG', 0, 0, 210, 297);
         }
 
