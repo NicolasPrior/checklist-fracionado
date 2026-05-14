@@ -535,6 +535,14 @@
       min-height:auto;
     }
 
+    .pdf-page-cover .pdf-sheet::before{
+      display:none;
+    }
+
+    .pdf-page-cover .pdf-footer{
+      display:none;
+    }
+
     .pdf-sheet::before{
       content:'';position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
       width:285px;height:285px;background:url('./Logo_Beija-flor_Transp_.jpg') center/contain no-repeat;
@@ -2225,6 +2233,11 @@
     }
 
     async function renderizarPaginaParaImagem(pagina, escalaCanvas) {
+      const larguraRender = pagina.scrollWidth || pagina.offsetWidth;
+      const alturaRender = pagina.classList.contains('pdf-page-cover')
+        ? (pagina.scrollHeight || pagina.offsetHeight)
+        : pagina.offsetHeight;
+
       const canvas = await html2canvas(pagina, {
         scale: escalaCanvas,
         useCORS: true,
@@ -2233,10 +2246,10 @@
         logging: false,
         scrollX: 0,
         scrollY: 0,
-        width: pagina.offsetWidth,
-        height: pagina.offsetHeight,
-        windowWidth: pagina.scrollWidth,
-        windowHeight: pagina.scrollHeight
+        width: larguraRender,
+        height: alturaRender,
+        windowWidth: larguraRender,
+        windowHeight: alturaRender
       });
 
       const ctx = canvas.getContext('2d');
