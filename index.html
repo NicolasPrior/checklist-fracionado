@@ -190,9 +190,7 @@
       box-shadow:var(--sombra-media);
     }
 
-    .panel > *{
-      position:relative;z-index:1;
-    }
+    .panel > *{position:relative;z-index:1}
 
     .panel:not(.registro-card)::after{
       content:'';position:absolute;right:16px;bottom:8px;width:180px;height:180px;
@@ -261,9 +259,7 @@
       background:linear-gradient(90deg,var(--azul-800),var(--teal-800),var(--verde-800));
     }
 
-    .photo-tabs{
-      display:flex;gap:10px;margin-bottom:18px;
-    }
+    .photo-tabs{display:flex;gap:10px;margin-bottom:18px}
 
     .photo-tab{
       flex:1;height:48px;border:none;border-radius:16px;cursor:pointer;
@@ -304,15 +300,6 @@
       display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;
       background:rgba(0,91,110,.08);color:var(--teal-800);
       font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;
-    }
-
-    .foto-col label{
-      display:block;margin-bottom:10px;color:var(--texto-suave);
-      font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;text-align:center;
-    }
-
-    .foto-col .foto-dica{
-      margin-top:8px;text-align:center;color:var(--texto-suave);font-size:12px;line-height:1.25;
     }
 
     .box-imagem{
@@ -384,25 +371,6 @@
       border-color:rgba(197,57,57,.45)!important;
       background:linear-gradient(180deg,#FFF9F9 0%,#FFF0F0 100%)!important;
       box-shadow:0 0 0 4px rgba(197,57,57,.08);
-    }
-
-    .header-volume{
-      display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;
-    }
-
-    .volume-title-wrap span{
-      display:inline-flex;align-items:center;padding:8px 12px;margin-bottom:8px;border-radius:999px;
-      background:rgba(0,91,110,.08);color:var(--teal-800);
-      font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;
-    }
-
-    .header-volume h4{font-size:20px;line-height:1.1}
-    .header-volume p{color:var(--texto-suave);font-size:14px}
-
-    .btn-remover{
-      border:1px solid rgba(197,57,57,.18);background:rgba(197,57,57,.08);color:var(--erro);
-      height:42px;padding:0 14px;border-radius:14px;font:700 12px/1 'Montserrat',sans-serif;
-      letter-spacing:.06em;cursor:pointer;
     }
 
     .botoes-fixos{
@@ -522,13 +490,35 @@
     }
 
     .pdf-document{width:794px;background:#FFFFFF}
-    .pdf-page{width:794px;height:1122px;padding:9px;overflow:hidden;background:#FFFFFF;margin:0}
+
+    .pdf-page{
+      width:794px;
+      height:1122px;
+      min-height:1122px;
+      padding:9px;
+      overflow:hidden;
+      background:#FFFFFF;
+      margin:0;
+    }
+
     .pdf-page + .pdf-page{margin-top:0}
+
+    .pdf-page--compact{
+      height:auto;
+      min-height:0;
+      overflow:visible;
+    }
 
     .pdf-sheet{
       position:relative;isolation:isolate;
       width:100%;height:100%;display:grid;grid-template-rows:auto 1fr auto;min-height:0;
       border:1px solid #DBE8F0;border-radius:18px;background:#FFFFFF;padding:7px 7px 5px;overflow:hidden;
+    }
+
+    .pdf-page--compact .pdf-sheet{
+      height:auto;
+      min-height:0;
+      grid-template-rows:auto auto auto;
     }
 
     .pdf-sheet::before{
@@ -537,9 +527,7 @@
       opacity:.045;pointer-events:none;z-index:0;
     }
 
-    .pdf-sheet > *{
-      position:relative;z-index:1;
-    }
+    .pdf-sheet > *{position:relative;z-index:1}
 
     .pdf-topline{
       display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;min-height:0;
@@ -577,6 +565,12 @@
 
     .pdf-main{
       min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:4px;
+    }
+
+    .pdf-page--compact .pdf-main{
+      overflow:visible;
+      min-height:0;
+      flex:none;
     }
 
     .pdf-hero{
@@ -683,22 +677,6 @@
       object-fit:contain !important;object-position:center center !important;background:#FFFFFF;image-rendering:auto;
     }
 
-    .pdf-truck-grid{
-      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;
-    }
-
-    .pdf-truck-grid .pdf-photo-card.is-placa{
-      grid-column:1 / -1;
-    }
-
-    .pdf-truck-grid .pdf-photo-frame{
-      height:165px;
-    }
-
-    .pdf-truck-grid .pdf-photo-card.is-placa .pdf-photo-frame{
-      height:185px;
-    }
-
     .pdf-page-header{
       display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
       margin-bottom:3px;padding:2px 2px 4px;border-bottom:1px solid #E0EAF2;flex-shrink:0;
@@ -761,13 +739,17 @@
       display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--texto-suave);font-size:7px;min-height:0;
     }
 
+    .pdf-page--compact .pdf-footer{
+      margin-top:6px;
+    }
+
     .pdf-footer strong{
       color:var(--teal-800);font:700 7px/1 'Montserrat',sans-serif;letter-spacing:.10em;text-transform:uppercase;
     }
 
     @media (max-width: 860px){
       .hero-main,.dados-grid,.registro-grid{grid-template-columns:1fr}
-      .panel-head,.header-volume,.hero-brand{flex-direction:column;align-items:stretch}
+      .panel-head,.hero-brand{flex-direction:column;align-items:stretch}
       .brand-lockup{align-items:flex-start}
       .status-note{min-width:0}
       .android-banner{align-items:stretch}
@@ -1280,10 +1262,6 @@
       const caminho = `${urlAtual.host}${urlAtual.pathname}${urlAtual.search}${urlAtual.hash}`;
       const intentUrl = `intent://${caminho}#Intent;scheme=${urlAtual.protocol.replace(':', '')};package=com.android.chrome;end`;
       window.location.href = intentUrl;
-    }
-
-    function obterLabelSecundario() {
-      return document.getElementById('tipo-carga').value === 'Bag in Box' ? 'Foto da carga' : 'Foto do lacre';
     }
 
     function obterSrcBox(box) {
@@ -1862,169 +1840,6 @@
       `;
     }
 
-    function construirPaginasPDFLegado() {
-      const { campos, caminhao, volumes, geradoEm } = obterDadosPDF();
-      const root = document.getElementById('pdf-render-root');
-      const paginas = [];
-      const totalPaginas = 1 + Math.ceil(volumes.length / 2);
-
-      paginas.push(`
-        <section class="pdf-page">
-          <div class="pdf-sheet">
-            <div class="pdf-topline">
-              <div class="pdf-brand-cluster">
-                <div class="pdf-brand-logo">
-                  <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
-                </div>
-                <div class="pdf-brandline">Dulcini S/A • Checklist fotográfico</div>
-              </div>
-              <div class="pdf-pagecount">Página 1 / ${totalPaginas}</div>
-            </div>
-
-            <div class="pdf-main">
-              <div class="pdf-hero">
-                <div>
-                  <div class="pdf-hero-kicker">Relatório operacional</div>
-                  <h1>Checklist de carregamento com evidência visual.</h1>
-                  <p>Documento gerado com os dados do carregamento, imagens do veículo e comprovação fotográfica dos volumes conferidos no padrão institucional da Dulcini S/A.</p>
-                </div>
-
-                <div class="pdf-hero-side">
-                  <div class="pdf-highlight">
-                    <span>Tipo de carga</span>
-                    <strong>${escaparHTML(campos.tp || '-')}</strong>
-                  </div>
-                  <div class="pdf-highlight">
-                    <span>Volumes</span>
-                    <strong>${escaparHTML(campos.q || '0')}</strong>
-                  </div>
-                  <div class="pdf-highlight">
-                    <span>Emitido em</span>
-                    <strong>${escaparHTML(geradoEm)}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <section class="pdf-section">
-                <div class="pdf-section-head">
-                  <div>
-                    <span>Dados principais</span>
-                    <h2>Informações da operação</h2>
-                  </div>
-                  <p>Os dados abaixo compõem a identificação principal deste carregamento.</p>
-                </div>
-
-                <div class="pdf-meta-grid">
-                  ${montarMetaCard('Cliente', campos.c)}
-                  ${montarMetaCard('Transportadora', campos.t)}
-                  ${montarMetaCard('Motorista', campos.m)}
-                  ${montarMetaCard('Placa do veículo', campos.p)}
-                  ${montarMetaCard('Tipo de carga', campos.tp)}
-                  ${montarMetaCard('Quantidade de volumes', campos.q)}
-                  ${montarMetaCard('Número da nota fiscal', campos.nf, true)}
-                </div>
-              </section>
-
-              <section class="pdf-section">
-                <div class="pdf-section-head">
-                  <div>
-                    <span>Registro fotográfico</span>
-                    <h2>Fotos do veículo</h2>
-                  </div>
-                  <p>Placa ampliada e sem corte na primeira página.</p>
-                </div>
-
-                <div class="pdf-truck-grid">
-                  ${montarFotoPDF('Lateral do caminhão carregado', caminhao[0] || '')}
-                  ${montarFotoPDF('Carregamento', caminhao[1] || '')}
-                  ${montarFotoPDF('Placa', caminhao[2] || '', 'is-placa')}
-                </div>
-              </section>
-            </div>
-
-            <div class="pdf-footer">
-              <span>Relatório de carregamento</span>
-              <strong>Dulcini S/A</strong>
-            </div>
-          </div>
-        </section>
-      `);
-
-      for (let i = 0; i < volumes.length; i += 2) {
-        const dupla = volumes.slice(i, i + 2);
-        const paginaAtual = paginas.length + 1;
-
-        paginas.push(`
-          <section class="pdf-page">
-            <div class="pdf-sheet">
-              <div class="pdf-topline">
-                <div class="pdf-brand-cluster">
-                  <div class="pdf-brand-logo">
-                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
-                  </div>
-                  <div class="pdf-brandline">Dulcini S/A • Volumes conferidos</div>
-                </div>
-                <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
-              </div>
-
-              <div class="pdf-main">
-                <div class="pdf-page-header">
-                  <div>
-                    <h2>Volumes conferidos</h2>
-                    <p>Volumes organizados em pares por página, com fotos ampliadas e mais nítidas.</p>
-                  </div>
-                  <div class="pdf-page-tags">
-                    <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
-                    <div class="pdf-tag">NF ${escaparHTML(campos.nf || '-')}</div>
-                    <div class="pdf-tag">Placa ${escaparHTML(campos.p || '-')}</div>
-                  </div>
-                </div>
-
-                <div class="pdf-volumes-list">
-                  ${dupla.map(volume => montarVolumePDF(volume, campos.tp)).join('')}
-                </div>
-              </div>
-
-              <div class="pdf-footer">
-                <span>Volumes ${i + 1}${dupla.length === 2 ? ` e ${i + 2}` : ''}</span>
-                <strong>Dulcini S/A</strong>
-              </div>
-            </div>
-          </section>
-        `);
-      }
-
-      root.innerHTML = `<div class="pdf-document">${paginas.join('')}</div>`;
-      return root;
-    }
-
-    function limparChecklistLegado(confirmarMensagem = true) {
-      aplicarCamposFormulario({ c:'', t:'', m:'', p:'', tp:'', q:'', nf:'' });
-
-      document.getElementById('container-volumes').innerHTML = '';
-      document.getElementById('secao-caminhao').style.display = 'none';
-      document.getElementById('painel-volumes').style.display = 'none';
-      document.getElementById('btn-add-vol').style.display = 'none';
-
-      document.querySelectorAll('#secao-caminhao .box-imagem').forEach((box) => {
-        const input = box.querySelector('input[type="file"]');
-        if (input) input.value = '';
-        preencherBoxImagem(box, '');
-      });
-
-      document.getElementById('pdf-render-root').innerHTML = '';
-      fecharPendentes();
-
-      reordenar();
-      sincronizarFotos();
-
-      if (confirmarMensagem) {
-        setTimeout(() => {
-          document.getElementById('c').focus();
-        }, 100);
-      }
-    }
-
     function construirPaginasPDF() {
       const { campos, registros, regra, geradoEm } = obterDadosPDF();
       const listaLacres = registros.lacres.map((src, index) => ({ numero: index + 1, src }));
@@ -2034,7 +1849,7 @@
       const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-page">
+        <section class="pdf-page pdf-page--compact">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -2259,6 +2074,17 @@
       return canvas;
     }
 
+    function obterDimensoesPaginaPDF(pagina, canvas) {
+      const larguraMm = 210;
+
+      if (!pagina.classList.contains('pdf-page--compact')) {
+        return { larguraMm, alturaMm: 297 };
+      }
+
+      const alturaMm = Number(((canvas.height * larguraMm) / canvas.width).toFixed(2));
+      return { larguraMm, alturaMm: Math.max(10, alturaMm) };
+    }
+
     function baixarBlob(blob, nomeArquivo) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2311,12 +2137,7 @@
         const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
 
         atualizarStatusLoading('Convertendo páginas em PDF...');
-        const doc = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4',
-          compress: false
-        });
+        let doc = null;
 
         for (let i = 0; i < paginas.length; i++) {
           atualizarStatusLoading(`Gerando página ${i + 1} de ${paginas.length}...`);
@@ -2326,8 +2147,22 @@
             configPDF.escalaCanvas
           );
 
-          if (i > 0) doc.addPage('a4', 'portrait');
-          doc.addImage(canvasPagina, 'PNG', 0, 0, 210, 297);
+          const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], canvasPagina);
+
+          if (!doc) {
+            doc = new jsPDF({
+              orientation: 'portrait',
+              unit: 'mm',
+              format: [larguraMm, alturaMm],
+              compress: false
+            });
+          } else if (paginas[i].classList.contains('pdf-page--compact')) {
+            doc.addPage([larguraMm, alturaMm], 'portrait');
+          } else {
+            doc.addPage('a4', 'portrait');
+          }
+
+          doc.addImage(canvasPagina, 'PNG', 0, 0, larguraMm, alturaMm);
         }
 
         atualizarStatusLoading('Salvando arquivo PDF...');
@@ -2338,7 +2173,6 @@
           const desejaNovo = confirm('Deseja fazer um novo checklist?');
           if (desejaNovo) limparChecklist(true);
         }, 450);
-
       } catch (erro) {
         console.error('Erro ao gerar PDF:', erro);
         alert('Não foi possível gerar o PDF neste dispositivo.');
