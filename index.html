@@ -2257,13 +2257,14 @@
     }
 
     function obterAlturaCorteCapa(pagina, canvas) {
-      const footer = pagina.querySelector('.pdf-footer');
-      if (!footer) return canvas.height;
+      const ultimaSecao = pagina.querySelector('.pdf-main .pdf-section:last-of-type');
+      const referencia = ultimaSecao || pagina.querySelector('.pdf-footer');
+      if (!referencia) return canvas.height;
 
       const pageRect = pagina.getBoundingClientRect();
-      const footerRect = footer.getBoundingClientRect();
-      const margemInferiorPx = 12;
-      const alturaDOM = (footerRect.bottom - pageRect.top) + margemInferiorPx;
+      const referenciaRect = referencia.getBoundingClientRect();
+      const margemInferiorPx = 10;
+      const alturaDOM = (referenciaRect.bottom - pageRect.top) + margemInferiorPx;
       const fatorEscala = canvas.height / pagina.offsetHeight;
 
       return alturaDOM * fatorEscala;
