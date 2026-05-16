@@ -278,6 +278,23 @@
     .photo-panel{display:none}
     .photo-panel.is-active{display:block}
 
+    .carregamento-extra-bar{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;
+      padding:16px 18px;border-radius:20px;border:1px solid rgba(0,91,110,.14);
+      background:linear-gradient(135deg,rgba(231,241,251,.96),rgba(243,251,246,.96));
+      box-shadow:0 10px 20px rgba(0,53,157,.05);
+    }
+
+    .carregamento-extra-bar p{
+      color:var(--texto-suave);font-size:14px;line-height:1.45;
+    }
+
+    .btn-carregamento-extra{
+      flex:0 0 auto;min-width:210px;height:46px;padding:0 18px;border:none;border-radius:16px;cursor:pointer;
+      color:#fff;background:var(--gradiente-suporte);box-shadow:0 12px 22px rgba(0,91,110,.12);
+      font:700 12px/1 'Montserrat',sans-serif;letter-spacing:.06em;text-transform:uppercase;
+    }
+
     .registro-grid{
       display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;
     }
@@ -296,10 +313,35 @@
       max-width:170px;color:var(--texto-suave);font-size:13px;line-height:1.35;text-align:right;
     }
 
+    .registro-head-side{
+      display:grid;gap:8px;justify-items:end;
+    }
+
     .registro-seq{
       display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;
       background:rgba(0,91,110,.08);color:var(--teal-800);
       font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;
+    }
+
+    .registro-card--extra{
+      border-color:rgba(0,53,157,.14);
+      background:linear-gradient(180deg,#FFFFFF 0%,#EEF6FC 100%);
+    }
+
+    .registro-card--extra .registro-seq{
+      background:rgba(0,53,157,.08);color:var(--azul-800);
+    }
+
+    .registro-extra-tag{
+      display:inline-flex;align-items:center;justify-content:center;min-height:24px;padding:0 10px;border-radius:999px;
+      background:rgba(0,91,110,.08);color:var(--teal-800);
+      font:700 10px/1 'Montserrat',sans-serif;letter-spacing:.10em;text-transform:uppercase;
+    }
+
+    .registro-extra-remove{
+      height:34px;padding:0 12px;border:none;border-radius:12px;cursor:pointer;
+      color:var(--erro);background:rgba(197,57,57,.10);border:1px solid rgba(197,57,57,.18);
+      font:700 11px/1 'Montserrat',sans-serif;letter-spacing:.05em;text-transform:uppercase;
     }
 
     .box-imagem{
@@ -371,6 +413,10 @@
       border-color:rgba(197,57,57,.45)!important;
       background:linear-gradient(180deg,#FFF9F9 0%,#FFF0F0 100%)!important;
       box-shadow:0 0 0 4px rgba(197,57,57,.08);
+    }
+
+    .foto-dica{
+      margin-top:12px;color:var(--texto-suave);font-size:12px;line-height:1.35;
     }
 
     .botoes-fixos{
@@ -750,7 +796,10 @@
       .status-note{min-width:0}
       .android-banner{align-items:stretch}
       .android-banner button{width:100%}
+      .carregamento-extra-bar{flex-direction:column;align-items:stretch}
+      .btn-carregamento-extra{width:100%}
       .registro-head{flex-direction:column}
+      .registro-head-side{justify-items:start}
       .registro-head p{max-width:none;text-align:left}
     }
 
@@ -906,6 +955,10 @@
         </div>
 
         <div class="photo-panel" id="aba-carregamentos">
+          <div class="carregamento-extra-bar" id="acoes-carregamentos" hidden>
+            <p id="texto-carregamento-extra">Se precisar, adicione uma foto complementar do carregamento geral, fracionados ou outra evidência sem alterar a quantidade de volumes.</p>
+            <button type="button" class="btn-carregamento-extra" onclick="adicionarRegistroExtraCarregamento()">Adicionar foto extra</button>
+          </div>
           <div class="registro-grid" id="container-carregamentos"></div>
         </div>
       </section>
@@ -1434,9 +1487,9 @@
       return { lacres: [], carregamentos: [] };
     }
 
-    function criarMarkupBoxImagem(tipo, numero, alt) {
+    function criarMarkupBoxImagem(tipo, numero, alt, label = '', extra = false) {
       return `
-        <div class="box-imagem" data-foto-tipo="${escaparHTML(tipo)}" data-foto-numero="${numero}" onclick="abrirOrigemImagem(this)">
+        <div class="box-imagem" data-foto-tipo="${escaparHTML(tipo)}" data-foto-numero="${numero}" data-foto-label="${escaparHTML(label || alt)}" data-foto-extra="${extra ? '1' : '0'}" onclick="abrirOrigemImagem(this)">
           <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
           <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
           <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
@@ -1449,23 +1502,40 @@
       `;
     }
 
-    function criarCardRegistro(tipo, numero) {
-      const titulo = tipo === 'lacre' ? `Lacre ${numero}` : `Carregamento ${numero}`;
-      const descricao = tipo === 'lacre'
-        ? 'Registre o lacre correspondente a esta posição.'
-        : 'Registre o carregamento correspondente a esta posição.';
-      const alt = tipo === 'lacre'
-        ? `Foto do lacre ${numero}`
-        : `Foto do carregamento ${numero}`;
+    function criarCardRegistro(tipo, numero, opcoes = {}) {
+      const extra = tipo === 'carregamento' && Boolean(opcoes.extra);
+      const indiceExtra = extra ? Number(opcoes.indiceExtra || numero || 1) : 0;
+      const titulo = extra
+        ? `Carregamento extra ${indiceExtra}`
+        : tipo === 'lacre'
+          ? `Lacre ${numero}`
+          : `Carregamento ${numero}`;
+      const descricao = extra
+        ? 'Use este registro para uma foto geral do carregamento, dos fracionados ou de outra evidência complementar.'
+        : tipo === 'lacre'
+          ? 'Registre o lacre correspondente a esta posição.'
+          : 'Registre o carregamento correspondente a esta posição.';
+      const alt = extra
+        ? `Foto complementar do carregamento ${indiceExtra}`
+        : tipo === 'lacre'
+          ? `Foto do lacre ${numero}`
+          : `Foto do carregamento ${numero}`;
+      const dica = extra
+        ? 'Use para visão geral, fracionados ou comprovação complementar.'
+        : 'Câmera ou galeria';
 
       return `
-        <article class="registro-card">
+        <article class="registro-card ${extra ? 'registro-card--extra' : ''}" ${extra ? `data-extra-indice="${indiceExtra}"` : ''}>
           <div class="registro-head">
             <span class="registro-seq">${escaparHTML(titulo)}</span>
-            <p>${escaparHTML(descricao)}</p>
+            <div class="registro-head-side">
+              ${extra ? '<span class="registro-extra-tag">Foto complementar</span>' : ''}
+              <p>${escaparHTML(descricao)}</p>
+              ${extra ? '<button type="button" class="registro-extra-remove" onclick="removerRegistroExtraCarregamento(this)">Remover</button>' : ''}
+            </div>
           </div>
-          ${criarMarkupBoxImagem(tipo, numero, alt)}
-          <div class="foto-dica">Câmera ou galeria</div>
+          ${criarMarkupBoxImagem(tipo, numero, alt, titulo, extra)}
+          <div class="foto-dica">${escaparHTML(dica)}</div>
         </article>
       `;
     }
@@ -1502,16 +1572,86 @@
       status.innerText = `Serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento para concluir esta operação.`;
     }
 
-    function renderizarColecaoFotos(containerId, tipo, total, fotos = []) {
+    function renderizarColecaoFotos(containerId, tipo, total, fotos = [], opcoes = {}) {
       const container = document.getElementById(containerId);
       if (!container) return;
 
-      container.innerHTML = Array.from({ length: total }, (_, index) => criarCardRegistro(tipo, index + 1)).join('');
+      const obrigatorios = Math.max(0, Number(opcoes.obrigatorios ?? total) || 0);
+
+      container.innerHTML = Array.from({ length: total }, (_, index) => {
+        const extra = tipo === 'carregamento' && index >= obrigatorios;
+        return criarCardRegistro(
+          tipo,
+          extra ? index - obrigatorios + 1 : index + 1,
+          extra ? { extra: true, indiceExtra: index - obrigatorios + 1 } : {}
+        );
+      }).join('');
 
       container.querySelectorAll('.box-imagem').forEach((box, index) => {
         const src = fotos[index] || '';
         preencherBoxImagem(box, src);
       });
+    }
+
+    function atualizarAcaoCarregamentoExtra(quantidades = { lacres: 0, carregamentos: 0 }, colecoes = null) {
+      const barra = document.getElementById('acoes-carregamentos');
+      const texto = document.getElementById('texto-carregamento-extra');
+      if (!barra || !texto) return;
+
+      if (!quantidades.carregamentos) {
+        barra.hidden = true;
+        return;
+      }
+
+      const registros = normalizarColecoesFotos(colecoes || coletarRegistros());
+      const extras = Math.max(0, registros.carregamentos.length - quantidades.carregamentos);
+
+      barra.hidden = false;
+      texto.innerText = extras
+        ? `Além das ${quantidades.carregamentos} fotos obrigatórias, você adicionou ${extras} foto${extras === 1 ? '' : 's'} extra${extras === 1 ? '' : 's'} de carregamento.`
+        : 'Se precisar, adicione uma foto complementar do carregamento geral, fracionados ou outra evidência sem alterar a quantidade de volumes.';
+    }
+
+    function adicionarRegistroExtraCarregamento() {
+      const quantidades = obterQuantidadeRegistrosEsperada();
+      if (!quantidades.carregamentos) {
+        alert('Informe o tipo de carga e a quantidade de volumes antes de adicionar uma foto extra.');
+        return;
+      }
+
+      const registros = normalizarColecoesFotos(coletarRegistros());
+      registros.carregamentos.push('');
+      sincronizarRegistrosFotograficos(registros);
+      alternarAbaFotos('carregamentos');
+
+      requestAnimationFrame(() => {
+        const extras = document.querySelectorAll('#container-carregamentos .registro-card--extra');
+        const ultimo = extras[extras.length - 1];
+        if (ultimo) ultimo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    function removerRegistroExtraCarregamento(botao) {
+      const card = botao?.closest('.registro-card--extra');
+      if (!card) return;
+
+      const box = card.querySelector('.box-imagem');
+      if (box && obterSrcBox(box) && !confirm('Deseja remover esta foto extra de carregamento?')) {
+        return;
+      }
+
+      const indiceExtra = parseInt(card.dataset.extraIndice || '0', 10);
+      const quantidades = obterQuantidadeRegistrosEsperada();
+      const registros = normalizarColecoesFotos(coletarRegistros());
+      const indiceReal = quantidades.carregamentos + indiceExtra - 1;
+
+      if (!indiceExtra || indiceReal < quantidades.carregamentos || indiceReal >= registros.carregamentos.length) {
+        return;
+      }
+
+      registros.carregamentos.splice(indiceReal, 1);
+      sincronizarRegistrosFotograficos(registros);
+      alternarAbaFotos('carregamentos');
     }
 
     function sincronizarRegistrosFotograficos(registros = null) {
@@ -1741,12 +1881,8 @@
 
         box.classList.add('foto-pendente');
 
-        const numero = box.dataset.fotoNumero || '?';
-        const tipo = box.dataset.fotoTipo === 'carregamento'
-          ? 'Carregamento'
-          : 'Lacres';
-
-        faltantes.push(`${tipo} - Registro ${numero}`);
+        const label = box.dataset.fotoLabel || `Registro ${box.dataset.fotoNumero || '?'}`;
+        faltantes.push(label);
       });
 
       return faltantes;
@@ -1813,11 +1949,19 @@
       `;
     }
 
-    function montarRegistroPDF(tipo, numero, src) {
-      const titulo = tipo === 'lacre' ? `Lacre ${numero}` : `Carregamento ${numero}`;
-      const descricao = tipo === 'lacre'
-        ? `Registro fotográfico do lacre ${numero}.`
-        : `Registro fotográfico do carregamento ${numero}.`;
+    function montarRegistroPDF(tipo, numero, src, opcoes = {}) {
+      const extra = tipo === 'carregamento' && Boolean(opcoes.extra);
+      const indiceExtra = extra ? Number(opcoes.indiceExtra || numero || 1) : 0;
+      const titulo = extra
+        ? `Carregamento extra ${indiceExtra}`
+        : tipo === 'lacre'
+          ? `Lacre ${numero}`
+          : `Carregamento ${numero}`;
+      const descricao = extra
+        ? 'Registro fotográfico complementar do carregamento.'
+        : tipo === 'lacre'
+          ? `Registro fotográfico do lacre ${numero}.`
+          : `Registro fotográfico do carregamento ${numero}.`;
 
       return `
         <article class="pdf-volume-card">
@@ -1838,14 +1982,20 @@
 
     function construirPaginasPDF() {
       const { campos, registros, regra, geradoEm } = obterDadosPDF();
+      const quantidades = obterQuantidadeRegistrosEsperada(campos);
       const listaLacres = registros.lacres.map((src, index) => ({ numero: index + 1, src }));
-      const listaCarregamentos = registros.carregamentos.map((src, index) => ({ numero: index + 1, src }));
+      const listaCarregamentos = registros.carregamentos.map((src, index) => ({
+        numero: index + 1,
+        src,
+        extra: index >= quantidades.carregamentos,
+        indiceExtra: index - quantidades.carregamentos + 1
+      }));
       const root = document.getElementById('pdf-render-root');
       const paginas = [];
       const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-page">
+        <section class="pdf-page pdf-page--compact">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -2004,7 +2154,10 @@
                 </div>
 
                 <div class="pdf-volumes-list">
-                  ${dupla.map((registro) => montarRegistroPDF('carregamento', registro.numero, registro.src)).join('')}
+                  ${dupla.map((registro) => montarRegistroPDF('carregamento', registro.numero, registro.src, {
+                    extra: registro.extra,
+                    indiceExtra: registro.indiceExtra
+                  })).join('')}
                 </div>
               </div>
 
@@ -2043,9 +2196,8 @@
     }
 
     async function renderizarPaginaParaImagem(pagina, escalaCanvas) {
-      const rect = pagina.getBoundingClientRect();
-      const largura = Math.ceil(rect.width);
-      const altura = Math.ceil(rect.height);
+      const largura = pagina.scrollWidth || pagina.offsetWidth;
+      const altura = pagina.scrollHeight || pagina.offsetHeight;
 
       const canvas = await html2canvas(pagina, {
         scale: escalaCanvas,
@@ -2054,8 +2206,8 @@
         backgroundColor: '#FFFFFF',
         logging: false,
         removeContainer: true,
-        scrollX: 0,
-        scrollY: 0,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY,
         width: largura,
         height: altura,
         windowWidth: largura,
@@ -2071,8 +2223,15 @@
       return canvas;
     }
 
-    function obterDimensoesPaginaPDF() {
-      return { larguraMm: 210, alturaMm: 297 };
+    function obterDimensoesPaginaPDF(pagina, canvas) {
+      const larguraMm = 210;
+
+      if (!pagina.classList.contains('pdf-page--compact')) {
+        return { larguraMm, alturaMm: 297 };
+      }
+
+      const alturaMm = Number(((canvas.height * larguraMm) / canvas.width).toFixed(2));
+      return { larguraMm, alturaMm: Math.max(10, alturaMm) };
     }
 
     function baixarBlob(blob, nomeArquivo) {
@@ -2137,15 +2296,17 @@
             configPDF.escalaCanvas
           );
 
-          const { larguraMm, alturaMm } = obterDimensoesPaginaPDF();
+          const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], canvasPagina);
 
           if (!doc) {
             doc = new jsPDF({
               orientation: 'portrait',
               unit: 'mm',
-              format: 'a4',
+              format: [larguraMm, alturaMm],
               compress: false
             });
+          } else if (paginas[i].classList.contains('pdf-page--compact')) {
+            doc.addPage([larguraMm, alturaMm], 'portrait');
           } else {
             doc.addPage('a4', 'portrait');
           }
@@ -2249,7 +2410,7 @@
       if (botao) botao.blur();
     }
 
-    function atualizarResumoRegistros(quantidades = { lacres: 0, carregamentos: 0 }) {
+    function atualizarResumoRegistros(quantidades = { lacres: 0, carregamentos: 0 }, extrasCarregamento = 0) {
       const status = document.getElementById('status-registros');
       if (!status) return;
 
@@ -2262,16 +2423,16 @@
       }
 
       if (tipoSemLacre(campos.tp)) {
-        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'volume' : 'volumes'} de Bag in Box, serão exigidos apenas ${quantidades.carregamentos} registros de carregamento. Não há registros de lacre para este tipo de carga.`;
+        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'volume' : 'volumes'} de Bag in Box, serão exigidos apenas ${quantidades.carregamentos} registros de carregamento.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} extra${extrasCarregamento === 1 ? '' : 's'} adicionada${extrasCarregamento === 1 ? '' : 's'}.` : ' Não há registros de lacre para este tipo de carga.'}`;
         return;
       }
 
       if (tipoDuplicaRegistros(campos.tp)) {
-        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'container' : 'containers'}, serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento.`;
+        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'container' : 'containers'}, serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} extra${extrasCarregamento === 1 ? '' : 's'} de carregamento.` : ''}`;
         return;
       }
 
-      status.innerText = `Serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento para concluir esta operação.`;
+      status.innerText = `Serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento para concluir esta operação.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} extra${extrasCarregamento === 1 ? '' : 's'} de carregamento.` : ''}`;
     }
 
     function sincronizarRegistrosFotograficos(registros = null) {
@@ -2279,7 +2440,8 @@
       const campos = coletarCamposFormulario();
       const quantidades = obterQuantidadeRegistrosEsperada(campos);
       const totalLacres = quantidades.lacres || colecoes.lacres.length;
-      const totalCarregamentos = quantidades.carregamentos || colecoes.carregamentos.length;
+      const totalCarregamentos = Math.max(quantidades.carregamentos, colecoes.carregamentos.length);
+      const extrasCarregamento = Math.max(0, totalCarregamentos - quantidades.carregamentos);
       const painel = document.getElementById('painel-registros');
       const lacres = document.getElementById('container-lacres');
       const carregamentos = document.getElementById('container-carregamentos');
@@ -2293,22 +2455,28 @@
         carregamentos.innerHTML = '';
         atualizarVisibilidadeAbasFotos({ lacres: 0, carregamentos: 0 }, campos.tp);
         atualizarDescricaoRegistro(campos.tp);
+        atualizarAcaoCarregamentoExtra({ lacres: 0, carregamentos: 0 }, { lacres: [], carregamentos: [] });
         atualizarResumoRegistros({ lacres: 0, carregamentos: 0 });
         return;
       }
 
-      renderizarColecaoFotos('container-lacres', 'lacre', totalLacres, colecoes.lacres);
-      renderizarColecaoFotos('container-carregamentos', 'carregamento', totalCarregamentos, colecoes.carregamentos);
+      renderizarColecaoFotos('container-lacres', 'lacre', totalLacres, colecoes.lacres, {
+        obrigatorios: quantidades.lacres
+      });
+      renderizarColecaoFotos('container-carregamentos', 'carregamento', totalCarregamentos, colecoes.carregamentos, {
+        obrigatorios: quantidades.carregamentos
+      });
       atualizarVisibilidadeAbasFotos({
         lacres: totalLacres,
         carregamentos: totalCarregamentos
       }, campos.tp);
+      atualizarAcaoCarregamentoExtra(quantidades, colecoes);
       atualizarDescricaoRegistro(campos.tp);
       alternarAbaFotos(obterAbaPadraoFotos(campos.tp));
       atualizarResumoRegistros({
-        lacres: totalLacres,
-        carregamentos: totalCarregamentos
-      });
+        lacres: quantidades.lacres,
+        carregamentos: quantidades.carregamentos
+      }, extrasCarregamento);
       sincronizarFotos(painel);
     }
 
@@ -2330,17 +2498,17 @@
 
       if (!qtdEsperada.carregamentos) return false;
       return qtdEsperada.lacres === qtdAtual.lacres.length
-        && qtdEsperada.carregamentos === qtdAtual.carregamentos.length;
+        && qtdAtual.carregamentos.length >= qtdEsperada.carregamentos;
     }
 
     function obterDadosPDF() {
       const campos = coletarCamposFormulario();
       const registros = normalizarColecoesFotos(coletarRegistros());
       const regra = tipoSemLacre(campos.tp)
-        ? 'Para Bag in Box, cada volume exige apenas um registro de carregamento.'
+        ? 'Para Bag in Box, cada volume exige apenas um registro de carregamento. Fotos extras podem ser adicionadas quando necessário.'
         : tipoDuplicaRegistros(campos.tp)
-          ? 'Cada container exige dois registros de lacre e um registro de carregamento.'
-          : 'Cada volume exige um registro de lacre e um de carregamento.';
+          ? 'Cada container exige dois registros de lacre e um registro de carregamento. Fotos extras de carregamento podem ser adicionadas quando necessário.'
+          : 'Cada volume exige um registro de lacre e um de carregamento. Fotos extras de carregamento podem ser adicionadas quando necessário.';
 
       return {
         campos,
