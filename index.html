@@ -261,6 +261,10 @@
       font:600 16px/1 'Source Sans 3',sans-serif;outline:none;
     }
 
+    .campo input[type="text"]{
+      text-transform:uppercase;
+    }
+
     .campo-erro input,.campo-erro select{
       border-color:rgba(197,57,57,.45)!important;
       background:rgba(255,245,245,.95)!important;
@@ -1449,30 +1453,60 @@
       return tipo === 'Container' || tipo === 'Container do Cliente';
     }
 
+    function normalizarTextoMaiusculo(valor = '') {
+      return String(valor || '').toLocaleUpperCase('pt-BR');
+    }
+
+    function aplicarMaiusculoNoCampo(input) {
+      if (!input || input.type !== 'text' || input.readOnly) return;
+
+      const inicio = input.selectionStart;
+      const fim = input.selectionEnd;
+      input.value = normalizarTextoMaiusculo(input.value);
+
+      if (typeof inicio === 'number' && typeof fim === 'number') {
+        input.setSelectionRange(inicio, fim);
+      }
+    }
+
+    function configurarCamposMaiusculos() {
+      document.querySelectorAll('#container-campos input[type="text"]:not([readonly])').forEach((input) => {
+        if (input.dataset.uppercaseReady === '1') {
+          aplicarMaiusculoNoCampo(input);
+          return;
+        }
+
+        input.dataset.uppercaseReady = '1';
+        aplicarMaiusculoNoCampo(input);
+        input.addEventListener('input', () => aplicarMaiusculoNoCampo(input));
+      });
+    }
+
     function coletarCamposFormulario() {
       return {
-        c: document.getElementById('c').value.trim(),
-        t: document.getElementById('t').value.trim(),
-        m: document.getElementById('m').value.trim(),
-        cr: document.getElementById('colaborador-responsavel').value.trim(),
+        c: normalizarTextoMaiusculo(document.getElementById('c').value.trim()),
+        t: normalizarTextoMaiusculo(document.getElementById('t').value.trim()),
+        m: normalizarTextoMaiusculo(document.getElementById('m').value.trim()),
+        cr: normalizarTextoMaiusculo(document.getElementById('colaborador-responsavel').value.trim()),
         dc: document.getElementById('data-carregamento').value.trim(),
-        p: document.getElementById('p').value.trim(),
+        p: normalizarTextoMaiusculo(document.getElementById('p').value.trim()),
         tp: document.getElementById('tipo-carga').value,
         q: document.getElementById('qtd-volumes').value.trim(),
-        nf: document.getElementById('nota-fiscal').value.trim()
+        nf: normalizarTextoMaiusculo(document.getElementById('nota-fiscal').value.trim())
       };
     }
 
     function aplicarCamposFormulario(campos = {}) {
-      document.getElementById('c').value = campos.c || '';
-      document.getElementById('t').value = campos.t || '';
-      document.getElementById('m').value = campos.m || '';
-      document.getElementById('colaborador-responsavel').value = campos.cr || '';
+      document.getElementById('c').value = normalizarTextoMaiusculo(campos.c || '');
+      document.getElementById('t').value = normalizarTextoMaiusculo(campos.t || '');
+      document.getElementById('m').value = normalizarTextoMaiusculo(campos.m || '');
+      document.getElementById('colaborador-responsavel').value = normalizarTextoMaiusculo(campos.cr || '');
       atualizarCampoDataCarregamento(campos.dc || '');
-      document.getElementById('p').value = campos.p || '';
+      document.getElementById('p').value = normalizarTextoMaiusculo(campos.p || '');
       document.getElementById('tipo-carga').value = campos.tp || '';
       document.getElementById('qtd-volumes').value = campos.q || '';
-      document.getElementById('nota-fiscal').value = campos.nf || '';
+      document.getElementById('nota-fiscal').value = normalizarTextoMaiusculo(campos.nf || '');
+      configurarCamposMaiusculos();
     }
 
     function obterQuantidadeRegistrosEsperada(campos = null) {
@@ -2547,6 +2581,7 @@
       try {
         atualizarTextosHero();
         atualizarCampoDataCarregamento();
+        configurarCamposMaiusculos();
         atualizarResumoRegistros({ lacres: 0, carregamentos: 0 });
         alternarAbaFotos('lacres');
         await abrirBanco();
