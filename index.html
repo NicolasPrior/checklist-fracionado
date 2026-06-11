@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Checklist de Carregamento - Dulcini S/A</title>
+  <title>Checklist de carregamento fracionado | Dulcini S/A</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -862,7 +862,7 @@
 </head>
 <body>
   <button type="button" id="btn-abrir-pendentes" onclick="abrirPendentes()">
-    PENDENTES <span id="count-pendentes">0</span>
+    Pendências <span id="count-pendentes">0</span>
   </button>
 
   <main id="render-area">
@@ -874,23 +874,23 @@
           </div>
           <div class="brand-copy">
             <div class="hero-pill">Dulcini S/A</div>
-            <div class="hero-caption">Checklist operacional de carregamento com registro fotográfico e geração de PDF.</div>
+            <div class="hero-caption">Checklist de carregamento fracionado com registro fotográfico e geração de PDF.</div>
           </div>
         </div>
       </div>
 
       <div class="hero-main">
         <div class="hero-copy">
-          <h1>Checklist de carregamento com rastreabilidade padrão Dulcini.</h1>
-          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento institucional com capa inicial e páginas internas organizadas em pares de registros.</p>
+          <h1>Checklist de carregamento fracionado com rastreabilidade Dulcini.</h1>
+          <p>Preencha os dados da operação, registre as fotos obrigatórias e gere um documento institucional com página inicial e páginas internas organizadas em pares de registros.</p>
         </div>
 
         <div class="hero-guide">
-          <strong>Fluxo do PDF</strong>
+          <strong>Estrutura do PDF</strong>
           <ul>
             <li><span>01</span> Página 1 com os dados gerais da operação e o resumo fotográfico.</li>
             <li><span>02</span> Páginas internas com registros de lacres e carregamento organizados em pares.</li>
-            <li><span>03</span> Pendentes salvos localmente para retomar quando a NF estiver disponível.</li>
+            <li><span>03</span> Checklists pendentes salvos localmente para retomada posterior.</li>
           </ul>
         </div>
       </div>
@@ -899,7 +899,7 @@
     <div class="content-shell">
       <div class="android-banner" id="android-banner">
         <div>
-          <strong>Abra no Chrome para salvar o PDF</strong>
+          <strong>Abra no Chrome para gerar o PDF</strong>
           <p>Se este link estiver aberto dentro do WhatsApp, toque no botão ao lado para abri-lo no Chrome do Android. Essa é a forma mais confiável de gerar o PDF no celular.</p>
         </div>
         <button type="button" onclick="abrirNoChromeAndroid()">Abrir no Chrome</button>
@@ -910,11 +910,11 @@
           <div>
             <div class="panel-kicker">Dados da operação</div>
             <h2>Informações do carregamento</h2>
-            <p>Esses dados aparecem na primeira página do PDF e compõem o cabeçalho institucional do checklist da Dulcini.</p>
+            <p>Esses dados aparecem na primeira página do PDF e compõem o cabeçalho institucional do documento.</p>
           </div>
 
           <div class="status-note" id="status-registros">
-            Para cargas do tipo container, cada unidade gera dois registros de lacre e um de carregamento.
+            Para cargas do tipo container, cada unidade exige dois registros de lacre e um registro de carregamento.
           </div>
         </div>
 
@@ -935,7 +935,7 @@
           </div>
 
           <div class="campo">
-            <label for="colaborador-responsavel">Colaborador Responsável *</label>
+            <label for="colaborador-responsavel">Colaborador responsável *</label>
             <div class="input-shell"><input type="text" id="colaborador-responsavel" placeholder="Nome do responsável" required></div>
           </div>
 
@@ -953,11 +953,11 @@
             <label for="tipo-carga">Tipo de carga *</label>
             <div class="input-shell">
               <select id="tipo-carga" onchange="mudarTipoCarga()" required>
-                <option value="">Selecione o tipo...</option>
+                <option value="">Selecione o tipo de carga...</option>
                 <option value="Tambor">Tambor</option>
                 <option value="Container">Container</option>
-                <option value="Tambor do Cliente">Tambor do Cliente</option>
-                <option value="Container do Cliente">Container do Cliente</option>
+                <option value="Tambor do Cliente">Tambor do cliente</option>
+                <option value="Container do Cliente">Container do cliente</option>
                 <option value="Bag in Box">Bag in Box</option>
               </select>
             </div>
@@ -970,7 +970,7 @@
 
           <div class="campo full">
             <label for="nota-fiscal">Número da nota fiscal *</label>
-            <div class="input-shell"><input type="text" id="nota-fiscal" placeholder="Informe quando disponível" required></div>
+            <div class="input-shell"><input type="text" id="nota-fiscal" placeholder="Digite o número da nota fiscal" required></div>
           </div>
         </div>
       </section>
@@ -980,13 +980,13 @@
           <div>
             <div class="panel-kicker">Etapa 1</div>
             <h3>Registro fotográfico</h3>
-            <p>Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamento para concluir o registro da operação. Em cargas do tipo container, cada unidade gera dois lacres e um carregamento.</p>
+            <p>Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamentos para concluir o registro da operação. Em cargas do tipo container, cada unidade exige dois lacres e um registro de carregamento.</p>
           </div>
         </div>
 
         <div class="photo-tabs">
           <button type="button" class="photo-tab is-active" data-aba-foto="lacres" onclick="alternarAbaFotos('lacres', this)">Lacres</button>
-          <button type="button" class="photo-tab" data-aba-foto="carregamentos" onclick="alternarAbaFotos('carregamentos', this)">Carregamento</button>
+          <button type="button" class="photo-tab" data-aba-foto="carregamentos" onclick="alternarAbaFotos('carregamentos', this)">Carregamentos</button>
         </div>
 
         <div class="photo-panel is-active" id="aba-lacres">
@@ -995,8 +995,8 @@
 
         <div class="photo-panel" id="aba-carregamentos">
           <div class="carregamento-extra-bar" id="acoes-carregamentos" hidden>
-            <p id="texto-carregamento-extra">Se precisar, adicione uma foto complementar do carregamento geral, fracionados ou outra evidência sem alterar a quantidade de volumes.</p>
-            <button type="button" class="btn-carregamento-extra" onclick="adicionarRegistroExtraCarregamento()">Adicionar foto extra</button>
+            <p id="texto-carregamento-extra">Se necessário, adicione uma foto complementar do carregamento geral, dos volumes fracionados ou de outra evidência operacional, sem alterar a quantidade de volumes.</p>
+            <button type="button" class="btn-carregamento-extra" onclick="adicionarRegistroExtraCarregamento()">Adicionar foto complementar</button>
           </div>
           <div class="registro-grid" id="container-carregamentos"></div>
         </div>
@@ -1005,13 +1005,13 @@
   </main>
 
   <div class="botoes-fixos">
-    <button type="button" class="btn btn-standby" onclick="salvarParaDepois()">Salvar pendente</button>
+    <button type="button" class="btn btn-standby" onclick="salvarParaDepois()">Salvar como pendente</button>
     <button type="button" class="btn btn-pdf" onclick="gerarPDF()">Salvar PDF</button>
   </div>
 
   <div id="modal-pendentes">
     <div class="modal-conteudo">
-      <h3>Aguardando nota fiscal</h3>
+      <h3>Checklists pendentes</h3>
       <div id="lista-pendentes-corpo"></div>
       <button type="button" class="btn btn-add" style="width:100%; margin-top:14px;" onclick="fecharPendentes()">Fechar</button>
     </div>
@@ -1205,15 +1205,15 @@
       const descricao = document.querySelector('.hero-copy p');
 
       if (caption) {
-        caption.innerText = 'Controle operacional para carregamentos, com registro fotográfico e emissão de relatório em PDF.';
+        caption.innerText = 'Checklist de carregamento fracionado com registro fotográfico e geração de PDF.';
       }
 
       if (titulo) {
-        titulo.innerText = 'Conferência de carregamento com rastreabilidade visual no padrão da Dulcini.';
+        titulo.innerText = 'Checklist de carregamento fracionado com rastreabilidade Dulcini.';
       }
 
       if (descricao) {
-        descricao.innerText = 'Reúna os dados da operação, documente as evidências obrigatórias e gere um relatório institucional com capa inicial e páginas internas organizadas em pares de registros.';
+        descricao.innerText = 'Reúna os dados da operação, documente as evidências obrigatórias e gere um relatório institucional com página inicial e páginas internas organizadas em pares de registros.';
       }
     }
 
@@ -1737,22 +1737,22 @@
       const extra = tipo === 'carregamento' && Boolean(opcoes.extra);
       const indiceExtra = extra ? Number(opcoes.indiceExtra || numero || 1) : 0;
       const titulo = extra
-        ? 'Foto extra do carregamento'
+        ? 'Foto complementar do carregamento'
         : tipo === 'lacre'
           ? `Lacre ${numero}`
           : `Carregamento ${numero}`;
       const descricao = extra
-        ? 'Use este registro para uma foto geral do carregamento, dos fracionados ou de outra evidência complementar.'
+        ? 'Use este registro para uma foto geral do carregamento, dos volumes fracionados ou de outra evidência operacional.'
         : tipo === 'lacre'
           ? 'Registre o lacre correspondente a esta posição.'
           : 'Registre o carregamento correspondente a esta posição.';
       const alt = extra
-        ? 'Foto extra do carregamento'
+        ? 'Foto complementar do carregamento'
         : tipo === 'lacre'
           ? `Foto do lacre ${numero}`
           : `Foto do carregamento ${numero}`;
       const dica = extra
-        ? 'Use para visão geral, fracionados ou comprovação complementar.'
+        ? 'Use para visão geral, volumes fracionados ou comprovação complementar.'
         : 'Câmera ou galeria';
 
       return `
@@ -1839,14 +1839,14 @@
 
       barra.hidden = false;
       texto.innerText = extras
-        ? `Além das ${quantidades.carregamentos} fotos obrigatórias, você adicionou ${extras} foto${extras === 1 ? '' : 's'} extra${extras === 1 ? '' : 's'} de carregamento.`
-        : 'Se precisar, adicione uma foto complementar do carregamento geral, fracionados ou outra evidência sem alterar a quantidade de volumes.';
+        ? `Além das ${quantidades.carregamentos} fotos obrigatórias, você adicionou ${extras} foto${extras === 1 ? '' : 's'} complementar${extras === 1 ? '' : 'es'} de carregamento.`
+        : 'Se necessário, adicione uma foto complementar do carregamento geral, dos volumes fracionados ou de outra evidência operacional, sem alterar a quantidade de volumes.';
     }
 
     function adicionarRegistroExtraCarregamento() {
       const quantidades = obterQuantidadeRegistrosEsperada();
       if (!quantidades.carregamentos) {
-        alert('Informe o tipo de carga e a quantidade de volumes antes de adicionar uma foto extra.');
+        alert('Informe o tipo de carga e a quantidade de volumes antes de adicionar uma foto complementar.');
         return;
       }
 
@@ -1867,7 +1867,7 @@
       if (!card) return;
 
       const box = card.querySelector('.box-imagem');
-      if (box && obterSrcBox(box) && !confirm('Deseja remover esta foto extra de carregamento?')) {
+      if (box && obterSrcBox(box) && !confirm('Deseja remover esta foto complementar do carregamento?')) {
         return;
       }
 
@@ -1997,7 +1997,7 @@
       const snapshot = coletarEstadoAtual();
 
       if (!snapshot.campos.p || !snapshot.campos.cr) {
-        alert('Preencha a placa e o colaborador responsável antes de salvar como pendente.');
+        alert('Preencha a placa e o colaborador responsável antes de salvar o checklist como pendente.');
         return;
       }
 
@@ -2011,7 +2011,7 @@
         await salvarPendenteDB(registro);
         await recarregarPendentes();
 
-        alert('Checklist pendente salvo com sucesso.');
+        alert('Checklist salvo como pendente.');
         limparChecklist(false);
       } catch (erro) {
         console.error('Erro ao salvar no IndexedDB:', erro);
@@ -2029,7 +2029,7 @@
       const corpo = document.getElementById('lista-pendentes-corpo');
 
       if (!pendentes.length) {
-        corpo.innerHTML = '<p style="text-align:center; color:#61788E; padding:24px 10px;">Nenhum checklist aguardando nota fiscal.</p>';
+        corpo.innerHTML = '<p style="text-align:center; color:#61788E; padding:24px 10px;">Nenhum checklist pendente no momento.</p>';
       } else {
         corpo.innerHTML = pendentes.map((item) => {
           const snapshot = normalizarPendente(item);
@@ -2047,7 +2047,7 @@
               <small>${escaparHTML(item.dt || '')} - Lacres: ${totalLacres} | Carregamentos: ${totalCarregamentos}</small>
               <div class="pendente-acoes">
                 <button type="button" class="pendente-retomar" onclick="recuperar(${item.id})">Retomar</button>
-                <button type="button" class="pendente-excluir" aria-label="Excluir pendente" title="Excluir pendente" onclick="excluirItem(${item.id})">X</button>
+                <button type="button" class="pendente-excluir" aria-label="Excluir checklist pendente" title="Excluir checklist pendente" onclick="excluirItem(${item.id})">X</button>
               </div>
             </div>
           `;
@@ -2070,7 +2070,7 @@
         await abrirPendentes();
       } catch (erro) {
         console.error(erro);
-        alert('Não foi possível excluir este pendente.');
+        alert('Não foi possível excluir este checklist pendente.');
       }
     }
 
@@ -2091,7 +2091,7 @@
         fecharPendentes();
       } catch (erro) {
         console.error(erro);
-        alert('Não foi possível recuperar este pendente.');
+        alert('Não foi possível retomar este checklist pendente.');
       }
     }
 
@@ -2184,7 +2184,7 @@
     function montarRegistroPDF(tipo, numero, src, opcoes = {}) {
       const extra = tipo === 'carregamento' && Boolean(opcoes.extra);
       const titulo = extra
-        ? 'Foto extra do carregamento'
+        ? 'Foto complementar do carregamento'
         : tipo === 'lacre'
           ? `Lacre ${numero}`
           : `Carregamento ${numero}`;
@@ -2255,8 +2255,8 @@
               <div class="pdf-hero">
                 <div>
                   <div class="pdf-hero-kicker">Relatório operacional</div>
-                  <h1>Checklist de carregamento com evidência visual.</h1>
-                  <p>Documento gerado com os dados do carregamento e a comprovação fotográfica dos lacres e do carregamento no padrão institucional da Dulcini S/A.</p>
+                  <h1>Checklist de carregamento fracionado com evidência visual.</h1>
+                  <p>Documento gerado com os dados do carregamento e a comprovação fotográfica dos lacres e das etapas de carregamento, no padrão institucional da Dulcini S/A.</p>
                 </div>
 
                 <div class="pdf-hero-side">
@@ -2303,14 +2303,14 @@
                     <span>Estrutura fotográfica</span>
                     <h2>Lacres e carregamento</h2>
                   </div>
-                  <p>Os registros abaixo seguem a regra operacional definida para esta carga.</p>
+                  <p>Os registros abaixo seguem o critério operacional definido para esta carga.</p>
                 </div>
 
                 <div class="pdf-meta-grid">
                   ${montarMetaCard('Registros de lacre', String(listaLacres.length || 0))}
                   ${montarMetaCard('Registros de carregamento', String(listaCarregamentos.length || 0))}
                   ${montarMetaCard('Emitido em', geradoEm)}
-                  ${montarMetaCard('Critério aplicado', regra, true)}
+                  ${montarMetaCard('Critério operacional', regra, true)}
                 </div>
               </section>
             </div>
@@ -2508,7 +2508,7 @@
         window.scrollTo(0, 0);
         await esperar(120);
 
-        atualizarStatusLoading('Lendo números dos lacres nas fotos...');
+        atualizarStatusLoading('Lendo os números dos lacres nas fotos...');
         const dadosPDF = await obterDadosPDFComOCR();
 
         atualizarStatusLoading('Montando as páginas do checklist...');
@@ -2519,18 +2519,18 @@
 
         const paginas = Array.from(root.querySelectorAll('.pdf-page'));
         if (!paginas.length) {
-          throw new Error('Nenhuma página foi montada.');
+          throw new Error('Nenhuma página foi gerada para o PDF.');
         }
 
         const configPDF = obterConfiguracaoPDF();
         const campos = coletarCamposFormulario();
         const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
 
-        atualizarStatusLoading('Convertendo páginas em PDF...');
+        atualizarStatusLoading('Convertendo as páginas em PDF...');
         let doc = null;
 
         for (let i = 0; i < paginas.length; i++) {
-          atualizarStatusLoading(`Gerando página ${i + 1} de ${paginas.length}...`);
+          atualizarStatusLoading(`Gerando a página ${i + 1} de ${paginas.length}...`);
 
           const canvasPagina = await renderizarPaginaParaImagem(
             paginas[i],
@@ -2553,12 +2553,12 @@
           doc.addImage(canvasPagina, 'PNG', 0, 0, larguraMm, alturaMm);
         }
 
-        atualizarStatusLoading('Salvando arquivo PDF...');
+        atualizarStatusLoading('Salvando o arquivo PDF...');
         const blob = doc.output('blob');
         baixarBlob(blob, nomeArquivo);
 
         setTimeout(() => {
-          const desejaNovo = confirm('Deseja fazer um novo checklist?');
+          const desejaNovo = confirm('Deseja iniciar um novo checklist?');
           if (desejaNovo) limparChecklist(true);
         }, 450);
       } catch (erro) {
@@ -2591,11 +2591,11 @@
       }
 
       if (tipoDuplicaRegistros(tipo)) {
-        descricao.innerText = 'Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamento para concluir o registro da operação. Em cargas do tipo container, cada unidade gera dois lacres e um carregamento.';
+        descricao.innerText = 'Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamentos para concluir o registro da operação. Em cargas do tipo container, cada unidade exige dois lacres e um registro de carregamento.';
         return;
       }
 
-      descricao.innerText = 'Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamento para concluir o registro da operação.';
+      descricao.innerText = 'Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamentos para concluir o registro da operação.';
     }
 
     function atualizarVisibilidadeAbasFotos(quantidades = { lacres: 0, carregamentos: 0 }, tipo = '') {
@@ -2663,16 +2663,16 @@
       }
 
       if (tipoSemLacre(campos.tp)) {
-        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'volume' : 'volumes'} de Bag in Box, serão exigidos apenas ${quantidades.carregamentos} registros de carregamento.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} extra${extrasCarregamento === 1 ? '' : 's'} adicionada${extrasCarregamento === 1 ? '' : 's'}.` : ' Não há registros de lacre para este tipo de carga.'}`;
+        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'volume' : 'volumes'} de Bag in Box, serão exigidos apenas ${quantidades.carregamentos} registros de carregamento.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} complementar${extrasCarregamento === 1 ? '' : 'es'} adicionada${extrasCarregamento === 1 ? '' : 's'}.` : ' Não há registros de lacre para este tipo de carga.'}`;
         return;
       }
 
       if (tipoDuplicaRegistros(campos.tp)) {
-        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'container' : 'containers'}, serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} extra${extrasCarregamento === 1 ? '' : 's'} de carregamento.` : ''}`;
+        status.innerText = `Para ${qtdInformada} ${qtdInformada === 1 ? 'container' : 'containers'}, serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} complementar${extrasCarregamento === 1 ? '' : 'es'} de carregamento.` : ''}`;
         return;
       }
 
-      status.innerText = `Serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento para concluir esta operação.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} extra${extrasCarregamento === 1 ? '' : 's'} de carregamento.` : ''}`;
+      status.innerText = `Serão exigidos ${quantidades.lacres} registros de lacre e ${quantidades.carregamentos} registros de carregamento para concluir esta operação.${extrasCarregamento ? ` Há também ${extrasCarregamento} foto${extrasCarregamento === 1 ? '' : 's'} complementar${extrasCarregamento === 1 ? '' : 'es'} de carregamento.` : ''}`;
     }
 
     function sincronizarRegistrosFotograficos(registros = null) {
@@ -2745,10 +2745,10 @@
       const campos = coletarCamposFormulario();
       const registros = normalizarColecoesFotos(coletarRegistros());
       const regra = tipoSemLacre(campos.tp)
-        ? 'Para Bag in Box, cada volume exige apenas um registro de carregamento. Fotos extras podem ser adicionadas quando necessário.'
+        ? 'Para Bag in Box, cada volume exige apenas um registro de carregamento. Fotos complementares podem ser adicionadas quando necessário.'
         : tipoDuplicaRegistros(campos.tp)
-          ? 'Cada container exige dois registros de lacre e um registro de carregamento. Fotos extras de carregamento podem ser adicionadas quando necessário.'
-          : 'Cada volume exige um registro de lacre e um de carregamento. Fotos extras de carregamento podem ser adicionadas quando necessário.';
+          ? 'Cada container exige dois registros de lacre e um registro de carregamento. Fotos complementares do carregamento podem ser adicionadas quando necessário.'
+          : 'Cada volume exige um registro de lacre e um de carregamento. Fotos complementares do carregamento podem ser adicionadas quando necessário.';
 
       return {
         campos,
