@@ -733,6 +733,16 @@
       word-spacing:.02em;
     }
 
+    .pdf-lacre-ocr{
+      margin:0 0 4px;padding:6px 8px;border-radius:8px;text-align:center;
+      background:#EAF6EF;color:var(--teal-800);border:1px solid #D5E9DD;
+      font:800 10px/1.1 'Montserrat',sans-serif;
+    }
+
+    .pdf-lacre-ocr.is-missing{
+      background:#FFF8E0;color:#7A5A00;border-color:#F1DA85;
+    }
+
     .pdf-photo-frame{
       overflow:hidden;display:flex;align-items:center;justify-content:center;height:210px;
       border-radius:10px;background:#F3F8FD;border:1px solid #E6EEF4;padding:3px;
@@ -799,7 +809,7 @@
     }
 
     .pdf-volume-card .pdf-photo-frame{
-      height:205px;
+      height:190px;
     }
 
     .pdf-page--compact .pdf-main{
@@ -1025,6 +1035,12 @@
     const DB_VERSION = 1;
     const STORE_NAME = 'pendentes';
     const LOGO_PATH = './Logo_Beija-flor_Transp_.jpg';
+    const OCR_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    const OCR_LACRE_NAO_IDENTIFICADO = 'Número do lacre não identificado';
+    const OCR_CONFIDENCE_MIN = 65;
+    let ocrScriptPromise = null;
+    let ocrWorkerPromise = null;
+
 
     let dbInstance = null;
     let pendentes = [];
@@ -1298,6 +1314,162 @@
 
     function esperar(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function registrarFalhaOCR(contexto, motivo, detalhes = {}) {
+      console.warn('OCR do lacre não identificado:', { contexto, motivo, ...detalhes });
+    }
+
+    function carregarBibliotecaOCR() {
+      if (window.Tesseract) return Promise.resolve(window.Tesseract);
+      if (ocrScriptPromise) return ocrScriptPromise;
+
+      ocrScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        const timeout = setTimeout(() => {
+          reject(new Error('Tempo limite excedido ao carregar a biblioteca de OCR.'));
+        }, 20000);
+
+        script.src = OCR_SCRIPT_URL;
+        script.async = true;
+        script.onload = () => {
+          clearTimeout(timeout);
+          if (window.Tesseract) resolve(window.Tesseract);
+          else reject(new Error('Biblioteca de OCR carregada sem objeto Tesseract.'));
+        };
+        script.onerror = () => {
+          clearTimeout(timeout);
+          reject(new Error('Falha ao carregar a biblioteca de OCR.'));
+        };
+
+        document.head.appendChild(script);
+      });
+
+      return ocrScriptPromise;
+    }
+
+    async function obterWorkerOCR() {
+      if (ocrWorkerPromise) return ocrWorkerPromise;
+
+      ocrWorkerPromise = (async () => {
+        const tesseract = await carregarBibliotecaOCR();
+        if (!tesseract?.createWorker) {
+          throw new Error('A biblioteca de OCR não disponibilizou o worker.');
+        }
+
+        const worker = await tesseract.createWorker('eng');
+        if (worker.setParameters) {
+          await worker.setParameters({
+            tessedit_char_whitelist: '0123456789',
+            preserve_interword_spaces: '1'
+          });
+        }
+        return worker;
+      })();
+
+      return ocrWorkerPromise;
+    }
+
+    async function encerrarWorkerOCR() {
+      if (!ocrWorkerPromise) return;
+
+      try {
+        const worker = await ocrWorkerPromise;
+        if (worker?.terminate) await worker.terminate();
+      } catch (erro) {
+        console.warn('Falha ao encerrar o worker de OCR:', erro);
+      } finally {
+        ocrWorkerPromise = null;
+      }
+    }
+
+    function limparNumeroLacreOCR(valor = '') {
+      return String(valor || '').replace(/\D+/g, '');
+    }
+
+    function calcularConfiancaOCR(dados = {}, numero = '') {
+      const base = Number(dados.confidence || 0);
+      const palavras = Array.isArray(dados.words) ? dados.words : [];
+      const confiancas = palavras
+        .filter((palavra) => {
+          const digitos = limparNumeroLacreOCR(palavra?.text || '');
+          return digitos && (digitos === numero || numero.includes(digitos) || digitos.includes(numero));
+        })
+        .map((palavra) => Number(palavra.confidence || 0))
+        .filter((valor) => Number.isFinite(valor) && valor > 0);
+
+      return confiancas.length ? Math.max(base, ...confiancas) : base;
+    }
+
+    function extrairCandidatosNumeroLacre(dados = {}) {
+      const texto = String(dados.text || '');
+      const encontrados = texto.match(/\d[\d\s.\-_/]{2,}\d/g) || [];
+      const mapa = new Map();
+
+      encontrados.forEach((trecho) => {
+        const numero = limparNumeroLacreOCR(trecho);
+        if (numero.length < 4 || numero.length > 20) return;
+
+        const confianca = calcularConfiancaOCR(dados, numero);
+        const atual = mapa.get(numero);
+        if (!atual || confianca > atual.confianca) {
+          mapa.set(numero, { numero, confianca });
+        }
+      });
+
+      return Array.from(mapa.values()).sort((a, b) => b.confianca - a.confianca || b.numero.length - a.numero.length);
+    }
+
+    async function identificarNumeroLacreNaFoto(src, contexto) {
+      if (!src) {
+        registrarFalhaOCR(contexto, 'foto ausente');
+        return { identificado: false, numero: '', confianca: 0 };
+      }
+
+      try {
+        const worker = await obterWorkerOCR();
+        const resultado = await worker.recognize(src);
+        const dados = resultado?.data || {};
+        const candidatos = extrairCandidatosNumeroLacre(dados);
+        const principal = candidatos[0];
+
+        if (!principal) {
+          registrarFalhaOCR(contexto, 'nenhum candidato numérico encontrado', { texto: dados.text || '' });
+          return { identificado: false, numero: '', confianca: Number(dados.confidence || 0) };
+        }
+
+        if (principal.confianca < OCR_CONFIDENCE_MIN) {
+          registrarFalhaOCR(contexto, 'confiança abaixo do limite', principal);
+          return { identificado: false, numero: '', confianca: principal.confianca };
+        }
+
+        const segundo = candidatos.find((candidato) => candidato.numero !== principal.numero);
+        if (segundo && principal.confianca - segundo.confianca < 12) {
+          registrarFalhaOCR(contexto, 'resultado ambíguo', { principal, segundo });
+          return { identificado: false, numero: '', confianca: principal.confianca };
+        }
+
+        return {
+          identificado: true,
+          numero: principal.numero,
+          confianca: principal.confianca
+        };
+      } catch (erro) {
+        registrarFalhaOCR(contexto, 'falha técnica no OCR', { erro });
+        return { identificado: false, numero: '', confianca: 0 };
+      }
+    }
+
+    function formatarResultadoOCR(ocr) {
+      if (ocr?.identificado && ocr.numero) {
+        return 'Lacre: ' + ocr.numero;
+      }
+
+      return OCR_LACRE_NAO_IDENTIFICADO;
+    }
+
+    function classeResultadoOCR(ocr) {
+      return ocr?.identificado ? '' : ' is-missing';
     }
 
     async function aguardarImagensCarregadas(container) {
@@ -1997,10 +2169,11 @@
       `;
     }
 
-    function montarFotoPDF(label, src = '', extraClass = '') {
+    function montarFotoPDF(label, src = '', extraClass = '', ocr = null) {
       return `
         <div class="pdf-photo-card ${extraClass}">
           <span>${escaparHTML(label)}</span>
+          ${ocr ? `<div class="pdf-lacre-ocr${classeResultadoOCR(ocr)}">${escaparHTML(formatarResultadoOCR(ocr))}</div>` : ''}
           <div class="pdf-photo-frame">
             ${src ? `<img src="${src}" alt="${escaparHTML(label)}">` : ''}
           </div>
@@ -2020,6 +2193,7 @@
         : tipo === 'lacre'
           ? `Registro fotográfico do lacre ${numero}.`
           : `Registro fotográfico do carregamento ${numero}.`;
+      const ocr = tipo === 'lacre' ? opcoes.ocr : null;
 
       return `
         <article class="pdf-volume-card">
@@ -2032,16 +2206,28 @@
           </div>
 
           <div class="pdf-volume-photos">
-            ${montarFotoPDF(titulo, src || '')}
+            ${montarFotoPDF(titulo, src || '', '', ocr)}
           </div>
         </article>
       `;
     }
 
-    function construirPaginasPDF() {
-      const { campos, registros, regra, geradoEm } = obterDadosPDF();
+    function normalizarLacrePDF(registro, index) {
+      if (typeof registro === 'string') {
+        return { numero: index + 1, src: registro, ocr: null };
+      }
+
+      return {
+        numero: index + 1,
+        src: registro?.src || registro?.foto || '',
+        ocr: registro?.ocr || null
+      };
+    }
+
+    function construirPaginasPDF(dadosPDF = null) {
+      const { campos, registros, regra, geradoEm } = dadosPDF || obterDadosPDF();
       const quantidades = obterQuantidadeRegistrosEsperada(campos);
-      const listaLacres = registros.lacres.map((src, index) => ({ numero: index + 1, src }));
+      const listaLacres = registros.lacres.map(normalizarLacrePDF);
       const listaCarregamentos = registros.carregamentos.map((src, index) => ({
         numero: index + 1,
         src,
@@ -2168,7 +2354,7 @@
                 </div>
 
                 <div class="pdf-volumes-list">
-                  ${dupla.map((registro) => montarRegistroPDF('lacre', registro.numero, registro.src)).join('')}
+                  ${dupla.map((registro) => montarRegistroPDF('lacre', registro.numero, registro.src, { ocr: registro.ocr })).join('')}
                 </div>
               </div>
 
@@ -2322,8 +2508,11 @@
         window.scrollTo(0, 0);
         await esperar(120);
 
+        atualizarStatusLoading('Lendo números dos lacres nas fotos...');
+        const dadosPDF = await obterDadosPDFComOCR();
+
         atualizarStatusLoading('Montando as páginas do checklist...');
-        const root = construirPaginasPDF();
+        const root = construirPaginasPDF(dadosPDF);
 
         await esperar(180);
         await aguardarLayoutPDF(root);
@@ -2376,6 +2565,7 @@
         console.error('Erro ao gerar PDF:', erro);
         alert('Não foi possível gerar o PDF neste dispositivo.');
       } finally {
+        await encerrarWorkerOCR();
         window.scrollTo(scrollOriginal.x, scrollOriginal.y);
         setTimeout(() => {
           loading.style.display = 'none';
@@ -2565,6 +2755,28 @@
         registros,
         regra,
         geradoEm: formatarDataExtensa(new Date())
+      };
+    }
+
+    async function obterDadosPDFComOCR() {
+      const dados = obterDadosPDF();
+      const lacres = [];
+
+      for (let i = 0; i < dados.registros.lacres.length; i++) {
+        const src = dados.registros.lacres[i];
+        atualizarStatusLoading('Lendo número do lacre ' + (i + 1) + ' de ' + dados.registros.lacres.length + '...');
+        lacres.push({
+          src,
+          ocr: await identificarNumeroLacreNaFoto(src, 'Fracionado - lacre ' + (i + 1))
+        });
+      }
+
+      return {
+        ...dados,
+        registros: {
+          ...dados.registros,
+          lacres
+        }
       };
     }
 
