@@ -74,6 +74,15 @@
       box-shadow:0 16px 30px rgba(0,53,157,.18);cursor:pointer;
     }
 
+    #btn-abrir-historico{
+      position:fixed;top:20px;right:160px;z-index:20;
+      border:1px solid rgba(255,255,255,.24);
+      background:linear-gradient(135deg,var(--azul-900,#00359D),var(--teal-700,#005B6E));
+      color:#fff;padding:12px 18px;border-radius:999px;
+      font:700 13px/1 'Montserrat',sans-serif;letter-spacing:.04em;
+      box-shadow:0 16px 30px rgba(0,53,157,.18);cursor:pointer;
+    }
+
     #count-pendentes{
       display:inline-flex;align-items:center;justify-content:center;
       min-width:22px;height:22px;margin-left:8px;padding:0 7px;
@@ -851,7 +860,7 @@
       .panel-head,.hero-brand{flex-direction:column;align-items:stretch}
       .brand-lockup{align-items:flex-start}
       .status-note{min-width:0}
-      #btn-abrir-pendentes{
+      #btn-abrir-pendentes,#btn-abrir-historico{
         position:relative;top:auto;right:auto;z-index:10;
         display:flex;align-items:center;justify-content:center;width:max-content;max-width:calc(100vw - 20px);
         margin:0 0 10px auto;padding:10px 14px;font-size:11px;
@@ -883,6 +892,9 @@
   </style>
 </head>
 <body>
+  <button type="button" id="btn-abrir-historico" onclick="abrirHistorico()">
+    Histórico
+  </button>
   <button type="button" id="btn-abrir-pendentes" onclick="abrirPendentes()">
     Pendências <span id="count-pendentes">0</span>
   </button>
@@ -1039,6 +1051,16 @@
     </div>
   </div>
 
+  <div id="modal-historico" style="display:none;position:fixed;inset:0;z-index:25;padding:20px;background:rgba(9,17,12,.56);backdrop-filter:blur(10px);">
+    <div class="modal-conteudo">
+      <h3>Histórico de conferências</h3>
+      <input type="search" id="busca-historico" placeholder="Buscar por cliente, placa, NF, motorista, lacre, protocolo ou data..." autocomplete="off"
+        oninput="renderizarHistorico()" style="width:100%; box-sizing:border-box; padding:12px 14px; margin-bottom:14px; border:1px solid var(--borda,#cdd8d2); border-radius:12px; font-size:14px;">
+      <div id="lista-historico-corpo" style="max-height:60vh; overflow-y:auto; padding-right:4px;"></div>
+      <button type="button" class="btn btn-add" style="width:100%; margin-top:14px;" onclick="fecharHistorico()">Fechar</button>
+    </div>
+  </div>
+
   <div id="loading">
     <div class="loading-card">
       <strong>Gerando PDF</strong>
@@ -1054,10 +1076,12 @@
     const LEGACY_STORAGE_KEYS = [STORAGE_KEY, 'checklists_pendentes'];
     const DB_NAME = 'dulcini_checklists_db';
     const LEGACY_DB_NAMES = ['centrosucar_checklists_db'];
-    const DB_VERSION = 2;
+    const DB_VERSION = 3;
     const STORE_NAME = 'pendentes';
     const RASCUNHO_STORE = 'rascunho-ativo';
     const RASCUNHO_KEY = 'atual';
+    const CONFERENCIAS_STORE = 'conferencias';
+    const CODIGO_PREFIXO = 'FRA';
     const LOGO_PATH = './Logo_Beija-flor_Transp_.jpg';
     const OCR_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
     const OCR_LACRE_NAO_IDENTIFICADO = 'Lacre não identificado';
@@ -1090,6 +1114,9 @@
           }
           if (!db.objectStoreNames.contains(RASCUNHO_STORE)) {
             db.createObjectStore(RASCUNHO_STORE);
+          }
+          if (!db.objectStoreNames.contains(CONFERENCIAS_STORE)) {
+            db.createObjectStore(CONFERENCIAS_STORE, { keyPath: 'id' });
           }
         };
 
@@ -1186,6 +1213,101 @@
           console.warn('Auto-save falhou:', erro);
         }
       }, 700);
+    }
+
+    // ===== Histórico / rastreabilidade =====
+    function gerarCodigoUnico() {
+      const d = new Date();
+      const data = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      const aleatorio = (Date.now().toString(36) + Math.random().toString(36).slice(2)).slice(-6).toUpperCase();
+      return `DUL-${CODIGO_PREFIXO}-${data}-${aleatorio}`;
+    }
+
+    async function salvarConferenciaDB(registro) {
+      const db = await abrirBanco();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(CONFERENCIAS_STORE, 'readwrite');
+        tx.objectStore(CONFERENCIAS_STORE).put(registro);
+        tx.oncomplete = () => resolve(registro);
+        tx.onerror = () => reject(tx.error || new Error('Erro ao salvar conferência no histórico.'));
+      });
+    }
+
+    async function listarConferenciasDB() {
+      const db = await abrirBanco();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(CONFERENCIAS_STORE, 'readonly');
+        const req = tx.objectStore(CONFERENCIAS_STORE).getAll();
+        req.onsuccess = () => {
+          const dados = Array.isArray(req.result) ? req.result : [];
+          dados.sort((a, b) => Number(b.dt || 0) - Number(a.dt || 0));
+          resolve(dados);
+        };
+        req.onerror = () => reject(req.error || new Error('Erro ao listar histórico.'));
+      });
+    }
+
+    async function obterConferenciaDB(id) {
+      const db = await abrirBanco();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(CONFERENCIAS_STORE, 'readonly');
+        const req = tx.objectStore(CONFERENCIAS_STORE).get(id);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error || new Error('Erro ao ler conferência.'));
+      });
+    }
+
+    async function excluirConferenciaDB(id) {
+      const db = await abrirBanco();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(CONFERENCIAS_STORE, 'readwrite');
+        tx.objectStore(CONFERENCIAS_STORE).delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error('Erro ao excluir conferência.'));
+      });
+    }
+
+    let qrLibPromise = null;
+    function carregarBibliotecaQR() {
+      if (window.qrcode) return Promise.resolve(window.qrcode);
+      if (qrLibPromise) return qrLibPromise;
+      qrLibPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        const timeout = setTimeout(() => reject(new Error('Tempo limite ao carregar QR.')), 12000);
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+        script.async = true;
+        script.onload = () => { clearTimeout(timeout); window.qrcode ? resolve(window.qrcode) : reject(new Error('QR sem objeto.')); };
+        script.onerror = () => { clearTimeout(timeout); reject(new Error('Falha ao carregar QR.')); };
+        document.head.appendChild(script);
+      });
+      return qrLibPromise;
+    }
+
+    async function gerarQRDataURL(texto) {
+      try {
+        const qrcode = await carregarBibliotecaQR();
+        const qr = qrcode(0, 'M');
+        qr.addData(String(texto || ''));
+        qr.make();
+        return qr.createDataURL(6, 10);
+      } catch (erro) {
+        console.warn('QR indisponível:', erro);
+        return '';
+      }
+    }
+
+    function montarTextoQRConferencia(codigo, campos, registros) {
+      const lacres = (registros && Array.isArray(registros.lacres)) ? registros.lacres : [];
+      const numeros = lacres.map((l) => l && l.numeroLacre).filter(Boolean);
+      return [
+        'Dulcini S/A - Checklist Fracionado',
+        'Protocolo: ' + codigo,
+        'Cliente: ' + (campos.c || ''),
+        'Placa: ' + (campos.p || ''),
+        'NF: ' + (campos.nf || ''),
+        'Data: ' + (campos.dc || ''),
+        'Lacres (' + numeros.length + '): ' + numeros.join(', ')
+      ].join('\n');
     }
 
     async function excluirPendenteDB(id) {
@@ -3025,6 +3147,110 @@
       document.getElementById('modal-pendentes').style.display = 'none';
     }
 
+    let conferenciasCache = [];
+
+    async function abrirHistorico() {
+      try {
+        conferenciasCache = await listarConferenciasDB();
+      } catch (erro) {
+        console.error('Erro ao carregar histórico:', erro);
+        conferenciasCache = [];
+      }
+      const busca = document.getElementById('busca-historico');
+      if (busca) busca.value = '';
+      renderizarHistorico();
+      document.getElementById('modal-historico').style.display = 'block';
+    }
+
+    function fecharHistorico() {
+      const modal = document.getElementById('modal-historico');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function lacresDaConferencia(c) {
+      const registros = c.registros || {};
+      const lista = Array.isArray(registros.lacres) ? registros.lacres : [];
+      return lista.map((l) => (l && l.numeroLacre) || '').filter(Boolean);
+    }
+
+    function textoBuscaConferencia(c) {
+      const campos = c.campos || {};
+      return [c.codigo, campos.c, campos.p, campos.nf, campos.m, campos.dc, campos.cr, lacresDaConferencia(c).join(' '), c.geradoEm]
+        .map((v) => String(v || '').toLowerCase()).join(' ');
+    }
+
+    function renderizarHistorico() {
+      const corpo = document.getElementById('lista-historico-corpo');
+      if (!corpo) return;
+      const termo = String(document.getElementById('busca-historico')?.value || '').trim().toLowerCase();
+      const lista = termo
+        ? conferenciasCache.filter((c) => termo.split(/\s+/).every((t) => textoBuscaConferencia(c).includes(t)))
+        : conferenciasCache;
+
+      if (!conferenciasCache.length) {
+        corpo.innerHTML = '<p style="text-align:center; color:#65756E; padding:24px 10px;">Nenhuma conferência registrada ainda. Ao gerar um PDF, ele fica salvo aqui automaticamente.</p>';
+        return;
+      }
+      if (!lista.length) {
+        corpo.innerHTML = '<p style="text-align:center; color:#65756E; padding:24px 10px;">Nenhum resultado para a busca.</p>';
+        return;
+      }
+
+      corpo.innerHTML = lista.map((c) => {
+        const campos = c.campos || {};
+        const numeros = lacresDaConferencia(c);
+        return `
+          <div class="pendente-card">
+            <strong>${escaparHTML(campos.p || '—')} • NF ${escaparHTML(campos.nf || '—')}</strong>
+            <small>${escaparHTML(campos.c || '')}</small>
+            <small>${escaparHTML(c.geradoEm || '')} • ${numeros.length} lacre(s)</small>
+            <small>Protocolo: ${escaparHTML(c.codigo || '')}</small>
+            <small>Lacres: ${numeros.length ? escaparHTML(numeros.join(', ')) : '—'}</small>
+            <div class="pendente-acoes">
+              <button type="button" class="pendente-retomar" onclick="reimprimirConferencia('${escaparHTML(c.id)}')">Baixar PDF</button>
+              <button type="button" class="pendente-excluir" aria-label="Excluir do histórico" title="Excluir do histórico" onclick="excluirConferencia('${escaparHTML(c.id)}')">X</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function reimprimirConferencia(id) {
+      const loading = document.getElementById('loading');
+      try {
+        const registro = await obterConferenciaDB(id);
+        if (!registro) { alert('Conferência não encontrada no histórico.'); return; }
+        loading.style.display = 'block';
+        const dadosPDF = {
+          campos: registro.campos || {},
+          registros: registro.registros || { lacres: [], carregamentos: [] },
+          regra: registro.regra || '',
+          geradoEm: registro.geradoEm || formatarDataExtensa(new Date()),
+          codigo: registro.codigo || registro.id,
+          qrDataUrl: registro.qrDataUrl || ''
+        };
+        const nomeArquivo = registro.nomeArquivo || montarNomeArquivoPDF(dadosPDF.campos, dadosPDF.codigo);
+        await renderizarEbaixarPDF(dadosPDF, nomeArquivo);
+      } catch (erro) {
+        console.error('Erro ao reimprimir:', erro);
+        alert('Não foi possível gerar o PDF desta conferência.');
+      } finally {
+        setTimeout(() => { loading.style.display = 'none'; }, 500);
+      }
+    }
+
+    async function excluirConferencia(id) {
+      if (!confirm('Excluir esta conferência do histórico deste dispositivo? O PDF já baixado não é afetado.')) return;
+      try {
+        await excluirConferenciaDB(id);
+        conferenciasCache = await listarConferenciasDB();
+        renderizarHistorico();
+      } catch (erro) {
+        console.error(erro);
+        alert('Não foi possível excluir do histórico.');
+      }
+    }
+
     async function excluirItem(id) {
       if (!confirm('Deseja excluir este checklist pendente?')) return;
 
@@ -3241,7 +3467,7 @@
     }
 
     function construirPaginasPDF(dadosPDF = null) {
-      const { campos, registros, regra, geradoEm } = dadosPDF || obterDadosPDF();
+      const { campos, registros, regra, geradoEm, codigo = '', qrDataUrl = '' } = dadosPDF || obterDadosPDF();
       const quantidades = obterQuantidadeRegistrosEsperada(campos);
       const listaLacres = registros.lacres.map(normalizarLacrePDF);
       const listaCarregamentos = registros.carregamentos.map((src, index) => ({
@@ -3276,6 +3502,13 @@
                 </div>
 
                 <div class="pdf-hero-side">
+                  ${codigo ? `<div class="pdf-highlight" style="display:flex; align-items:center; gap:12px;">
+                    <div style="flex:1; min-width:0;">
+                      <span>Protocolo de conferência</span>
+                      <strong style="font-size:0.82em; letter-spacing:0.4px; word-break:break-all;">${escaparHTML(codigo)}</strong>
+                    </div>
+                    ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR do protocolo" style="width:84px; height:84px; flex:0 0 auto; background:#fff; border-radius:6px;">` : ''}
+                  </div>` : ''}
                   <div class="pdf-highlight">
                     <span>Tipo de carga</span>
                     <strong>${escaparHTML(campos.tp || '-')}</strong>
@@ -3500,6 +3733,44 @@
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
 
+    async function renderizarEbaixarPDF(dadosPDF, nomeArquivo) {
+      atualizarStatusLoading('Montando as páginas do checklist...');
+      const root = construirPaginasPDF(dadosPDF);
+
+      await esperar(180);
+      await aguardarLayoutPDF(root);
+
+      const paginas = Array.from(root.querySelectorAll('.pdf-page'));
+      if (!paginas.length) {
+        throw new Error('Nenhuma página foi gerada para o PDF.');
+      }
+
+      const configPDF = obterConfiguracaoPDF();
+      atualizarStatusLoading('Convertendo as páginas em PDF...');
+      let doc = null;
+
+      for (let i = 0; i < paginas.length; i++) {
+        atualizarStatusLoading(`Gerando a página ${i + 1} de ${paginas.length}...`);
+        const canvasPagina = await renderizarPaginaParaImagem(paginas[i], configPDF.escalaCanvas);
+        const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], canvasPagina);
+        if (!doc) {
+          doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: false });
+        } else {
+          doc.addPage('a4', 'portrait');
+        }
+        doc.addImage(canvasPagina, 'PNG', 0, 0, larguraMm, alturaMm);
+      }
+
+      atualizarStatusLoading('Salvando o arquivo PDF...');
+      const blob = doc.output('blob');
+      baixarBlob(blob, nomeArquivo);
+    }
+
+    function montarNomeArquivoPDF(campos, codigo) {
+      const base = campos.nf || campos.p || 'sem_numero';
+      return `Checklist_Fracionado_${limparNomeArquivo(base)}_${codigo}.pdf`;
+    }
+
     async function gerarPDF() {
       const loading = document.getElementById('loading');
       const scrollOriginal = { x: window.scrollX, y: window.scrollY };
@@ -3538,54 +3809,34 @@
         const dadosPDF = obterDadosPDF();
         registrarDiagnosticoOCR('pdf-dados-enviados', { contexto: 'Fracionado', lacres: resumirOCRParaDiagnostico() });
 
-        atualizarStatusLoading('Montando as páginas do checklist...');
-        const root = construirPaginasPDF(dadosPDF);
+        atualizarStatusLoading('Gerando protocolo e QR Code...');
+        dadosPDF.codigo = gerarCodigoUnico();
+        dadosPDF.qrDataUrl = await gerarQRDataURL(montarTextoQRConferencia(dadosPDF.codigo, dadosPDF.campos, dadosPDF.registros));
 
-        await esperar(180);
-        await aguardarLayoutPDF(root);
+        const nomeArquivo = montarNomeArquivoPDF(dadosPDF.campos, dadosPDF.codigo);
+        await renderizarEbaixarPDF(dadosPDF, nomeArquivo);
 
-        const paginas = Array.from(root.querySelectorAll('.pdf-page'));
-        if (!paginas.length) {
-          throw new Error('Nenhuma página foi gerada para o PDF.');
+        // Registra a conferência concluída no histórico local (rastreabilidade + reimpressão).
+        try {
+          await salvarConferenciaDB({
+            id: dadosPDF.codigo,
+            codigo: dadosPDF.codigo,
+            tipo: 'fracionado',
+            dt: Date.now(),
+            geradoEm: dadosPDF.geradoEm,
+            campos: dadosPDF.campos,
+            registros: dadosPDF.registros,
+            regra: dadosPDF.regra,
+            qrDataUrl: dadosPDF.qrDataUrl,
+            nomeArquivo
+          });
+          await limparRascunhoDB();
+        } catch (erroHist) {
+          console.warn('Falha ao registrar conferência no histórico:', erroHist);
         }
-
-        const configPDF = obterConfiguracaoPDF();
-        const campos = coletarCamposFormulario();
-        const nomeArquivo = `Checklist_Dulcini_${limparNomeArquivo(campos.nf || campos.p || 'sem_numero')}.pdf`;
-
-        atualizarStatusLoading('Convertendo as páginas em PDF...');
-        let doc = null;
-
-        for (let i = 0; i < paginas.length; i++) {
-          atualizarStatusLoading(`Gerando a página ${i + 1} de ${paginas.length}...`);
-
-          const canvasPagina = await renderizarPaginaParaImagem(
-            paginas[i],
-            configPDF.escalaCanvas
-          );
-
-          const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], canvasPagina);
-
-          if (!doc) {
-            doc = new jsPDF({
-              orientation: 'portrait',
-              unit: 'mm',
-              format: 'a4',
-              compress: false
-            });
-          } else {
-            doc.addPage('a4', 'portrait');
-          }
-
-          doc.addImage(canvasPagina, 'PNG', 0, 0, larguraMm, alturaMm);
-        }
-
-        atualizarStatusLoading('Salvando o arquivo PDF...');
-        const blob = doc.output('blob');
-        baixarBlob(blob, nomeArquivo);
 
         setTimeout(() => {
-          const desejaNovo = confirm('Deseja iniciar um novo checklist?');
+          const desejaNovo = confirm('PDF gerado e registrado no histórico.\nProtocolo: ' + dadosPDF.codigo + '\n\nDeseja iniciar um novo checklist?');
           if (desejaNovo) limparChecklist(true);
         }, 450);
       } catch (erro) {
