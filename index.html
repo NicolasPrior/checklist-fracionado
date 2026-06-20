@@ -1922,7 +1922,9 @@
         // Sem certeza: mostra o palpite ao lado, mas NAO preenche o campo (decisao do operador).
         definirStatusLacre(status, 'Leitura provável: ' + ocr.sugestao + ' — confira na foto e digite para confirmar.', '#b25a00');
       } else {
-        definirStatusLacre(status, 'Não foi possível ler. Digite o número do lacre conferindo na foto.', '#b25a00');
+        // Sinal CONFIAVEL de foto ruim: o motor rodou e nao achou leitura nem palpite.
+        // (Nao usamos nitidez/brilho pre-captura — nas fotos reais eles nao separam boa de ruim.)
+        definirStatusLacre(status, 'Foto difícil de ler. Toque na foto para refazer (aproxime, mais luz, sem reflexo) ou digite o número conferindo na foto.', '#b25a00');
       }
     }
 
@@ -2318,7 +2320,7 @@
     function criarMarkupBoxImagem(tipo, numero, alt, label = '', extra = false) {
       return `
         <div class="box-imagem" data-foto-tipo="${escaparHTML(tipo)}" data-foto-numero="${numero}" data-foto-label="${escaparHTML(label || alt)}" data-foto-extra="${extra ? '1' : '0'}" onclick="abrirOrigemImagem(this)">
-          <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou escolher uma imagem da galeria.</small></span>
+          <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou a galeria. Aproxime bem, com boa luz e sem reflexo.</small></span>
           <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
           <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
           <div class="box-acoes-foto">
