@@ -1096,10 +1096,13 @@
     const CONFERENCIAS_STORE = 'conferencias';
     const CODIGO_PREFIXO = 'FRA';
     const LOGO_PATH = './Logo_Beija-flor_Transp_.jpg';
-
+    // PDFs acima deste número de páginas são pesados/lentos para rasterizar: avisamos antes de gerar.
+    const LIMITE_PAGINAS_PDF = 60;
+    const ERRO_PDF_CANCELADO = 'PDF_CANCELADO';
 
     let dbInstance = null;
     let pendentes = [];
+    let gerandoPDF = false; // trava de reentrância: evita gerar dois PDFs no mesmo clique / duplo-clique.
     const { jsPDF } = window.jspdf;
 
     function abrirBanco() {
@@ -2286,8 +2289,10 @@
         const nomeArquivo = registro.nomeArquivo || montarNomeArquivoPDF(dadosPDF.campos, dadosPDF.codigo);
         await renderizarEbaixarPDF(dadosPDF, nomeArquivo);
       } catch (erro) {
-        console.error('Erro ao reimprimir:', erro);
-        alert('Não foi possível gerar o PDF desta conferência.');
+        if (!(erro && erro.message === ERRO_PDF_CANCELADO)) {
+          console.error('Erro ao reimprimir:', erro);
+          alert('Não foi possível gerar o PDF desta conferência.');
+        }
       } finally {
         setTimeout(() => { loading.style.display = 'none'; }, 500);
       }
@@ -2788,13 +2793,20 @@
       atualizarStatusLoading('Montando as páginas do checklist...');
       const root = construirPaginasPDF(dadosPDF);
 
-      await esperar(180);
-      await aguardarLayoutPDF(root);
-
       const paginas = Array.from(root.querySelectorAll('.pdf-page'));
       if (!paginas.length) {
         throw new Error('Nenhuma página foi gerada para o PDF.');
       }
+
+      // Falha controlada para PDFs muito grandes: avisa ANTES de carregar imagens/rasterizar,
+      // em vez de travar/parecer congelado durante a rasterização de centenas de páginas.
+      if (paginas.length > LIMITE_PAGINAS_PDF
+        && !confirm(`Este PDF terá ${paginas.length} páginas e pode demorar bastante para gerar neste aparelho. Deseja continuar mesmo assim?`)) {
+        throw new Error(ERRO_PDF_CANCELADO);
+      }
+
+      await esperar(180);
+      await aguardarLayoutPDF(root);
 
       const configPDF = obterConfiguracaoPDF();
       atualizarStatusLoading('Convertendo as páginas em PDF...');
@@ -2823,6 +2835,8 @@
     }
 
     async function gerarPDF() {
+      if (gerandoPDF) return; // trava de reentrância: ignora cliques repetidos enquanto gera.
+      gerandoPDF = true;
       const loading = document.getElementById('loading');
       const scrollOriginal = { x: window.scrollX, y: window.scrollY };
       loading.style.display = 'block';
@@ -2883,9 +2897,14 @@
           if (desejaNovo) limparChecklist(true);
         }, 450);
       } catch (erro) {
-        console.error('Erro ao gerar PDF:', erro);
-        alert('Não foi possível gerar o PDF neste dispositivo.');
+        if (erro && erro.message === ERRO_PDF_CANCELADO) {
+          // Usuário optou por não gerar um PDF muito grande: encerra em silêncio (sem alerta de erro).
+        } else {
+          console.error('Erro ao gerar PDF:', erro);
+          alert('Não foi possível gerar o PDF neste dispositivo.');
+        }
       } finally {
+        gerandoPDF = false;
         window.scrollTo(scrollOriginal.x, scrollOriginal.y);
         setTimeout(() => {
           loading.style.display = 'none';
