@@ -2516,7 +2516,7 @@
       const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
       paginas.push(`
-        <section class="pdf-page">
+        <section class="pdf-page pdf-page--compact">
           <div class="pdf-sheet">
             <div class="pdf-topline">
               <div class="pdf-brand-cluster">
@@ -2774,8 +2774,13 @@
       return canvas.toDataURL('image/jpeg', qualidade);
     }
 
-    function obterDimensoesPaginaPDF() {
-      return { larguraMm: 210, alturaMm: 297 };
+    function obterDimensoesPaginaPDF(pagina) {
+      // Altura da página do PDF = altura real renderizada (794px de largura = 210mm; 1122px = 297mm/A4).
+      // Páginas normais mantêm min-height:1122px (= A4); a capa usa .pdf-page--compact (altura do
+      // conteúdo) e sai compacta, sem o vão em branco — mesmo princípio do PDF do Granel.
+      const alturaPx = (pagina && pagina.offsetHeight) || 1122;
+      const alturaMm = Number(((alturaPx / 1122) * 297).toFixed(2));
+      return { larguraMm: 210, alturaMm };
     }
 
     function baixarBlob(blob, nomeArquivo) {
@@ -2817,9 +2822,9 @@
         const imagemPagina = await renderizarPaginaParaImagem(paginas[i], configPDF.escalaCanvas, configPDF.qualidadePagina);
         const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], imagemPagina);
         if (!doc) {
-          doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+          doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [larguraMm, alturaMm], compress: true });
         } else {
-          doc.addPage('a4', 'portrait');
+          doc.addPage([larguraMm, alturaMm], 'portrait');
         }
         doc.addImage(imagemPagina, 'JPEG', 0, 0, larguraMm, alturaMm);
       }
