@@ -849,6 +849,13 @@
       flex:none;
     }
 
+    /* Espaco da 1a pagina onde os primeiros registros fotograficos fluem quando
+       cabem com seguranca dentro da A4. Vazio nao reserva espaco (sem vao em branco). */
+    .pdf-cover-extra{
+      display:flex;flex-direction:column;gap:4px;min-height:0;
+    }
+    .pdf-cover-extra:empty{display:none}
+
     .pdf-footer{
       margin-top:3px;padding-top:4px;border-top:1px solid #E0EAF2;
       display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--texto-suave);font-size:7px;min-height:0;
@@ -2501,6 +2508,62 @@
       };
     }
 
+    // Agrupa os registros que entram na 1a pagina sob subtitulos por grupo (lacres /
+    // carregamentos), reutilizando o mesmo cartao (.pdf-volume-card) das paginas de fotos.
+    function montarRegistrosCapaPDF(blocos) {
+      if (!blocos || !blocos.length) return '';
+      const partes = [];
+      let grupoAtual = null;
+      let buffer = [];
+      const fechar = () => {
+        if (!buffer.length) return;
+        const titulo = grupoAtual === 'lacre' ? 'Lacres registrados' : 'Carregamentos registrados';
+        const descricao = grupoAtual === 'lacre'
+          ? 'Relação fotográfica dos lacres vinculados a esta operação.'
+          : 'Relação fotográfica das etapas de carregamento desta operação.';
+        partes.push(`
+          <section class="pdf-section">
+            <div class="pdf-section-head">
+              <div>
+                <span>Estrutura fotográfica</span>
+                <h2>${titulo}</h2>
+              </div>
+              <p>${descricao}</p>
+            </div>
+            <div class="pdf-volumes-list">${buffer.join('')}</div>
+          </section>
+        `);
+        buffer = [];
+      };
+      blocos.forEach((bloco) => {
+        if (bloco.grupo !== grupoAtual) { fechar(); grupoAtual = bloco.grupo; }
+        buffer.push(bloco.html);
+      });
+      fechar();
+      return partes.join('');
+    }
+
+    // Paginacao por medicao: injeta a capa no DOM e adiciona registros um a um ate a
+    // altura real (offsetHeight) chegar perto do limite de uma A4 (1122px). Devolve
+    // quantos registros cabem na 1a pagina sem ultrapassar a folha. A .pdf-photo-frame
+    // tem altura fixa (190px), entao a medicao e estavel mesmo antes das imagens carregarem.
+    function medirRegistrosCapaPDF(root, construirCapa, blocos) {
+      if (!root || !blocos || !blocos.length) return 0;
+      const A4_LIMITE = 1118; // ~297mm; deixa ~4px de folga para nunca exceder a pagina.
+      root.innerHTML = `<div class="pdf-document">${construirCapa(1, '')}</div>`;
+      const capa = root.querySelector('.pdf-page');
+      const extra = capa ? capa.querySelector('.pdf-cover-extra') : null;
+      let cabem = 0;
+      if (capa && extra) {
+        for (let k = 1; k <= blocos.length; k++) {
+          extra.innerHTML = montarRegistrosCapaPDF(blocos.slice(0, k));
+          if (capa.offsetHeight <= A4_LIMITE) cabem = k; else break;
+        }
+        extra.innerHTML = '';
+      }
+      return cabem;
+    }
+
     function construirPaginasPDF(dadosPDF = null) {
       const { campos, registros, regra, geradoEm } = dadosPDF || obterDadosPDF();
       const quantidades = obterQuantidadeRegistrosEsperada(campos);
@@ -2512,10 +2575,17 @@
         indiceExtra: index - quantidades.carregamentos + 1
       }));
       const root = document.getElementById('pdf-render-root');
-      const paginas = [];
-      const totalPaginas = Math.max(1, 1 + Math.ceil(listaLacres.length / 2) + Math.ceil(listaCarregamentos.length / 2));
 
-      paginas.push(`
+      // Blocos de registro em ordem de documento (lacres e depois carregamentos),
+      // para fluir os primeiros registros para a 1a pagina enquanto couberem na A4.
+      const blocosCapa = [
+        ...listaLacres.map((r) => ({ grupo: 'lacre', html: montarRegistroPDF('lacre', r.numero, r.src) })),
+        ...listaCarregamentos.map((r) => ({ grupo: 'carregamento', html: montarRegistroPDF('carregamento', r.numero, r.src, { extra: r.extra, indiceExtra: r.indiceExtra }) }))
+      ];
+
+      // Capa parametrizada (mesmo HTML para medir e renderizar). O ".pdf-cover-extra"
+      // recebe os primeiros registros que couberem com seguranca na 1a pagina.
+      const construirCapa = (numeroTotalPaginas, extraHTML) => `
         <section class="pdf-page pdf-page--compact">
           <div class="pdf-sheet">
             <div class="pdf-topline">
@@ -2525,7 +2595,7 @@
                 </div>
                 <div class="pdf-brandline">Dulcini S/A • Checklist fotográfico</div>
               </div>
-              <div class="pdf-pagecount">Página 1 / ${totalPaginas}</div>
+              <div class="pdf-pagecount">Página 1 / ${numeroTotalPaginas}</div>
             </div>
 
             <div class="pdf-main">
@@ -2590,6 +2660,8 @@
                   ${montarMetaCard('Critério operacional', regra, true)}
                 </div>
               </section>
+
+              <div class="pdf-cover-extra">${extraHTML}</div>
             </div>
 
             <div class="pdf-footer">
@@ -2599,10 +2671,22 @@
             </div>
           </div>
         </section>
-      `);
+      `;
 
-      for (let i = 0; i < listaLacres.length; i += 2) {
-        const dupla = listaLacres.slice(i, i + 2);
+      // Mede quantos registros cabem na 1a pagina e divide o restante para as demais.
+      const qtdNaCapa = medirRegistrosCapaPDF(root, construirCapa, blocosCapa);
+      const lacresNaCapa = Math.min(qtdNaCapa, listaLacres.length);
+      const carregNaCapa = Math.max(0, qtdNaCapa - listaLacres.length);
+      const lacresRestantes = listaLacres.slice(lacresNaCapa);
+      const carregRestantes = listaCarregamentos.slice(carregNaCapa);
+
+      const paginas = [];
+      const totalPaginas = Math.max(1, 1 + Math.ceil(lacresRestantes.length / 2) + Math.ceil(carregRestantes.length / 2));
+
+      paginas.push(construirCapa(totalPaginas, montarRegistrosCapaPDF(blocosCapa.slice(0, qtdNaCapa))));
+
+      for (let i = 0; i < lacresRestantes.length; i += 2) {
+        const dupla = lacresRestantes.slice(i, i + 2);
         const paginaAtual = paginas.length + 1;
 
         paginas.push(`
@@ -2646,8 +2730,8 @@
         `);
       }
 
-      for (let i = 0; i < listaCarregamentos.length; i += 2) {
-        const dupla = listaCarregamentos.slice(i, i + 2);
+      for (let i = 0; i < carregRestantes.length; i += 2) {
+        const dupla = carregRestantes.slice(i, i + 2);
         const paginaAtual = paginas.length + 1;
 
         paginas.push(`
