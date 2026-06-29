@@ -14,6 +14,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="./cadastros-seed.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1076,7 +1077,12 @@
       <h3>Histórico de conferências</h3>
       <input type="search" id="busca-historico" placeholder="Buscar por cliente, placa, NF, motorista, protocolo ou data..." autocomplete="off"
         oninput="renderizarHistorico()" style="width:100%; box-sizing:border-box; padding:12px 14px; margin-bottom:14px; border:1px solid var(--borda,#cdd8d2); border-radius:12px; font-size:14px;">
-      <div id="lista-historico-corpo" style="max-height:60vh; overflow-y:auto; padding-right:4px;"></div>
+      <div id="lista-historico-corpo" style="max-height:52vh; overflow-y:auto; padding-right:4px;"></div>
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--borda,#cdd8d2);">
+        <label for="import-cadastros" style="display:block; font-size:13px; font-weight:700; color:var(--azul-800,#0033a0); margin-bottom:6px;">Atualizar base de cadastros (Excel)</label>
+        <p style="margin:0 0 8px; font-size:12px; color:var(--texto-suave,#5b6b63);">Planilha com colunas Placa, Motorista e Transportadora (uma aba por transportadora). Só adiciona o que falta; não duplica.</p>
+        <input type="file" id="import-cadastros" accept=".xlsx,.xls" onchange="importarCadastrosDeArquivo(this.files[0]); this.value='';" style="width:100%; font-size:13px;">
+      </div>
       <button type="button" class="btn btn-add" style="width:100%; margin-top:14px;" onclick="fecharHistorico()">Fechar</button>
     </div>
   </div>
@@ -1096,11 +1102,12 @@
     const LEGACY_STORAGE_KEYS = [STORAGE_KEY, 'checklists_pendentes'];
     const DB_NAME = 'dulcini_checklists_db';
     const LEGACY_DB_NAMES = ['centrosucar_checklists_db'];
-    const DB_VERSION = 3;
+    const DB_VERSION = 4;
     const STORE_NAME = 'pendentes';
     const RASCUNHO_STORE = 'rascunho-ativo';
     const RASCUNHO_KEY = 'atual';
     const CONFERENCIAS_STORE = 'conferencias';
+    const CADASTROS_STORE = 'cadastros';
     const CODIGO_PREFIXO = 'FRA';
     const LOGO_PATH = './Logo_Beija-flor_Transp_.jpg';
     // PDFs acima deste número de páginas são pesados/lentos para rasterizar: avisamos antes de gerar.
@@ -1128,6 +1135,10 @@
           }
           if (!db.objectStoreNames.contains(CONFERENCIAS_STORE)) {
             db.createObjectStore(CONFERENCIAS_STORE, { keyPath: 'id' });
+          }
+          // Base mestre (motoristas/placas/transportadoras): semeada do Excel e ampliada no uso.
+          if (!db.objectStoreNames.contains(CADASTROS_STORE)) {
+            db.createObjectStore(CADASTROS_STORE, { keyPath: 'id' });
           }
         };
 
@@ -1284,43 +1295,189 @@
     function preencherDatalist(id, valores) {
       const dl = document.getElementById(id);
       if (!dl) return;
-      dl.innerHTML = Array.from(valores).slice(0, 60).map((v) => `<option value="${escaparHTML(v)}"></option>`).join('');
+      dl.innerHTML = Array.from(valores).slice(0, 400).map((v) => `<option value="${escaparHTML(v)}"></option>`).join('');
     }
 
+    // ===== Base mestre (cadastros): motoristas, placas, transportadoras =====
+    const normCad = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+    function idCadastro(tipo, valor) {
+      const v = tipo === 'placa' ? normalizarPlaca(valor) : normCad(valor).toUpperCase();
+      return tipo + '|' + v;
+    }
+    async function obterStoreCadastros(modo = 'readonly') {
+      const db = await abrirBanco();
+      return db.transaction(CADASTROS_STORE, modo).objectStore(CADASTROS_STORE);
+    }
+    async function listarCadastros(tipo = '') {
+      try {
+        const store = await obterStoreCadastros('readonly');
+        return await new Promise((resolve) => {
+          const req = store.getAll();
+          req.onsuccess = () => resolve((req.result || []).filter((r) => !tipo || r.tipo === tipo));
+          req.onerror = () => resolve([]);
+        });
+      } catch { return []; }
+    }
+    // Insere na base mestre só se ainda não existir (idempotente; chave normalizada evita duplicidade).
+    async function upsertCadastro(tipo, valorBruto, origem = 'manual') {
+      const valor = tipo === 'placa' ? normalizarPlaca(valorBruto) : normCad(valorBruto);
+      if (!valor) return false;
+      const id = idCadastro(tipo, valor);
+      try {
+        const store = await obterStoreCadastros('readwrite');
+        return await new Promise((resolve) => {
+          const get = store.get(id);
+          get.onsuccess = () => {
+            if (get.result) { resolve(false); return; }
+            store.put({ id, tipo, valor, origem, criadoEm: Date.now() });
+            store.transaction.oncomplete = () => resolve(true);
+            store.transaction.onerror = () => resolve(false);
+          };
+          get.onerror = () => resolve(false);
+        });
+      } catch { return false; }
+    }
+    // Semeia a base mestre do cadastros-seed.js (Excel). Só adiciona o que falta -> preserva edições/manuais.
+    async function semearCadastros() {
+      const seed = window.CADASTROS_SEED;
+      if (!seed) return;
+      try {
+        const store = await obterStoreCadastros('readwrite');
+        const existentes = await new Promise((resolve) => {
+          const req = store.getAllKeys();
+          req.onsuccess = () => resolve(new Set(req.result || []));
+          req.onerror = () => resolve(new Set());
+        });
+        const semear = (tipo, lista) => (lista || []).forEach((valorBruto) => {
+          const valor = tipo === 'placa' ? normalizarPlaca(valorBruto) : normCad(valorBruto);
+          if (!valor) return;
+          const id = idCadastro(tipo, valor);
+          if (existentes.has(id)) return;
+          existentes.add(id);
+          store.put({ id, tipo, valor, origem: 'excel', criadoEm: Date.now() });
+        });
+        semear('motorista', seed.motoristas);
+        semear('placa', seed.placas);
+        semear('transportadora', seed.transportadoras);
+        await new Promise((resolve) => { store.transaction.oncomplete = () => resolve(); store.transaction.onerror = () => resolve(); });
+      } catch (erro) { console.warn('Falha ao semear cadastros:', erro); }
+    }
+    // Importação de Excel sob demanda (SheetJS via CDN) -> amplia a base mestre. Idempotente, sem duplicar.
+    let sheetJsPromise = null;
+    function carregarSheetJS() {
+      if (window.XLSX) return Promise.resolve(window.XLSX);
+      if (!sheetJsPromise) sheetJsPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = () => resolve(window.XLSX);
+        s.onerror = () => reject(new Error('Não foi possível carregar o leitor de Excel.'));
+        document.head.appendChild(s);
+      });
+      return sheetJsPromise;
+    }
+    async function importarCadastrosDeArquivo(file) {
+      if (!file) return;
+      let XLSX;
+      try { XLSX = await carregarSheetJS(); } catch (e) { alert(e.message + ' Verifique a conexão e tente novamente.'); return; }
+      let wb;
+      try { wb = XLSX.read(await file.arrayBuffer(), { type: 'array' }); }
+      catch { alert('Não foi possível ler este arquivo Excel.'); return; }
+      const store = await obterStoreCadastros('readwrite');
+      const existentes = await new Promise((resolve) => {
+        const r = store.getAllKeys();
+        r.onsuccess = () => resolve(new Set(r.result || []));
+        r.onerror = () => resolve(new Set());
+      });
+      const tentar = (tipo, valorBruto) => {
+        const valor = tipo === 'placa' ? normalizarPlaca(valorBruto) : normCad(valorBruto);
+        if (!valor) return false;
+        const id = idCadastro(tipo, valor);
+        if (existentes.has(id)) return false;
+        existentes.add(id);
+        store.put({ id, tipo, valor, origem: 'excel', criadoEm: Date.now() });
+        return true;
+      };
+      let lidos = 0, novos = 0;
+      for (const nomeAba of wb.SheetNames) {
+        const linhas = XLSX.utils.sheet_to_json(wb.Sheets[nomeAba], { header: 1, blankrows: false });
+        for (const linha of linhas) {
+          const placa = normCad(linha[0]); const motorista = normCad(linha[1]); const transp = normCad(linha[2]);
+          if (/^placa$/i.test(placa) && /^motorista$/i.test(motorista)) continue; // cabeçalho
+          if (!placa && !motorista && !transp) continue; // linha vazia
+          lidos++;
+          let criou = false;
+          if (placa) criou = tentar('placa', placa) || criou;
+          if (motorista) criou = tentar('motorista', motorista) || criou;
+          if (transp) criou = tentar('transportadora', transp) || criou;
+          if (criou) novos++;
+        }
+      }
+      await new Promise((resolve) => { store.transaction.oncomplete = () => resolve(); store.transaction.onerror = () => resolve(); });
+      await atualizarSugestoesHistorico();
+      alert(`Importação concluída.\nLinhas lidas: ${lidos}\nNovos registros adicionados: ${novos}`);
+    }
+
+    let placaParaTransportadora = {};
     async function atualizarSugestoesHistorico() {
-      let conferencias = [];
-      try { conferencias = await listarConferenciasDB(); } catch (erro) { return; }
       const clientes = new Set();
       const transportadoras = new Set();
       const motoristas = new Set();
       const placas = new Set();
       placaParaMotorista = {};
-      conferencias.forEach((c) => {
-        const campos = c.campos || {};
-        const cliente = String(campos.c || '').trim();
-        const transportadora = String(campos.t || '').trim();
-        const motorista = String(campos.m || '').trim();
-        const placa = String(campos.p || '').trim();
-        if (cliente) clientes.add(cliente);
-        if (transportadora) transportadoras.add(transportadora);
-        if (motorista) motoristas.add(motorista);
-        if (placa) { placas.add(placa); if (!placaParaMotorista[placa] && motorista) placaParaMotorista[placa] = motorista; }
+      placaParaTransportadora = {};
+      // 1) Base mestre (cadastros) + relações do seed (placa->motorista, placa->transportadora).
+      const cad = await listarCadastros();
+      cad.forEach((c) => {
+        if (c.tipo === 'placa') placas.add(c.valor);
+        else if (c.tipo === 'motorista') motoristas.add(c.valor);
+        else if (c.tipo === 'transportadora') transportadoras.add(c.valor);
       });
-      preencherDatalist('dl-cliente', clientes);
-      preencherDatalist('dl-transportadora', transportadoras);
-      preencherDatalist('dl-motorista', motoristas);
-      preencherDatalist('dl-placa', placas);
+      const seed = window.CADASTROS_SEED || {};
+      Object.entries(seed.placaMotorista || {}).forEach(([p, m]) => { if (!placaParaMotorista[p]) placaParaMotorista[p] = m; });
+      Object.entries(seed.placaTransportadora || {}).forEach(([p, t]) => { if (!placaParaTransportadora[p]) placaParaTransportadora[p] = t; });
+      // 2) Histórico (clientes só existem aqui; aprende valores efetivamente usados).
+      try {
+        const conferencias = await listarConferenciasDB();
+        conferencias.forEach((c) => {
+          const campos = c.campos || {};
+          const cliente = String(campos.c || '').trim();
+          const transportadora = String(campos.t || '').trim();
+          const motorista = String(campos.m || '').trim();
+          const placa = normalizarPlaca(campos.p || '');
+          if (cliente) clientes.add(cliente);
+          if (transportadora) transportadoras.add(transportadora);
+          if (motorista) motoristas.add(motorista);
+          if (placa) {
+            placas.add(placa);
+            if (!placaParaMotorista[placa] && motorista) placaParaMotorista[placa] = motorista;
+            if (!placaParaTransportadora[placa] && transportadora) placaParaTransportadora[placa] = transportadora;
+          }
+        });
+      } catch {}
+      preencherDatalist('dl-cliente', [...clientes].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+      preencherDatalist('dl-transportadora', [...transportadoras].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+      preencherDatalist('dl-motorista', [...motoristas].sort((a, b) => a.localeCompare(b, 'pt-BR')));
+      preencherDatalist('dl-placa', [...placas].sort());
     }
 
+    // Auto-preenche motorista E transportadora pela placa quando a relação é conhecida e o campo está vazio.
     function autoPreencherMotoristaPelaPlaca() {
       const placaEl = document.getElementById('p');
+      if (!placaEl) return;
+      const placa = normalizarPlaca(placaEl.value);
       const motoristaEl = document.getElementById('m');
-      if (!placaEl || !motoristaEl) return;
-      const motorista = placaParaMotorista[normalizarPlaca(placaEl.value)];
-      if (motorista && !String(motoristaEl.value || '').trim()) {
+      const motorista = placaParaMotorista[placa];
+      if (motoristaEl && motorista && !String(motoristaEl.value || '').trim()) {
         motoristaEl.value = motorista;
         aplicarMaiusculoNoCampo(motoristaEl);
         motoristaEl.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      const transpEl = document.getElementById('t');
+      const transportadora = placaParaTransportadora[placa];
+      if (transpEl && transportadora && !String(transpEl.value || '').trim()) {
+        transpEl.value = transportadora;
+        aplicarMaiusculoNoCampo(transpEl);
+        transpEl.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
 
@@ -2997,6 +3154,10 @@
             nomeArquivo
           });
           await limparRascunhoDB();
+          // Aprende motorista/placa/transportadora novos na base mestre (Fracionado permite cadastrar).
+          upsertCadastro('motorista', dadosPDF.campos.m).catch(() => {});
+          upsertCadastro('placa', dadosPDF.campos.p).catch(() => {});
+          upsertCadastro('transportadora', dadosPDF.campos.t).catch(() => {});
           atualizarSugestoesHistorico();
         } catch (erroHist) {
           console.warn('Falha ao registrar conferência no histórico:', erroHist);
@@ -3243,6 +3404,7 @@
         await abrirBanco();
         await migrarLocalStorageParaIndexedDB();
         await migrarIndexedDBLegado();
+        await semearCadastros();
         await recarregarPendentes();
         await restaurarRascunho();
         await atualizarSugestoesHistorico();
