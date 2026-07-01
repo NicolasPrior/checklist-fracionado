@@ -1046,6 +1046,7 @@
         <div class="photo-tabs">
           <button type="button" class="photo-tab is-active" data-aba-foto="lacres" onclick="alternarAbaFotos('lacres', this)">Lacres</button>
           <button type="button" class="photo-tab" data-aba-foto="carregamentos" onclick="alternarAbaFotos('carregamentos', this)">Carregamentos</button>
+          <button type="button" class="photo-tab" data-aba-foto="pos" onclick="alternarAbaFotos('pos', this)">Fotos após o carregamento</button>
         </div>
 
         <div class="photo-panel is-active" id="aba-lacres">
@@ -1058,6 +1059,14 @@
             <button type="button" class="btn-carregamento-extra" onclick="adicionarRegistroExtraCarregamento()">Adicionar foto complementar</button>
           </div>
           <div class="registro-grid" id="container-carregamentos"></div>
+        </div>
+
+        <div class="photo-panel" id="aba-pos">
+          <div class="carregamento-extra-bar" id="acoes-pos">
+            <p id="texto-pos-carregamento">Registre estas fotos depois que a carga já estiver corretamente posicionada dentro do caminhão. Para Bag in Box são exigidas no mínimo 4 fotos; para os demais tipos, no mínimo 3.</p>
+            <button type="button" class="btn-carregamento-extra" onclick="adicionarFotoPosCarregamento()">Adicionar foto</button>
+          </div>
+          <div class="registro-grid" id="container-pos"></div>
         </div>
       </section>
     </div>
@@ -1435,6 +1444,8 @@
     async function upsertCadastro(tipo, valorBruto, origem = 'manual') {
       const valor = tipo === 'placa' ? normalizarPlaca(valorBruto) : normCad(valorBruto);
       if (!valor) return false;
+      // Pavani é exclusiva do Granel: não é aprendida/persistida como transportadora no Fracionado.
+      if (tipo === 'transportadora' && ehTransportadoraPavani(valor)) return false;
       const id = idCadastro(tipo, valor);
       try {
         const store = await obterStoreCadastros('readwrite');
@@ -1497,7 +1508,13 @@
           req.onerror = () => resolve([]);
         });
         let removidos = 0;
-        todos.forEach((r) => { if (r && r.origem === 'excel' && !validos.has(r.id)) { store.delete(r.id); removidos++; } });
+        todos.forEach((r) => {
+          if (!r) return;
+          // Remove o que foi semeado (origem 'excel') e não pertence mais ao seed atual.
+          if (r.origem === 'excel' && !validos.has(r.id)) { store.delete(r.id); removidos++; return; }
+          // Pavani é exclusiva do Granel: purga qualquer resíduo no Fracionado (cache/import/manual).
+          if (r.tipo === 'transportadora' && ehTransportadoraPavani(r.valor)) { store.delete(r.id); removidos++; }
+        });
         await new Promise((resolve) => { store.transaction.oncomplete = () => resolve(); store.transaction.onerror = () => resolve(); });
         if (removidos) console.info('Cadastros reconciliados (removidos do seed antigo):', removidos);
       } catch (erro) { console.warn('Falha ao reconciliar cadastros:', erro); }
@@ -1531,6 +1548,7 @@
       const tentar = (tipo, valorBruto) => {
         const valor = tipo === 'placa' ? normalizarPlaca(valorBruto) : normCad(valorBruto);
         if (!valor) return false;
+        if (tipo === 'transportadora' && ehTransportadoraPavani(valor)) return false; // Pavani só no Granel
         const id = idCadastro(tipo, valor);
         if (existentes.has(id)) return false;
         existentes.add(id);
@@ -1613,7 +1631,8 @@
         });
       } catch {}
       opcoesAC.c = [...clientes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-      opcoesAC.t = [...transportadoras].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      // Pavani é exclusiva do Granel: nunca é sugerida no Fracionado (mesmo vinda de histórico/cadastro antigo).
+      opcoesAC.t = [...transportadoras].filter((t) => !ehTransportadoraPavani(t)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
       opcoesAC.m = [...motoristas].sort((a, b) => a.localeCompare(b, 'pt-BR'));
       opcoesAC.p = [...placas].sort();
       if (acInputAtual) acRender(acInputAtual); // atualiza a lista aberta, se houver
@@ -1633,7 +1652,8 @@
       }
       const transpEl = document.getElementById('t');
       const transportadora = placaParaTransportadora[placa];
-      if (transpEl && transportadora && !String(transpEl.value || '').trim()) {
+      // Nunca auto-preenche Pavani no Fracionado (regra de negócio: Pavani só no Granel).
+      if (transpEl && transportadora && !ehTransportadoraPavani(transportadora) && !String(transpEl.value || '').trim()) {
         transpEl.value = transportadora;
         aplicarMaiusculoNoCampo(transpEl);
         transpEl.dispatchEvent(new Event('input', { bubbles: true }));
@@ -2177,24 +2197,26 @@
 
     function normalizarColecoesFotos(registros = null) {
       if (!registros) {
-        return { lacres: [], carregamentos: [] };
+        return { lacres: [], carregamentos: [], posCarregamento: [] };
       }
 
-      if (Array.isArray(registros.lacres) || Array.isArray(registros.carregamentos)) {
+      if (Array.isArray(registros.lacres) || Array.isArray(registros.carregamentos) || Array.isArray(registros.posCarregamento)) {
         return {
           lacres: Array.isArray(registros.lacres) ? registros.lacres.map(normalizarRegistroLacre) : [],
-          carregamentos: Array.isArray(registros.carregamentos) ? registros.carregamentos.map(normalizarRegistroCarregamento) : []
+          carregamentos: Array.isArray(registros.carregamentos) ? registros.carregamentos.map(normalizarRegistroCarregamento) : [],
+          posCarregamento: Array.isArray(registros.posCarregamento) ? registros.posCarregamento.map(normalizarRegistroCarregamento) : []
         };
       }
 
       if (Array.isArray(registros)) {
         return {
           lacres: registros.map((item) => normalizarRegistroLacre(item?.lacre || '')),
-          carregamentos: registros.map((item) => normalizarRegistroCarregamento(item?.carregamento || ''))
+          carregamentos: registros.map((item) => normalizarRegistroCarregamento(item?.carregamento || '')),
+          posCarregamento: []
         };
       }
 
-      return { lacres: [], carregamentos: [] };
+      return { lacres: [], carregamentos: [], posCarregamento: [] };
     }
 
     function criarMarkupBoxImagem(tipo, numero, alt, label = '', extra = false) {
@@ -2213,26 +2235,39 @@
     }
 
     function criarCardRegistro(tipo, numero, opcoes = {}) {
-      const extra = tipo === 'carregamento' && Boolean(opcoes.extra);
+      const extra = (tipo === 'carregamento' || tipo === 'pos') && Boolean(opcoes.extra);
       const indiceExtra = extra ? Number(opcoes.indiceExtra || numero || 1) : 0;
-      const titulo = extra
-        ? 'Foto complementar do carregamento'
-        : tipo === 'lacre'
-          ? `Lacre ${numero}`
-          : `Carregamento ${numero}`;
-      const descricao = extra
-        ? 'Use este registro para uma foto geral do carregamento, dos volumes fracionados ou de outra evidência operacional.'
-        : tipo === 'lacre'
-          ? 'Registre o lacre correspondente a esta posição.'
-          : 'Registre o carregamento correspondente a esta posição.';
-      const alt = extra
-        ? 'Foto complementar do carregamento'
-        : tipo === 'lacre'
-          ? `Foto do lacre ${numero}`
-          : `Foto do carregamento ${numero}`;
-      const dica = extra
-        ? 'Use para visão geral, volumes fracionados ou comprovação complementar.'
-        : 'Câmera ou galeria';
+      let titulo, descricao, alt, dica, removeHandler;
+
+      if (tipo === 'pos') {
+        titulo = extra ? 'Foto complementar após o carregamento' : `Foto após o carregamento ${numero}`;
+        descricao = extra
+          ? 'Use este registro para uma foto adicional da carga já posicionada dentro do caminhão.'
+          : 'Registre a carga já corretamente posicionada dentro do caminhão, após a conclusão do carregamento.';
+        alt = extra ? 'Foto complementar após o carregamento' : `Foto após o carregamento ${numero}`;
+        dica = 'Câmera ou galeria — caminhão já carregado';
+        removeHandler = 'removerFotoPosExtra(this)';
+      } else {
+        titulo = extra
+          ? 'Foto complementar do carregamento'
+          : tipo === 'lacre'
+            ? `Lacre ${numero}`
+            : `Carregamento ${numero}`;
+        descricao = extra
+          ? 'Use este registro para uma foto geral do carregamento, dos volumes fracionados ou de outra evidência operacional.'
+          : tipo === 'lacre'
+            ? 'Registre o lacre correspondente a esta posição.'
+            : 'Registre o carregamento correspondente a esta posição.';
+        alt = extra
+          ? 'Foto complementar do carregamento'
+          : tipo === 'lacre'
+            ? `Foto do lacre ${numero}`
+            : `Foto do carregamento ${numero}`;
+        dica = extra
+          ? 'Use para visão geral, volumes fracionados ou comprovação complementar.'
+          : 'Câmera ou galeria';
+        removeHandler = 'removerRegistroExtraCarregamento(this)';
+      }
 
       return `
         <article class="registro-card ${extra ? 'registro-card--extra' : ''}" ${extra ? `data-extra-indice="${indiceExtra}"` : ''}>
@@ -2241,7 +2276,7 @@
             <div class="registro-head-side">
               ${extra ? '<span class="registro-extra-tag">Foto complementar</span>' : ''}
               <p>${escaparHTML(descricao)}</p>
-              ${extra ? '<button type="button" class="registro-extra-remove" onclick="removerRegistroExtraCarregamento(this)">Remover</button>' : ''}
+              ${extra ? `<button type="button" class="registro-extra-remove" onclick="${removeHandler}">Remover</button>` : ''}
             </div>
           </div>
           ${criarMarkupBoxImagem(tipo, numero, alt, titulo, extra)}
@@ -2289,7 +2324,7 @@
       const obrigatorios = Math.max(0, Number(opcoes.obrigatorios ?? total) || 0);
 
       container.innerHTML = Array.from({ length: total }, (_, index) => {
-        const extra = tipo === 'carregamento' && index >= obrigatorios;
+        const extra = (tipo === 'carregamento' || tipo === 'pos') && index >= obrigatorios;
         return criarCardRegistro(
           tipo,
           extra ? index - obrigatorios + 1 : index + 1,
@@ -2370,6 +2405,83 @@
       alternarAbaFotos('carregamentos');
     }
 
+    // Normaliza o tipo de carga para comparar variações de grafia de "Bag in Box"
+    // sem alterar o valor armazenado/exibido (acento-insensitivel, maiúsculo, espaços colapsados).
+    function tipoBagInBox(tipo = '') {
+      return String(tipo || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim() === 'BAG IN BOX';
+    }
+
+    // Mínimo de fotos APÓS o carregamento: 4 para Bag in Box, 3 para os demais tipos.
+    // Retorna 0 enquanto o tipo de carga não foi definido (a seção ainda não se aplica).
+    function obterMinimoPosCarregamento(campos = null) {
+      const dados = campos || coletarCamposFormulario();
+      if (!dados.tp) return 0;
+      return tipoBagInBox(dados.tp) ? 4 : 3;
+    }
+
+    function atualizarInfoPosCarregamento(minimo = 0, colecoes = null) {
+      const texto = document.getElementById('texto-pos-carregamento');
+      if (!texto) return;
+      if (!minimo) {
+        texto.innerText = 'Selecione o tipo de carga para liberar o registro das fotos após o carregamento.';
+        return;
+      }
+      const registros = normalizarColecoesFotos(colecoes || coletarRegistros());
+      const preenchidas = registros.posCarregamento.filter(Boolean).length;
+      const base = `Registre estas fotos depois que a carga já estiver corretamente posicionada dentro do caminhão. São exigidas no mínimo ${minimo} fotos para este tipo de embalagem.`;
+      texto.innerText = preenchidas >= minimo
+        ? `${base} Mínimo atingido (${preenchidas}/${minimo}). Você pode adicionar fotos complementares se necessário.`
+        : `${base} Adicionadas até agora: ${preenchidas}/${minimo}.`;
+    }
+
+    function adicionarFotoPosCarregamento() {
+      const minimo = obterMinimoPosCarregamento();
+      if (!minimo) {
+        alert('Selecione o tipo de carga antes de adicionar fotos após o carregamento.');
+        return;
+      }
+      const registros = normalizarColecoesFotos(coletarRegistros());
+      registros.posCarregamento.push('');
+      sincronizarRegistrosFotograficos(registros);
+      alternarAbaFotos('pos');
+
+      requestAnimationFrame(() => {
+        const cards = document.querySelectorAll('#container-pos .registro-card');
+        const ultimo = cards[cards.length - 1];
+        if (ultimo) ultimo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    function removerFotoPosExtra(botao) {
+      const card = botao?.closest('.registro-card--extra');
+      if (!card) return;
+
+      const box = card.querySelector('.box-imagem');
+      if (box && obterSrcBox(box) && !confirm('Deseja remover esta foto após o carregamento?')) {
+        return;
+      }
+
+      const indiceExtra = parseInt(card.dataset.extraIndice || '0', 10);
+      const minimo = obterMinimoPosCarregamento();
+      const registros = normalizarColecoesFotos(coletarRegistros());
+      const indiceReal = minimo + indiceExtra - 1;
+
+      if (!indiceExtra || indiceReal < minimo || indiceReal >= registros.posCarregamento.length) {
+        return;
+      }
+
+      registros.posCarregamento.splice(indiceReal, 1);
+      sincronizarRegistrosFotograficos(registros);
+      alternarAbaFotos('pos');
+    }
+
+    // Pavani é válida apenas para o checklist Granel: não deve aparecer, ser selecionada,
+    // auto-preenchida ou persistida no Fracionado. Comparação acento-insensitivel por palavra.
+    function ehTransportadoraPavani(valor = '') {
+      const t = String(valor || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+      return /\bPAVANI\b/.test(t);
+    }
+
     function sincronizarRegistrosFotograficos(registros = null) {
       const colecoes = normalizarColecoesFotos(registros || coletarRegistros());
       const quantidades = obterQuantidadeRegistrosEsperada();
@@ -2402,7 +2514,8 @@
     function coletarRegistros() {
       return {
         lacres: Array.from(document.querySelectorAll('#container-lacres .box-imagem')).map(obterSrcBox),
-        carregamentos: Array.from(document.querySelectorAll('#container-carregamentos .box-imagem')).map(obterSrcBox)
+        carregamentos: Array.from(document.querySelectorAll('#container-carregamentos .box-imagem')).map(obterSrcBox),
+        posCarregamento: Array.from(document.querySelectorAll('#container-pos .box-imagem')).map(obterSrcBox)
       };
     }
 
@@ -2480,6 +2593,10 @@
 
     async function salvarParaDepois() {
       if (!validarCamposFormatados()) {
+        return;
+      }
+
+      if (!validarTransportadoraFracionado()) {
         return;
       }
 
@@ -2806,17 +2923,23 @@
     }
 
     function montarRegistroPDF(tipo, numero, src, opcoes = {}) {
-      const extra = tipo === 'carregamento' && Boolean(opcoes.extra);
-      const titulo = extra
-        ? 'Foto complementar do carregamento'
-        : tipo === 'lacre'
-          ? `Lacre ${numero}`
-          : `Carregamento ${numero}`;
-      const descricao = extra
-        ? 'Registro fotográfico complementar do carregamento.'
-        : tipo === 'lacre'
-          ? `Registro fotográfico do lacre ${numero}.`
-          : `Registro fotográfico do carregamento ${numero}.`;
+      const extra = (tipo === 'carregamento' || tipo === 'pos') && Boolean(opcoes.extra);
+      let titulo, descricao;
+      if (tipo === 'pos') {
+        titulo = `Foto após o carregamento ${numero}`;
+        descricao = 'Evidência da carga já corretamente posicionada dentro do caminhão, após a conclusão do carregamento.';
+      } else {
+        titulo = extra
+          ? 'Foto complementar do carregamento'
+          : tipo === 'lacre'
+            ? `Lacre ${numero}`
+            : `Carregamento ${numero}`;
+        descricao = extra
+          ? 'Registro fotográfico complementar do carregamento.'
+          : tipo === 'lacre'
+            ? `Registro fotográfico do lacre ${numero}.`
+            : `Registro fotográfico do carregamento ${numero}.`;
+      }
       return `
         <article class="pdf-volume-card">
           <div class="pdf-volume-top">
@@ -2854,10 +2977,16 @@
       let buffer = [];
       const fechar = () => {
         if (!buffer.length) return;
-        const titulo = grupoAtual === 'lacre' ? 'Lacres registrados' : 'Carregamentos registrados';
+        const titulo = grupoAtual === 'lacre'
+          ? 'Lacres registrados'
+          : grupoAtual === 'pos'
+            ? 'Fotos após o carregamento'
+            : 'Carregamentos registrados';
         const descricao = grupoAtual === 'lacre'
           ? 'Relação fotográfica dos lacres vinculados a esta operação.'
-          : 'Relação fotográfica das etapas de carregamento desta operação.';
+          : grupoAtual === 'pos'
+            ? 'Relação fotográfica da carga já posicionada no caminhão, após o carregamento.'
+            : 'Relação fotográfica das etapas de carregamento desta operação.';
         partes.push(`
           <section class="pdf-section">
             <div class="pdf-section-head">
@@ -2911,13 +3040,16 @@
         extra: index >= quantidades.carregamentos,
         indiceExtra: index - quantidades.carregamentos + 1
       }));
+      // Fotos após o carregamento (registros antigos podem não ter o campo -> trata como vazio).
+      const listaPos = (registros.posCarregamento || []).map((src, index) => ({ numero: index + 1, src }));
       const root = document.getElementById('pdf-render-root');
 
-      // Blocos de registro em ordem de documento (lacres e depois carregamentos),
-      // para fluir os primeiros registros para a 1a pagina enquanto couberem na A4.
+      // Blocos de registro em ordem de documento (lacres, carregamentos e, por fim, fotos após
+      // o carregamento), para fluir os primeiros registros para a 1a pagina enquanto couberem na A4.
       const blocosCapa = [
         ...listaLacres.map((r) => ({ grupo: 'lacre', html: montarRegistroPDF('lacre', r.numero, r.src) })),
-        ...listaCarregamentos.map((r) => ({ grupo: 'carregamento', html: montarRegistroPDF('carregamento', r.numero, r.src, { extra: r.extra, indiceExtra: r.indiceExtra }) }))
+        ...listaCarregamentos.map((r) => ({ grupo: 'carregamento', html: montarRegistroPDF('carregamento', r.numero, r.src, { extra: r.extra, indiceExtra: r.indiceExtra }) })),
+        ...listaPos.map((r) => ({ grupo: 'pos', html: montarRegistroPDF('pos', r.numero, r.src) }))
       ];
 
       // Capa parametrizada (mesmo HTML para medir e renderizar). O ".pdf-cover-extra"
@@ -2954,7 +3086,7 @@
                   </div>
                   <div class="pdf-highlight">
                     <span>Registros</span>
-                    <strong>${escaparHTML(String(listaLacres.length + listaCarregamentos.length))}</strong>
+                    <strong>${escaparHTML(String(listaLacres.length + listaCarregamentos.length + listaPos.length))}</strong>
                   </div>
                 </div>
               </div>
@@ -2993,6 +3125,7 @@
                 <div class="pdf-meta-grid">
                   ${montarMetaCard('Registros de lacre', String(listaLacres.length || 0))}
                   ${montarMetaCard('Registros de carregamento', String(listaCarregamentos.length || 0))}
+                  ${montarMetaCard('Fotos após o carregamento', String(listaPos.length || 0))}
                   ${montarMetaCard('Emitido em', geradoEm)}
                   ${montarMetaCard('Critério operacional', regra, true)}
                 </div>
@@ -3011,14 +3144,17 @@
       `;
 
       // Mede quantos registros cabem na 1a pagina e divide o restante para as demais.
+      // Ordem dos blocos na capa: lacres -> carregamentos -> fotos após o carregamento.
       const qtdNaCapa = medirRegistrosCapaPDF(root, construirCapa, blocosCapa);
       const lacresNaCapa = Math.min(qtdNaCapa, listaLacres.length);
-      const carregNaCapa = Math.max(0, qtdNaCapa - listaLacres.length);
+      const carregNaCapa = Math.min(Math.max(0, qtdNaCapa - listaLacres.length), listaCarregamentos.length);
+      const posNaCapa = Math.max(0, qtdNaCapa - listaLacres.length - listaCarregamentos.length);
       const lacresRestantes = listaLacres.slice(lacresNaCapa);
       const carregRestantes = listaCarregamentos.slice(carregNaCapa);
+      const posRestantes = listaPos.slice(posNaCapa);
 
       const paginas = [];
-      const totalPaginas = Math.max(1, 1 + Math.ceil(lacresRestantes.length / 2) + Math.ceil(carregRestantes.length / 2));
+      const totalPaginas = Math.max(1, 1 + Math.ceil(lacresRestantes.length / 2) + Math.ceil(carregRestantes.length / 2) + Math.ceil(posRestantes.length / 2));
 
       paginas.push(construirCapa(totalPaginas, montarRegistrosCapaPDF(blocosCapa.slice(0, qtdNaCapa))));
 
@@ -3115,6 +3251,51 @@
         `);
       }
 
+      for (let i = 0; i < posRestantes.length; i += 2) {
+        const dupla = posRestantes.slice(i, i + 2);
+        const paginaAtual = paginas.length + 1;
+
+        paginas.push(`
+          <section class="pdf-page">
+            <div class="pdf-sheet">
+              <div class="pdf-topline">
+                <div class="pdf-brand-cluster">
+                  <div class="pdf-brand-logo">
+                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
+                  </div>
+                  <div class="pdf-brandline">Dulcini S/A • Registros fotográficos</div>
+                </div>
+                <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
+              </div>
+
+              <div class="pdf-main">
+                <div class="pdf-page-header">
+                  <div>
+                    <h2>Fotos após o carregamento</h2>
+                    <p>Evidência da carga já corretamente posicionada dentro do caminhão, após a conclusão do carregamento.</p>
+                  </div>
+                  <div class="pdf-page-tags">
+                    <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
+                    <div class="pdf-tag">Data ${escaparHTML(campos.dc || '-')}</div>
+                    <div class="pdf-tag">NF ${escaparHTML(campos.nf || '-')}</div>
+                  </div>
+                </div>
+
+                <div class="pdf-volumes-list">
+                  ${dupla.map((registro) => montarRegistroPDF('pos', registro.numero, registro.src)).join('')}
+                </div>
+              </div>
+
+              <div class="pdf-footer">
+                <span>Fotos após o carregamento ${dupla[0]?.numero || '-'}${dupla.length === 2 ? ` e ${dupla[1]?.numero}` : ''}</span>
+                <span>Emitido em ${escaparHTML(geradoEm)} • Documento v1.0</span>
+                <strong>Dulcini S/A</strong>
+              </div>
+            </div>
+          </section>
+        `);
+      }
+
       root.innerHTML = `<div class="pdf-document">${paginas.join('')}</div>`;
       return root;
     }
@@ -3126,11 +3307,13 @@
 
       document.getElementById('container-lacres').innerHTML = '';
       document.getElementById('container-carregamentos').innerHTML = '';
+      document.getElementById('container-pos').innerHTML = '';
       document.getElementById('painel-registros').style.display = 'none';
       document.getElementById('pdf-render-root').innerHTML = '';
       fecharPendentes();
 
       atualizarResumoRegistros({ lacres: 0, carregamentos: 0 });
+      atualizarInfoPosCarregamento(0);
       alternarAbaFotos('lacres');
       sincronizarFotos();
 
@@ -3277,8 +3460,16 @@
           return;
         }
 
+        if (!validarTransportadoraFracionado()) {
+          return;
+        }
+
         if (!validarQuantidadeVolumes()) {
           alert('A quantidade informada não corresponde à quantidade de registros fotográficos exigidos para este tipo de carga.');
+          return;
+        }
+
+        if (!validarFotosPosCarregamento()) {
           return;
         }
 
@@ -3367,19 +3558,24 @@
       descricao.innerText = 'Primeiro fotografe todos os lacres. Depois, acesse a aba de carregamentos para concluir o registro da operação.';
     }
 
-    function atualizarVisibilidadeAbasFotos(quantidades = { lacres: 0, carregamentos: 0 }, tipo = '') {
+    function atualizarVisibilidadeAbasFotos(quantidades = { lacres: 0, carregamentos: 0, pos: 0 }, tipo = '') {
       const botaoLacres = document.querySelector('.photo-tab[data-aba-foto="lacres"]');
       const botaoCarregamentos = document.querySelector('.photo-tab[data-aba-foto="carregamentos"]');
+      const botaoPos = document.querySelector('.photo-tab[data-aba-foto="pos"]');
       const painelLacres = document.getElementById('aba-lacres');
       const painelCarregamentos = document.getElementById('aba-carregamentos');
+      const painelPos = document.getElementById('aba-pos');
 
       const mostrarLacres = quantidades.lacres > 0 && !tipoSemLacre(tipo);
       const mostrarCarregamentos = quantidades.carregamentos > 0;
+      const mostrarPos = (quantidades.pos || 0) > 0;
 
       if (botaoLacres) botaoLacres.hidden = !mostrarLacres;
       if (painelLacres) painelLacres.hidden = !mostrarLacres;
       if (botaoCarregamentos) botaoCarregamentos.hidden = !mostrarCarregamentos;
       if (painelCarregamentos) painelCarregamentos.hidden = !mostrarCarregamentos;
+      if (botaoPos) botaoPos.hidden = !mostrarPos;
+      if (painelPos) painelPos.hidden = !mostrarPos;
     }
 
     function obterQuantidadeRegistrosEsperada(campos = null) {
@@ -3451,20 +3647,32 @@
       const totalLacres = quantidades.lacres || colecoes.lacres.length;
       const totalCarregamentos = Math.max(quantidades.carregamentos, colecoes.carregamentos.length);
       const extrasCarregamento = Math.max(0, totalCarregamentos - quantidades.carregamentos);
+      // Fotos após o carregamento: aparecem junto com o restante do painel (tipo + qtd definidos).
+      // Em recomputação por mudança de tipo/qtd (sem registros explícitos), NÃO arrasta slots vazios
+      // excedentes: preserva as fotos já tiradas (compactadas) e garante ao menos `minimoPos` slots.
+      // Já em add/remove/restauração (registros explícitos) a coleção é mantida como está.
+      const recomputando = registros === null;
+      const baseAtiva = totalLacres > 0 || totalCarregamentos > 0;
+      const minimoPos = obterMinimoPosCarregamento(campos);
+      const posColecao = recomputando ? colecoes.posCarregamento.filter(Boolean) : colecoes.posCarregamento;
+      const totalPos = baseAtiva && minimoPos ? Math.max(minimoPos, posColecao.length) : 0;
       const painel = document.getElementById('painel-registros');
       const lacres = document.getElementById('container-lacres');
       const carregamentos = document.getElementById('container-carregamentos');
+      const pos = document.getElementById('container-pos');
 
-      if (!painel || !lacres || !carregamentos) return;
+      if (!painel || !lacres || !carregamentos || !pos) return;
 
-      painel.style.display = (totalLacres > 0 || totalCarregamentos > 0) ? 'block' : 'none';
+      painel.style.display = (totalLacres > 0 || totalCarregamentos > 0 || totalPos > 0) ? 'block' : 'none';
 
-      if (!totalLacres && !totalCarregamentos) {
+      if (!totalLacres && !totalCarregamentos && !totalPos) {
         lacres.innerHTML = '';
         carregamentos.innerHTML = '';
-        atualizarVisibilidadeAbasFotos({ lacres: 0, carregamentos: 0 }, campos.tp);
+        pos.innerHTML = '';
+        atualizarVisibilidadeAbasFotos({ lacres: 0, carregamentos: 0, pos: 0 }, campos.tp);
         atualizarDescricaoRegistro(campos.tp);
         atualizarAcaoCarregamentoExtra({ lacres: 0, carregamentos: 0 }, { lacres: [], carregamentos: [] });
+        atualizarInfoPosCarregamento(0);
         atualizarResumoRegistros({ lacres: 0, carregamentos: 0 });
         return;
       }
@@ -3475,12 +3683,17 @@
       renderizarColecaoFotos('container-carregamentos', 'carregamento', totalCarregamentos, colecoes.carregamentos, {
         obrigatorios: quantidades.carregamentos
       });
+      renderizarColecaoFotos('container-pos', 'pos', totalPos, posColecao, {
+        obrigatorios: minimoPos
+      });
       atualizarVisibilidadeAbasFotos({
         lacres: totalLacres,
-        carregamentos: totalCarregamentos
+        carregamentos: totalCarregamentos,
+        pos: totalPos
       }, campos.tp);
       atualizarAcaoCarregamentoExtra(quantidades, colecoes);
       atualizarDescricaoRegistro(campos.tp);
+      atualizarInfoPosCarregamento(totalPos ? minimoPos : 0, colecoes);
       alternarAbaFotos(obterAbaPadraoFotos(campos.tp));
       atualizarResumoRegistros({
         lacres: quantidades.lacres,
@@ -3508,6 +3721,30 @@
       if (!qtdEsperada.carregamentos) return false;
       return qtdEsperada.lacres === qtdAtual.lacres.length
         && qtdAtual.carregamentos.length >= qtdEsperada.carregamentos;
+    }
+
+    // Mínimo de fotos APÓS o carregamento (4 Bag in Box / 3 demais). Mostra mensagem clara
+    // e leva o usuário à aba correta antes de bloquear a finalização/exportação.
+    function validarFotosPosCarregamento() {
+      const minimo = obterMinimoPosCarregamento();
+      if (!minimo) return true; // tipo de carga ainda não definido — outras validações tratam.
+      const colecoes = normalizarColecoesFotos(coletarRegistros());
+      const preenchidas = colecoes.posCarregamento.filter(Boolean).length;
+      if (preenchidas >= minimo) return true;
+      alternarAbaFotos('pos');
+      alert(tipoBagInBox(coletarCamposFormulario().tp)
+        ? 'Adicione pelo menos 4 fotos após o carregamento para cargas Bag in Box.'
+        : 'Adicione pelo menos 3 fotos após o carregamento para este tipo de embalagem.');
+      return false;
+    }
+
+    // Pavani só é válida no Granel. Bloqueia finalização/exportação de Fracionado com Pavani.
+    function validarTransportadoraFracionado() {
+      const el = document.getElementById('t');
+      if (!el || !ehTransportadoraPavani(el.value)) return true;
+      el.closest('.campo')?.classList.add('campo-erro');
+      alert('Transportadora Pavani é permitida apenas para checklist granel.');
+      return false;
     }
 
     function obterDadosPDF() {
