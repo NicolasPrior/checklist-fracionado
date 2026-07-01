@@ -810,7 +810,7 @@
     }
 
     .pdf-volumes-list{
-      display:grid;gap:3px;align-content:start;min-height:0;overflow:hidden;
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start;min-height:0;overflow:hidden;
     }
 
     .pdf-volume-card{
@@ -1309,7 +1309,7 @@
     // da base mestre (cadastros) do PRÓPRIO app -> já respeitam o tipo de checklist.
     let placaParaMotorista = {};
     let placaParaTransportadora = {};
-    const opcoesAC = { c: [], t: [], m: [], p: [] };
+    const opcoesAC = { c: [], t: [], m: [], p: [], cr: [] };
     const normBuscaAC = (s) => String(s || '')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .toUpperCase().replace(/\s+/g, ' ').trim();
@@ -1411,11 +1411,12 @@
       input.addEventListener('blur', () => setTimeout(() => { if (acInputAtual === input) acFechar(); }, 120));
     }
     function configurarAutocompletes() {
-      // Fracionado: cliente, transportadora, motorista e placa.
+      // Fracionado: cliente, transportadora, motorista, placa e colaborador responsável.
       registrarAutocomplete('c', () => opcoesAC.c);
       registrarAutocomplete('t', () => opcoesAC.t);
       registrarAutocomplete('m', () => opcoesAC.m);
       registrarAutocomplete('p', () => opcoesAC.p);
+      registrarAutocomplete('colaborador-responsavel', () => opcoesAC.cr);
     }
     window.addEventListener('scroll', () => { if (acInputAtual && acPop && acPop.style.display === 'block') acPosicionar(acInputAtual); }, true);
     window.addEventListener('resize', () => { if (acInputAtual && acPop && acPop.style.display === 'block') acPosicionar(acInputAtual); });
@@ -1484,6 +1485,7 @@
         semear('placa', seed.placas);
         semear('transportadora', seed.transportadoras);
         semear('cliente', seed.clientes); // clientes do Fracionado (CLIENTES.xlsx -> aba "CLIENTES - FRACIONADO")
+        semear('colaborador', seed.colaboradores); // colaboradores do Fracionado (Controle Funcionários -> aba "Fracionado")
         await new Promise((resolve) => { store.transaction.oncomplete = () => resolve(); store.transaction.onerror = () => resolve(); });
       } catch (erro) { console.warn('Falha ao semear cadastros:', erro); }
     }
@@ -1501,6 +1503,7 @@
         reg('placa', seed.placas);
         reg('transportadora', seed.transportadoras);
         reg('cliente', seed.clientes);
+        reg('colaborador', seed.colaboradores);
         const store = await obterStoreCadastros('readwrite');
         const todos = await new Promise((resolve) => {
           const req = store.getAll();
@@ -1597,6 +1600,7 @@
       const transportadoras = new Set();
       const motoristas = new Set();
       const placas = new Set();
+      const colaboradores = new Set();
       placaParaMotorista = {};
       placaParaTransportadora = {};
       // 1) Base mestre (cadastros) do PRÓPRIO app (clientes do Fracionado também vêm do seed)
@@ -1607,6 +1611,7 @@
         else if (c.tipo === 'motorista') motoristas.add(c.valor);
         else if (c.tipo === 'transportadora') transportadoras.add(c.valor);
         else if (c.tipo === 'cliente') clientes.add(c.valor);
+        else if (c.tipo === 'colaborador') colaboradores.add(c.valor);
       });
       const seed = window.CADASTROS_SEED || {};
       Object.entries(seed.placaMotorista || {}).forEach(([p, m]) => { if (!placaParaMotorista[p]) placaParaMotorista[p] = m; });
@@ -1619,10 +1624,12 @@
           const cliente = String(campos.c || '').trim();
           const transportadora = String(campos.t || '').trim();
           const motorista = String(campos.m || '').trim();
+          const colaborador = String(campos.cr || '').trim();
           const placa = normalizarPlaca(campos.p || '');
           if (cliente) clientes.add(cliente);
           if (transportadora) transportadoras.add(transportadora);
           if (motorista) motoristas.add(motorista);
+          if (colaborador) colaboradores.add(colaborador);
           if (placa) {
             placas.add(placa);
             if (!placaParaMotorista[placa] && motorista) placaParaMotorista[placa] = motorista;
@@ -1635,6 +1642,7 @@
       opcoesAC.t = [...transportadoras].filter((t) => !ehTransportadoraPavani(t)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
       opcoesAC.m = [...motoristas].sort((a, b) => a.localeCompare(b, 'pt-BR'));
       opcoesAC.p = [...placas].sort();
+      opcoesAC.cr = [...colaboradores].sort((a, b) => a.localeCompare(b, 'pt-BR'));
       if (acInputAtual) acRender(acInputAtual); // atualiza a lista aberta, se houver
     }
 
@@ -3030,6 +3038,32 @@
       return cabem;
     }
 
+    // Empacota blocos de registro em paginas compactas por MEDICAO no DOM: injeta a pagina, adiciona
+    // blocos ate a altura real chegar perto do limite A4 e fecha a pagina. Devolve os grupos de blocos
+    // por pagina. Como as paginas sao compactas (altura variavel), a ultima sai curta (sem vao em branco).
+    function paginarBlocosPorMedicao(root, construirPaginaVazia, blocos) {
+      if (!root || !blocos || !blocos.length) return [];
+      const A4_LIMITE = 1118; // ~297mm; folga de ~4px para nunca exceder a folha.
+      const grupos = [];
+      let restantes = blocos.slice();
+      let guarda = 0;
+      while (restantes.length && guarda++ < 2000) {
+        root.innerHTML = `<div class="pdf-document">${construirPaginaVazia()}</div>`;
+        const pagina = root.querySelector('.pdf-page');
+        const slot = pagina ? pagina.querySelector('.pdf-cover-extra') : null;
+        if (!pagina || !slot) { grupos.push(restantes); break; }
+        let cabem = 0;
+        for (let k = 1; k <= restantes.length; k++) {
+          slot.innerHTML = montarRegistrosCapaPDF(restantes.slice(0, k));
+          if (pagina.offsetHeight <= A4_LIMITE) cabem = k; else break;
+        }
+        if (cabem === 0) cabem = 1; // garante progresso: ao menos 1 registro por pagina.
+        grupos.push(restantes.slice(0, cabem));
+        restantes = restantes.slice(cabem);
+      }
+      return grupos;
+    }
+
     function construirPaginasPDF(dadosPDF = null) {
       const { campos, registros, regra, geradoEm } = dadosPDF || obterDadosPDF();
       const quantidades = obterQuantidadeRegistrosEsperada(campos);
@@ -3143,158 +3177,47 @@
         </section>
       `;
 
-      // Mede quantos registros cabem na 1a pagina e divide o restante para as demais.
-      // Ordem dos blocos na capa: lacres -> carregamentos -> fotos após o carregamento.
+      // Capa: mede quantos registros cabem na 1a pagina (altura A4). Ordem: lacres -> carregamentos -> pos.
       const qtdNaCapa = medirRegistrosCapaPDF(root, construirCapa, blocosCapa);
-      const lacresNaCapa = Math.min(qtdNaCapa, listaLacres.length);
-      const carregNaCapa = Math.min(Math.max(0, qtdNaCapa - listaLacres.length), listaCarregamentos.length);
-      const posNaCapa = Math.max(0, qtdNaCapa - listaLacres.length - listaCarregamentos.length);
-      const lacresRestantes = listaLacres.slice(lacresNaCapa);
-      const carregRestantes = listaCarregamentos.slice(carregNaCapa);
-      const posRestantes = listaPos.slice(posNaCapa);
+
+      // Demais registros: empacotados por MEDICAO em paginas compactas (altura variavel), em fluxo
+      // continuo com subtitulos por grupo e 2 colunas (.pdf-volumes-list). Cada pagina enche ao maximo;
+      // a ultima sai curta (sem vao em branco) -> elimina paginas com 1-2 fotos e o desperdicio entre grupos.
+      const blocosRestantes = blocosCapa.slice(qtdNaCapa);
+      const construirPaginaFotos = (paginaAtual, numeroTotalPaginas, conteudoHTML) => `
+        <section class="pdf-page pdf-page--compact">
+          <div class="pdf-sheet">
+            <div class="pdf-topline">
+              <div class="pdf-brand-cluster">
+                <div class="pdf-brand-logo">
+                  <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
+                </div>
+                <div class="pdf-brandline">Dulcini S/A • Registros fotográficos</div>
+              </div>
+              <div class="pdf-pagecount">Página ${paginaAtual} / ${numeroTotalPaginas}</div>
+            </div>
+
+            <div class="pdf-main">
+              <div class="pdf-cover-extra">${conteudoHTML}</div>
+            </div>
+
+            <div class="pdf-footer">
+              <span>Registros fotográficos</span>
+              <span>Emitido em ${escaparHTML(geradoEm)} • Documento v1.0</span>
+              <strong>Dulcini S/A</strong>
+            </div>
+          </div>
+        </section>
+      `;
+      const gruposRestantes = paginarBlocosPorMedicao(root, () => construirPaginaFotos(1, 1, ''), blocosRestantes);
 
       const paginas = [];
-      const totalPaginas = Math.max(1, 1 + Math.ceil(lacresRestantes.length / 2) + Math.ceil(carregRestantes.length / 2) + Math.ceil(posRestantes.length / 2));
+      const totalPaginas = Math.max(1, 1 + gruposRestantes.length);
 
       paginas.push(construirCapa(totalPaginas, montarRegistrosCapaPDF(blocosCapa.slice(0, qtdNaCapa))));
-
-      for (let i = 0; i < lacresRestantes.length; i += 2) {
-        const dupla = lacresRestantes.slice(i, i + 2);
-        const paginaAtual = paginas.length + 1;
-
-        paginas.push(`
-          <section class="pdf-page">
-            <div class="pdf-sheet">
-              <div class="pdf-topline">
-                <div class="pdf-brand-cluster">
-                  <div class="pdf-brand-logo">
-                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
-                  </div>
-                  <div class="pdf-brandline">Dulcini S/A • Registros fotográficos</div>
-                </div>
-                <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
-              </div>
-
-              <div class="pdf-main">
-                <div class="pdf-page-header">
-                  <div>
-                    <h2>Lacres registrados</h2>
-                    <p>Relação fotográfica dos lacres vinculados a esta operação.</p>
-                  </div>
-                  <div class="pdf-page-tags">
-                    <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
-                    <div class="pdf-tag">Data ${escaparHTML(campos.dc || '-')}</div>
-                    <div class="pdf-tag">NF ${escaparHTML(campos.nf || '-')}</div>
-                  </div>
-                </div>
-
-                <div class="pdf-volumes-list">
-                  ${dupla.map((registro) => montarRegistroPDF('lacre', registro.numero, registro.src)).join('')}
-                </div>
-              </div>
-
-              <div class="pdf-footer">
-                <span>Lacres ${dupla[0]?.numero || '-'}${dupla.length === 2 ? ` e ${dupla[1]?.numero}` : ''}</span>
-                <span>Emitido em ${escaparHTML(geradoEm)} • Documento v1.0</span>
-                <strong>Dulcini S/A</strong>
-              </div>
-            </div>
-          </section>
-        `);
-      }
-
-      for (let i = 0; i < carregRestantes.length; i += 2) {
-        const dupla = carregRestantes.slice(i, i + 2);
-        const paginaAtual = paginas.length + 1;
-
-        paginas.push(`
-          <section class="pdf-page">
-            <div class="pdf-sheet">
-              <div class="pdf-topline">
-                <div class="pdf-brand-cluster">
-                  <div class="pdf-brand-logo">
-                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
-                  </div>
-                  <div class="pdf-brandline">Dulcini S/A • Registros fotográficos</div>
-                </div>
-                <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
-              </div>
-
-              <div class="pdf-main">
-                <div class="pdf-page-header">
-                  <div>
-                    <h2>Carregamentos registrados</h2>
-                    <p>Relação fotográfica das etapas de carregamento desta operação.</p>
-                  </div>
-                  <div class="pdf-page-tags">
-                    <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
-                    <div class="pdf-tag">Data ${escaparHTML(campos.dc || '-')}</div>
-                    <div class="pdf-tag">NF ${escaparHTML(campos.nf || '-')}</div>
-                  </div>
-                </div>
-
-                <div class="pdf-volumes-list">
-                  ${dupla.map((registro) => montarRegistroPDF('carregamento', registro.numero, registro.src, {
-                    extra: registro.extra,
-                    indiceExtra: registro.indiceExtra
-                  })).join('')}
-                </div>
-              </div>
-
-              <div class="pdf-footer">
-                <span>Carregamentos ${dupla[0]?.numero || '-'}${dupla.length === 2 ? ` e ${dupla[1]?.numero}` : ''}</span>
-                <span>Emitido em ${escaparHTML(geradoEm)} • Documento v1.0</span>
-                <strong>Dulcini S/A</strong>
-              </div>
-            </div>
-          </section>
-        `);
-      }
-
-      for (let i = 0; i < posRestantes.length; i += 2) {
-        const dupla = posRestantes.slice(i, i + 2);
-        const paginaAtual = paginas.length + 1;
-
-        paginas.push(`
-          <section class="pdf-page">
-            <div class="pdf-sheet">
-              <div class="pdf-topline">
-                <div class="pdf-brand-cluster">
-                  <div class="pdf-brand-logo">
-                    <img src="${LOGO_PATH}" alt="Logo Dulcini S/A">
-                  </div>
-                  <div class="pdf-brandline">Dulcini S/A • Registros fotográficos</div>
-                </div>
-                <div class="pdf-pagecount">Página ${paginaAtual} / ${totalPaginas}</div>
-              </div>
-
-              <div class="pdf-main">
-                <div class="pdf-page-header">
-                  <div>
-                    <h2>Fotos após o carregamento</h2>
-                    <p>Evidência da carga já corretamente posicionada dentro do caminhão, após a conclusão do carregamento.</p>
-                  </div>
-                  <div class="pdf-page-tags">
-                    <div class="pdf-tag">${escaparHTML(campos.tp || '-')}</div>
-                    <div class="pdf-tag">Data ${escaparHTML(campos.dc || '-')}</div>
-                    <div class="pdf-tag">NF ${escaparHTML(campos.nf || '-')}</div>
-                  </div>
-                </div>
-
-                <div class="pdf-volumes-list">
-                  ${dupla.map((registro) => montarRegistroPDF('pos', registro.numero, registro.src)).join('')}
-                </div>
-              </div>
-
-              <div class="pdf-footer">
-                <span>Fotos após o carregamento ${dupla[0]?.numero || '-'}${dupla.length === 2 ? ` e ${dupla[1]?.numero}` : ''}</span>
-                <span>Emitido em ${escaparHTML(geradoEm)} • Documento v1.0</span>
-                <strong>Dulcini S/A</strong>
-              </div>
-            </div>
-          </section>
-        `);
-      }
+      gruposRestantes.forEach((grupo, idx) => {
+        paginas.push(construirPaginaFotos(idx + 2, totalPaginas, montarRegistrosCapaPDF(grupo)));
+      });
 
       root.innerHTML = `<div class="pdf-document">${paginas.join('')}</div>`;
       return root;
@@ -3508,6 +3431,7 @@
           upsertCadastro('motorista', dadosPDF.campos.m).catch(() => {});
           upsertCadastro('placa', dadosPDF.campos.p).catch(() => {});
           upsertCadastro('transportadora', dadosPDF.campos.t).catch(() => {});
+          upsertCadastro('colaborador', dadosPDF.campos.cr).catch(() => {});
           atualizarSugestoesHistorico();
         } catch (erroHist) {
           console.warn('Falha ao registrar conferência no histórico:', erroHist);
