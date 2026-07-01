@@ -661,7 +661,7 @@
     }
 
     .pdf-main{
-      min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:4px;
+      min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:6px;
     }
 
     .pdf-page--compact{
@@ -765,16 +765,6 @@
       color:var(--grafite);font-size:8px;line-height:1.05;font-weight:600;
     }
 
-    .pdf-photo-card{
-      padding:4px;border-radius:11px;border:1px solid #E4EDF4;background:#FFFFFF;
-    }
-
-    .pdf-photo-card span{
-      display:block;margin-bottom:3px;text-align:center;color:var(--texto-suave);
-      font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;
-      word-spacing:.02em;
-    }
-
     .pdf-photo-frame{
       overflow:hidden;display:flex;align-items:center;justify-content:center;height:210px;
       border-radius:10px;background:#F3F8FD;border:1px solid #E6EEF4;padding:3px;
@@ -810,30 +800,26 @@
     }
 
     .pdf-volumes-list{
-      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start;min-height:0;overflow:hidden;
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start;min-height:0;overflow:hidden;
     }
 
     .pdf-volume-card{
-      padding:4px;border-radius:12px;border:1px solid #E0EAF2;background:#FCFEFF;
+      display:flex;flex-direction:column;padding:6px;border-radius:12px;border:1px solid #E0EAF2;background:#FCFEFF;
       break-inside:avoid;page-break-inside:avoid;
     }
 
-    .pdf-volume-top{
-      display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;
+    /* Altura fixa do cabecalho do cartao -> todos os cartoes ficam do MESMO tamanho e as
+       linhas do grid alinham (sem o efeito "largado"). Titulo unico por cartao. */
+    .pdf-volume-head{
+      height:36px;overflow:hidden;margin-bottom:4px;
     }
 
-    .pdf-volume-top h3{
-      color:var(--azul-900);font:800 11px/1.03 'Montserrat',sans-serif;
+    .pdf-volume-head h3{
+      color:var(--azul-900);font:800 10.5px/1.05 'Montserrat',sans-serif;
     }
 
-    .pdf-volume-top p{
-      margin-top:1px;color:var(--texto-suave);font-size:7px;
-    }
-
-    .pdf-volume-badge{
-      display:inline-flex;align-items:center;justify-content:center;min-height:18px;padding:0 7px;border-radius:999px;
-      background:#EDF5FC;color:var(--azul-800);font:700 6px/1 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;
-      word-spacing:.02em;
+    .pdf-volume-head p{
+      margin-top:2px;color:var(--texto-suave);font-size:6.5px;line-height:1.16;
     }
 
     .pdf-volume-photos{
@@ -841,7 +827,7 @@
     }
 
     .pdf-volume-card .pdf-photo-frame{
-      height:190px;
+      height:246px;
     }
 
     .pdf-page--compact .pdf-main{
@@ -853,7 +839,7 @@
     /* Espaco da 1a pagina onde os primeiros registros fotograficos fluem quando
        cabem com seguranca dentro da A4. Vazio nao reserva espaco (sem vao em branco). */
     .pdf-cover-extra{
-      display:flex;flex-direction:column;gap:4px;min-height:0;
+      display:flex;flex-direction:column;gap:8px;min-height:0;
     }
     .pdf-cover-extra:empty{display:none}
 
@@ -1868,10 +1854,15 @@
     }
 
     function obterConfiguracaoPDF() {
-      // Escala 2.0 (~190 DPI em A4) ja imprime nitido; acima disso o arquivo cresce em area^2
-      // sem ganho visivel. A pagina vai como JPEG q0.95 (texto/QR limpos, sem o peso do PNG cru).
+      // A pagina INTEIRA e rasterizada pelo html2canvas nesta escala -> ela define o DPI final de
+      // TUDO na folha (fotos + texto). 794px de largura * escala = px da imagem para 210mm.
+      // Escala 2.0 dava so ~192 DPI: as fotos (originais ate 5200px) eram reamostradas para baixo
+      // e ficavam "pixeladas" ao dar zoom. Escala 3.0 no desktop (~288 DPI) e 2.5 no mobile
+      // (~240 DPI, seguro para memoria) deixa as fotos nitidas. Segue como JPEG q0.95 + compress,
+      // entao o arquivo cresce pouco (fica na casa de poucos MB).
+      const ambiente = detectarAmbientePDF();
       return {
-        escalaCanvas: 2.0,
+        escalaCanvas: ambiente.mobile ? 2.5 : 3.0,
         qualidadePagina: 0.95
       };
     }
@@ -2920,12 +2911,11 @@
     }
 
     function montarFotoPDF(label, src = '', extraClass = '') {
+      // Moldura direta da foto (sem rotulo repetido): o cabecalho do cartao ja nomeia o registro.
+      // A imagem original entra por src; a moldura usa object-fit:contain (sem corte/distorcao).
       return `
-        <div class="pdf-photo-card ${extraClass}">
-          <span>${escaparHTML(label)}</span>
-          <div class="pdf-photo-frame">
-            ${src ? `<img src="${src}" alt="${escaparHTML(label)}">` : ''}
-          </div>
+        <div class="pdf-photo-frame ${extraClass}">
+          ${src ? `<img src="${src}" alt="${escaparHTML(label)}">` : ''}
         </div>
       `;
     }
@@ -2935,7 +2925,7 @@
       let titulo, descricao;
       if (tipo === 'pos') {
         titulo = `Foto após o carregamento ${numero}`;
-        descricao = 'Evidência da carga já corretamente posicionada dentro do caminhão, após a conclusão do carregamento.';
+        descricao = 'Evidência da carga já posicionada dentro do caminhão, após o carregamento.';
       } else {
         titulo = extra
           ? 'Foto complementar do carregamento'
@@ -2950,12 +2940,9 @@
       }
       return `
         <article class="pdf-volume-card">
-          <div class="pdf-volume-top">
-            <div>
-              <h3>${titulo}</h3>
-              <p>${descricao}</p>
-            </div>
-            <div class="pdf-volume-badge">${titulo}</div>
+          <div class="pdf-volume-head">
+            <h3>${titulo}</h3>
+            <p>${descricao}</p>
           </div>
 
           <div class="pdf-volume-photos">
