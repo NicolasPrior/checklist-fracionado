@@ -3258,7 +3258,7 @@
       limparChecklist(true);
     }
 
-    async function renderizarPaginaParaImagem(pagina, escalaCanvas, qualidade = 0.95) {
+    async function renderizarPaginaParaImagem(pagina, escalaCanvas, qualidade = 0.95, ignorarElementos = null) {
       const rect = pagina.getBoundingClientRect();
       const largura = Math.ceil(rect.width);
       const altura = Math.ceil(rect.height);
@@ -3275,7 +3275,11 @@
         width: largura,
         height: altura,
         windowWidth: largura,
-        windowHeight: altura
+        windowHeight: altura,
+        // As fotos preparadas em alta resolução saem do raster (entram depois via addImage,
+        // por cima, na mesma posição). Se uma foto não pôde ser preparada, ela NÃO entra
+        // neste conjunto e continua visível pelo raster (fallback).
+        ignoreElements: (el) => Boolean(ignorarElementos && ignorarElementos.has(el))
       });
 
       const ctx = canvas.getContext('2d');
@@ -3286,6 +3290,98 @@
 
       // JPEG (nao PNG): a pagina tem fotos -> JPEG q0.95 reduz o arquivo em ~10-20x sem perda visivel.
       return canvas.toDataURL('image/jpeg', qualidade);
+    }
+
+    // ── Fotos em alta resolução no PDF ─────────────────────────────────────────────
+    // O html2canvas rasteriza a página INTEIRA numa escala fixa, e esse raster vira o teto
+    // de nitidez de tudo (fotos incluídas). Para as fotos não perderem qualidade, cada uma
+    // é inserida DIRETO no jsPDF (addImage) por cima do raster, na posição exata da moldura,
+    // usando a imagem original salva no checklist reamostrada para o DPI de impressão abaixo.
+    const DPI_FOTOS_PDF = 300;
+
+    function carregarImagemDataURL(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Falha ao carregar a foto para o PDF.'));
+        img.src = src;
+      });
+    }
+
+    // Reduz a foto original ao tamanho de impressão em passos de no máximo 2x por vez
+    // (reduções grandes de uma vez só serrilham e acentuam moiré). NUNCA amplia além do
+    // original; se o original já é menor que o alvo, vai como está (sem recompressão).
+    async function reamostrarFotoParaPDF(src, larguraMm) {
+      const img = await carregarImagemDataURL(src);
+      if (!img.naturalWidth || !img.naturalHeight) throw new Error('Foto sem dimensões.');
+      const alvoPx = Math.max(1, Math.round((larguraMm / 25.4) * DPI_FOTOS_PDF));
+      const ehJPEG = /^data:image\/jpe?g/i.test(src);
+      if (alvoPx >= img.naturalWidth && ehJPEG) return src;
+
+      const larguraFinal = Math.min(alvoPx, img.naturalWidth);
+      let origem = img;
+      let largura = img.naturalWidth;
+      let altura = img.naturalHeight;
+      while (largura / 2 > larguraFinal) {
+        const meio = document.createElement('canvas');
+        meio.width = Math.max(1, Math.round(largura / 2));
+        meio.height = Math.max(1, Math.round(altura / 2));
+        const ctxMeio = meio.getContext('2d', { alpha: false });
+        ctxMeio.imageSmoothingEnabled = true;
+        ctxMeio.imageSmoothingQuality = 'high';
+        ctxMeio.drawImage(origem, 0, 0, meio.width, meio.height);
+        origem = meio;
+        largura = meio.width;
+        altura = meio.height;
+      }
+
+      const destino = document.createElement('canvas');
+      destino.width = larguraFinal;
+      destino.height = Math.max(1, Math.round(img.naturalHeight * (larguraFinal / img.naturalWidth)));
+      const ctx = destino.getContext('2d', { alpha: false });
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, destino.width, destino.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(origem, 0, 0, destino.width, destino.height);
+      return destino.toDataURL('image/jpeg', 0.93);
+    }
+
+    // Coleta as fotos da página com posição/tamanho em mm (794px = 210mm) e prepara a versão
+    // em alta resolução de cada uma. O retângulo usado é o do próprio <img> já ajustado pelo
+    // layout (object-fit:contain) ⇒ mesmo enquadramento da tela: sem zoom, corte ou distorção.
+    async function prepararFotosDaPaginaPDF(pagina, cache) {
+      const PX_POR_MM = 794 / 210;
+      const itens = [];
+      const elementos = new Set();
+      const rectPagina = pagina.getBoundingClientRect();
+      const imagens = Array.from(pagina.querySelectorAll('.pdf-photo-frame img'));
+      for (const img of imagens) {
+        const src = img.getAttribute('src');
+        if (!src) continue;
+        const rect = img.getBoundingClientRect();
+        if (rect.width < 8 || rect.height < 8) continue;
+        const larguraMm = rect.width / PX_POR_MM;
+        try {
+          const chave = Math.round(larguraMm) + '|' + src;
+          let dados = cache.get(chave);
+          if (!dados) {
+            dados = await reamostrarFotoParaPDF(src, larguraMm);
+            cache.set(chave, dados);
+          }
+          itens.push({
+            dados,
+            xMm: (rect.left - rectPagina.left) / PX_POR_MM,
+            yMm: (rect.top - rectPagina.top) / PX_POR_MM,
+            larguraMm,
+            alturaMm: rect.height / PX_POR_MM
+          });
+          elementos.add(img);
+        } catch (erro) {
+          // Sem versão em alta para esta foto: ela permanece visível pelo raster da página.
+        }
+      }
+      return { itens, elementos };
     }
 
     function obterDimensoesPaginaPDF(pagina) {
@@ -3331,16 +3427,26 @@
       atualizarStatusLoading('Convertendo as páginas em PDF...');
       let doc = null;
 
+      const cacheFotosPDF = new Map();
       for (let i = 0; i < paginas.length; i++) {
         atualizarStatusLoading(`Gerando a página ${i + 1} de ${paginas.length}...`);
-        const imagemPagina = await renderizarPaginaParaImagem(paginas[i], configPDF.escalaCanvas, configPDF.qualidadePagina);
+        const fotos = await prepararFotosDaPaginaPDF(paginas[i], cacheFotosPDF);
+        const imagemPagina = await renderizarPaginaParaImagem(paginas[i], configPDF.escalaCanvas, configPDF.qualidadePagina, fotos.elementos);
         const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], imagemPagina);
         if (!doc) {
           doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [larguraMm, alturaMm], compress: true });
+          // Abertura em "página inteira": o leitor mostra o documento no enquadramento
+          // padrão, sem começar com zoom aplicado.
+          if (typeof doc.setDisplayMode === 'function') doc.setDisplayMode('fullpage', 'continuous');
         } else {
           doc.addPage([larguraMm, alturaMm], 'portrait');
         }
         doc.addImage(imagemPagina, 'JPEG', 0, 0, larguraMm, alturaMm);
+        // Fotos originais por cima do raster: nitidez de impressão (DPI_FOTOS_PDF) na MESMA
+        // moldura medida no layout — o raster da página segue mandando só no texto/molduras.
+        for (const foto of fotos.itens) {
+          doc.addImage(foto.dados, 'JPEG', foto.xMm, foto.yMm, foto.larguraMm, foto.alturaMm);
+        }
       }
 
       atualizarStatusLoading('Salvando o arquivo PDF...');
