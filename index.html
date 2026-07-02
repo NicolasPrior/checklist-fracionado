@@ -771,8 +771,12 @@
     }
 
     .pdf-photo-frame img{
-      display:block;max-width:100% !important;max-height:100% !important;width:auto !important;height:auto !important;
-      object-fit:contain !important;object-position:center center !important;background:#FFFFFF;image-rendering:auto;
+      /* width/height 100% + object-fit: o box do <img> vira a própria caixa da moldura e o
+         navegador encaixa a foto DENTRO dele. Não depende de max-height:100%, que em navegador
+         móvel (WebKit/flex) falha e deixava o <img> maior que a moldura (foto "com zoom" na tela
+         e overlay do PDF invadindo os campos). */
+      display:block;width:100% !important;height:100% !important;
+      object-fit:contain !important;object-position:center center !important;image-rendering:auto;
     }
 
     .pdf-page-header{
@@ -3311,8 +3315,7 @@
     // Reduz a foto original ao tamanho de impressão em passos de no máximo 2x por vez
     // (reduções grandes de uma vez só serrilham e acentuam moiré). NUNCA amplia além do
     // original; se o original já é menor que o alvo, vai como está (sem recompressão).
-    async function reamostrarFotoParaPDF(src, larguraMm) {
-      const img = await carregarImagemDataURL(src);
+    async function reamostrarFotoParaPDF(img, src, larguraMm) {
       if (!img.naturalWidth || !img.naturalHeight) throw new Error('Foto sem dimensões.');
       const alvoPx = Math.max(1, Math.round((larguraMm / 25.4) * DPI_FOTOS_PDF));
       const ehJPEG = /^data:image\/jpe?g/i.test(src);
@@ -3348,33 +3351,53 @@
     }
 
     // Coleta as fotos da página com posição/tamanho em mm (794px = 210mm) e prepara a versão
-    // em alta resolução de cada uma. O retângulo usado é o do próprio <img> já ajustado pelo
-    // layout (object-fit:contain) ⇒ mesmo enquadramento da tela: sem zoom, corte ou distorção.
+    // em alta resolução de cada uma. O retângulo do overlay NÃO usa o box do <img> (navegador
+    // móvel tem bug de max-height/flex que deixa o <img> maior que a moldura ⇒ foto invadindo
+    // campos): ele é recalculado por matemática de "contain" dentro da caixa útil da MOLDURA,
+    // cuja altura é fixa no CSS ⇒ a foto nunca sai da moldura, sem zoom, corte ou distorção.
     async function prepararFotosDaPaginaPDF(pagina, cache) {
       const PX_POR_MM = 794 / 210;
       const itens = [];
       const elementos = new Set();
       const rectPagina = pagina.getBoundingClientRect();
-      const imagens = Array.from(pagina.querySelectorAll('.pdf-photo-frame img'));
-      for (const img of imagens) {
-        const src = img.getAttribute('src');
+      const molduras = Array.from(pagina.querySelectorAll('.pdf-photo-frame'));
+      for (const moldura of molduras) {
+        const img = moldura.querySelector('img');
+        const src = img ? img.getAttribute('src') : '';
         if (!src) continue;
-        const rect = img.getBoundingClientRect();
-        if (rect.width < 8 || rect.height < 8) continue;
-        const larguraMm = rect.width / PX_POR_MM;
         try {
+          const original = await carregarImagemDataURL(src);
+          if (!original.naturalWidth || !original.naturalHeight) continue;
+
+          // Caixa útil da moldura (sem borda e sem padding), em px fracionários.
+          const rectMoldura = moldura.getBoundingClientRect();
+          const estilo = getComputedStyle(moldura);
+          const bordaEsq = parseFloat(estilo.borderLeftWidth) + parseFloat(estilo.paddingLeft);
+          const bordaTopo = parseFloat(estilo.borderTopWidth) + parseFloat(estilo.paddingTop);
+          const caixaW = rectMoldura.width - bordaEsq - parseFloat(estilo.borderRightWidth) - parseFloat(estilo.paddingRight);
+          const caixaH = rectMoldura.height - bordaTopo - parseFloat(estilo.borderBottomWidth) - parseFloat(estilo.paddingBottom);
+          if (caixaW < 8 || caixaH < 8) continue;
+
+          // "contain" determinístico e centralizado (nunca amplia além do tamanho natural).
+          const escala = Math.min(caixaW / original.naturalWidth, caixaH / original.naturalHeight, 1);
+          const desenhoW = original.naturalWidth * escala;
+          const desenhoH = original.naturalHeight * escala;
+          const xPx = rectMoldura.left - rectPagina.left + bordaEsq + (caixaW - desenhoW) / 2;
+          const yPx = rectMoldura.top - rectPagina.top + bordaTopo + (caixaH - desenhoH) / 2;
+
+          const larguraMm = desenhoW / PX_POR_MM;
           const chave = Math.round(larguraMm) + '|' + src;
           let dados = cache.get(chave);
           if (!dados) {
-            dados = await reamostrarFotoParaPDF(src, larguraMm);
+            dados = await reamostrarFotoParaPDF(original, src, larguraMm);
             cache.set(chave, dados);
           }
           itens.push({
             dados,
-            xMm: (rect.left - rectPagina.left) / PX_POR_MM,
-            yMm: (rect.top - rectPagina.top) / PX_POR_MM,
+            xMm: xPx / PX_POR_MM,
+            yMm: yPx / PX_POR_MM,
             larguraMm,
-            alturaMm: rect.height / PX_POR_MM
+            alturaMm: desenhoH / PX_POR_MM
           });
           elementos.add(img);
         } catch (erro) {
