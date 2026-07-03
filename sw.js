@@ -2,7 +2,7 @@
    App abre e opera sem internet: app shell pré-cacheado; bibliotecas externas
    (Tesseract.js, jsPDF, html2canvas, QR, fontes) e recursos do OCR cacheados em
    tempo de execução na 1ª vez online. Sem backend: persistência local (IndexedDB). */
-const CACHE = 'dulcini-fracionado-v16';
+const CACHE = 'dulcini-fracionado-v17';
 const PRECACHE = [
   './',
   './index.html',
