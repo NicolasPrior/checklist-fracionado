@@ -3496,6 +3496,14 @@
       return { larguraMm: 210, alturaMm };
     }
 
+    // jsPDF normaliza páginas 'portrait' para altura >= largura e TROCA as dimensões de
+    // [210, h] quando h < 210 — a última página compacta (curta) saía com 113.8mm de largura
+    // e o conteúdo de 210mm era cortado. Declarar 'landscape' preserva [210, h] como medido.
+    // Mesmo padrão do Granel (obterOrientacaoPaginaPDF, FASE do PDF compacto).
+    function obterOrientacaoPaginaPDF(alturaMm) {
+      return alturaMm < 210 ? 'landscape' : 'portrait';
+    }
+
     function baixarBlob(blob, nomeArquivo) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -3558,13 +3566,14 @@
         const fotos = await prepararFotosDaPaginaPDF(paginas[i], cacheFotosPDF);
         const imagemPagina = await renderizarPaginaParaImagem(paginas[i], configPDF.escalaCanvas, configPDF.qualidadePagina, fotos.elementos);
         const { larguraMm, alturaMm } = obterDimensoesPaginaPDF(paginas[i], imagemPagina);
+        const orientacaoPagina = obterOrientacaoPaginaPDF(alturaMm);
         if (!doc) {
-          doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [larguraMm, alturaMm], compress: true });
+          doc = new jsPDF({ orientation: orientacaoPagina, unit: 'mm', format: [larguraMm, alturaMm], compress: true });
           // Abertura em "página inteira": o leitor mostra o documento no enquadramento
           // padrão, sem começar com zoom aplicado.
           if (typeof doc.setDisplayMode === 'function') doc.setDisplayMode('fullpage', 'continuous');
         } else {
-          doc.addPage([larguraMm, alturaMm], 'portrait');
+          doc.addPage([larguraMm, alturaMm], orientacaoPagina);
         }
         doc.addImage(imagemPagina, 'JPEG', 0, 0, larguraMm, alturaMm);
         // Fotos originais por cima do raster: nitidez de impressão (DPI_FOTOS_PDF) na MESMA
