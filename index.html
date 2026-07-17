@@ -2051,8 +2051,17 @@
       };
     }
 
+    // Trava anti-duplo-disparo: se botão E box dispararem na mesma interação (toque na área
+    // dos botões que também borbulha para o box), dois seletores de arquivo seriam pedidos e
+    // o ÚLTIMO venceria — no Android, a câmera "roubava" o clique do botão Galeria. Com a
+    // trava, só o PRIMEIRO pedido da interação vale (o do botão tocado).
+    let ultimaAberturaCaptura = 0;
+
     function abrirInputImagem(box, origem = 'gallery') {
       if (!box) return;
+      const agora = Date.now();
+      if (agora - ultimaAberturaCaptura < 800) return;
+      ultimaAberturaCaptura = agora;
 
       const seletor = origem === 'camera' ? '.input-camera' : '.input-galeria';
       const input = box.querySelector(seletor);
@@ -2062,7 +2071,10 @@
       input.click();
     }
 
-    function abrirOrigemImagem(box) {
+    function abrirOrigemImagem(evento, box) {
+      // Toques na faixa dos botões Câmera/Galeria pertencem aos botões: o box nunca deve
+      // interpretá-los (mesmo que a propagação não tenha sido interrompida).
+      if (evento && evento.target && evento.target.closest && evento.target.closest('.box-acoes-foto')) return;
       const ambiente = detectarAmbientePDF();
       abrirInputImagem(box, ambiente.android ? 'camera' : 'gallery');
     }
@@ -2443,8 +2455,8 @@
 
     function criarMarkupBoxImagem(tipo, numero, alt, label = '', extra = false) {
       return `
-        <div class="box-imagem" data-foto-tipo="${escaparHTML(tipo)}" data-foto-numero="${numero}" data-foto-label="${escaparHTML(label || alt)}" data-foto-extra="${extra ? '1' : '0'}" onclick="abrirOrigemImagem(this)">
-          <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera ou a galeria. Aproxime bem, com boa luz e sem reflexo.</small></span>
+        <div class="box-imagem" data-foto-tipo="${escaparHTML(tipo)}" data-foto-numero="${numero}" data-foto-label="${escaparHTML(label || alt)}" data-foto-extra="${extra ? '1' : '0'}" onclick="abrirOrigemImagem(event, this)">
+          <span class="msg-camera"><strong>Registrar foto</strong><small>Toque para abrir a câmera. Para escolher uma foto já tirada, use o botão Galeria abaixo.</small></span>
           <input class="input-galeria" type="file" accept="image/*" onchange="preview(this)">
           <input class="input-camera" type="file" accept="image/*" capture="environment" onchange="preview(this)">
           <div class="box-acoes-foto">
