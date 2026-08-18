@@ -547,6 +547,10 @@
     }
 
     .pendente-retomar{flex:1;color:#fff;background:var(--gradiente-acao)}
+    .pendente-editar{
+      flex:1;color:var(--azul-800);background:var(--azul-050);
+      border:1px solid rgba(12,88,167,.22);
+    }
     .pendente-excluir{
       width:48px;color:var(--erro);background:rgba(197,57,57,.10);
       border:1px solid rgba(197,57,57,.18);
@@ -1101,6 +1105,54 @@
         <input type="file" id="import-cadastros" accept=".xlsx,.xls" onchange="importarCadastrosDeArquivo(this.files[0]); this.value='';" style="width:100%; font-size:13px;">
       </div>
       <button type="button" class="btn btn-add" style="width:100%; margin-top:14px;" onclick="fecharHistorico()">Fechar</button>
+    </div>
+  </div>
+
+  <div id="modal-editar-conferencia" style="display:none;position:fixed;inset:0;z-index:26;padding:20px;background:rgba(6,20,36,.56);backdrop-filter:blur(10px);">
+    <div class="modal-conteudo">
+      <h3>Corrigir checklist do hist&oacute;rico</h3>
+      <p style="margin:0 0 14px; font-size:13px; color:var(--texto-suave);">
+        Ajuste os dados de identifica&ccedil;&atilde;o (nota fiscal cancelada ou trocada, placa, motorista&hellip;). O PDF &eacute; gerado de novo j&aacute; com a corre&ccedil;&atilde;o e passa a indicar que foi retificado.
+      </p>
+      <input type="hidden" id="edit-id">
+
+      <div class="dados-grid">
+        <div class="campo">
+          <label for="edit-c">Cliente *</label>
+          <div class="input-shell"><input type="text" id="edit-c" placeholder="Nome do cliente" autocomplete="off" required></div>
+        </div>
+        <div class="campo">
+          <label for="edit-t">Transportadora *</label>
+          <div class="input-shell"><input type="text" id="edit-t" placeholder="Nome da transportadora" autocomplete="off" required></div>
+        </div>
+        <div class="campo">
+          <label for="edit-m">Motorista *</label>
+          <div class="input-shell"><input type="text" id="edit-m" placeholder="Nome completo" autocomplete="off" required></div>
+        </div>
+        <div class="campo">
+          <label for="edit-cr">Colaborador respons&aacute;vel *</label>
+          <div class="input-shell"><input type="text" id="edit-cr" placeholder="Nome do respons&aacute;vel" autocomplete="off" required></div>
+        </div>
+        <div class="campo">
+          <label for="edit-dc">Data do carregamento</label>
+          <div class="input-shell"><input type="date" id="edit-dc"></div>
+        </div>
+        <div class="campo">
+          <label for="edit-p">Placa do ve&iacute;culo *</label>
+          <div class="input-shell"><input type="text" id="edit-p" placeholder="ABC-1234" maxlength="8" autocapitalize="characters" autocomplete="off" required></div>
+        </div>
+        <div class="campo full">
+          <label for="edit-nf">N&uacute;mero da nota fiscal *</label>
+          <div class="input-shell"><input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" id="edit-nf" placeholder="Digite o n&uacute;mero da nota fiscal" autocomplete="off" required></div>
+        </div>
+      </div>
+
+      <p id="edit-travados" style="margin:12px 0 0; padding:10px 12px; border-radius:12px; background:var(--azul-050); font-size:12px; line-height:1.4; color:var(--texto-suave);"></p>
+
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button type="button" class="btn btn-add" style="flex:1;" onclick="fecharEdicaoConferencia()">Cancelar</button>
+        <button type="button" class="btn btn-pdf" style="flex:1;" onclick="salvarEdicaoConferencia()">Salvar corre&ccedil;&atilde;o</button>
+      </div>
     </div>
   </div>
 
@@ -2979,14 +3031,17 @@
         const totalLacres = Number.isFinite(c.totalLacres)
           ? c.totalLacres
           : (Array.isArray(c.registros?.lacres) ? c.registros.lacres.length : 0);
+        const revisao = Number(c.revisao || 0);
         return `
           <div class="pendente-card">
             <strong>${escaparHTML(campos.p || '—')} • NF ${escaparHTML(campos.nf || '—')}</strong>
             <small>${escaparHTML(campos.c || '')}</small>
             <small>${escaparHTML(c.geradoEm || '')} • ${totalLacres} lacre(s)</small>
             <small>Protocolo: ${escaparHTML(c.codigo || '')}</small>
+            ${revisao > 0 ? `<small style="color:var(--azul-800); font-weight:700;">Retificado em ${escaparHTML(c.editadoEm || '')} • Documento v1.${revisao}</small>` : ''}
             <div class="pendente-acoes">
               <button type="button" class="pendente-retomar" onclick="reimprimirConferencia('${escaparHTML(c.id)}')">Baixar PDF</button>
+              <button type="button" class="pendente-editar" onclick="abrirEdicaoConferencia('${escaparHTML(c.id)}')">Editar</button>
               <button type="button" class="pendente-excluir" aria-label="Excluir do histórico" title="Excluir do histórico" onclick="excluirConferencia('${escaparHTML(c.id)}')">X</button>
             </div>
           </div>
@@ -3007,7 +3062,9 @@
           registros: registro.registros || { lacres: [], carregamentos: [] },
           regra: registro.regra || '',
           geradoEm: registro.geradoEm || formatarDataExtensa(new Date()),
-          codigo: registro.codigo || registro.id
+          codigo: registro.codigo || registro.id,
+          revisao: Number(registro.revisao || 0),
+          editadoEm: registro.editadoEm || ''
         };
         const nomeArquivo = registro.nomeArquivo || montarNomeArquivoPDF(dadosPDF.campos, dadosPDF.codigo);
         baixarBlob(await renderizarPDFEmBlob(dadosPDF), nomeArquivo);
@@ -3030,6 +3087,120 @@
       } catch (erro) {
         console.error(erro);
         alert('Não foi possível excluir do histórico.');
+      }
+    }
+
+    // ===== Correção de checklist já emitido =====
+    // Editáveis: só os dados de IDENTIFICAÇÃO (NF cancelada/trocada, placa, motorista...).
+    // Ficam de fora o tipo de carga e a quantidade de volumes: esses dois definem QUANTOS
+    // registros fotográficos o documento tem (e o texto do critério operacional), então
+    // mudá-los depois deixaria o texto brigando com as próprias fotos já registradas.
+    const CAMPOS_EDITAVEIS_CONFERENCIA = ['c', 't', 'm', 'cr', 'dc', 'p', 'nf'];
+
+    async function abrirEdicaoConferencia(id) {
+      try {
+        const registro = await obterConferenciaDB(id);
+        if (!registro) { alert('Conferência não encontrada no histórico.'); return; }
+
+        const campos = registro.campos || {};
+        document.getElementById('edit-id').value = registro.id;
+        document.getElementById('edit-c').value = campos.c || '';
+        document.getElementById('edit-t').value = campos.t || '';
+        document.getElementById('edit-m').value = campos.m || '';
+        document.getElementById('edit-cr').value = campos.cr || '';
+        document.getElementById('edit-dc').value = dataBRparaISO(campos.dc || '');
+        document.getElementById('edit-p').value = campos.p || '';
+        document.getElementById('edit-nf').value = campos.nf || '';
+
+        const lacres = Array.isArray(registro.registros?.lacres) ? registro.registros.lacres : [];
+        const carregamentos = Array.isArray(registro.registros?.carregamentos) ? registro.registros.carregamentos : [];
+        const revisao = Number(registro.revisao || 0);
+        document.getElementById('edit-travados').textContent =
+          `Protocolo ${registro.codigo || registro.id} • ${campos.tp || '—'} • ${campos.q || '—'} volume(s) • ${lacres.length} lacre(s) e ${carregamentos.length} carregamento(s).`
+          + ' O tipo de carga e a quantidade de volumes não mudam aqui, porque definem os registros fotográficos já feitos.'
+          + (revisao > 0 ? ` Já retificado ${revisao}x (última em ${registro.editadoEm || '—'}).` : '');
+
+        document.getElementById('modal-editar-conferencia').style.display = 'block';
+      } catch (erro) {
+        console.error('Erro ao abrir edição da conferência:', erro);
+        alert('Não foi possível abrir este checklist para correção.');
+      }
+    }
+
+    function fecharEdicaoConferencia() {
+      const modal = document.getElementById('modal-editar-conferencia');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function coletarCamposEdicao() {
+      return {
+        c: normalizarTextoMaiusculo(document.getElementById('edit-c').value.trim()),
+        t: normalizarTextoMaiusculo(document.getElementById('edit-t').value.trim()),
+        m: normalizarTextoMaiusculo(document.getElementById('edit-m').value.trim()),
+        cr: normalizarTextoMaiusculo(document.getElementById('edit-cr').value.trim()),
+        dc: dataISOparaBR(document.getElementById('edit-dc').value),
+        p: normalizarPlaca(document.getElementById('edit-p').value.trim()),
+        nf: normalizarNotaFiscal(document.getElementById('edit-nf').value.trim())
+      };
+    }
+
+    function validarCamposEdicao(novos) {
+      const erros = [];
+      if (!novos.c) erros.push('Informe o cliente.');
+      if (!novos.t) erros.push('Informe a transportadora.');
+      if (!novos.m) erros.push('Informe o motorista.');
+      if (!novos.cr) erros.push('Informe o colaborador responsável.');
+      if (!novos.p) erros.push('Informe a placa do veículo.');
+      else if (novos.p.length > 8) erros.push('A placa deve ter no máximo 8 caracteres.');
+      if (!novos.nf) erros.push('Informe a nota fiscal.');
+      else if (!/^\d{1,6}$/.test(novos.nf)) erros.push('A nota fiscal deve conter apenas números e no máximo 6 dígitos.');
+      return erros;
+    }
+
+    async function salvarEdicaoConferencia() {
+      const id = document.getElementById('edit-id').value;
+      if (!id) return;
+
+      const novos = coletarCamposEdicao();
+      const erros = validarCamposEdicao(novos);
+      if (erros.length) { alert(erros.join('\n')); return; }
+
+      try {
+        const registro = await obterConferenciaDB(id);
+        if (!registro) { alert('Conferência não encontrada no histórico.'); return; }
+
+        const anteriores = registro.campos || {};
+        const mudou = CAMPOS_EDITAVEIS_CONFERENCIA
+          .some((k) => String(anteriores[k] || '') !== String(novos[k] || ''));
+        if (!mudou) { fecharEdicaoConferencia(); return; }
+
+        const campos = { ...anteriores, ...novos };
+        const codigo = registro.codigo || registro.id;
+
+        await salvarConferenciaDB({
+          ...registro,
+          campos,
+          // O nome do arquivo carrega a NF: sem recalcular, a correção baixaria com a nota
+          // ANTIGA no nome do arquivo e ninguém acharia o documento certo depois.
+          nomeArquivo: montarNomeArquivoPDF(campos, codigo),
+          revisao: Number(registro.revisao || 0) + 1,
+          editadoEm: formatarDataExtensa(new Date()),
+          editadoDt: Date.now()
+        });
+
+        upsertCadastro('motorista', novos.m).catch(() => {});
+        upsertCadastro('placa', novos.p).catch(() => {});
+        upsertCadastro('transportadora', novos.t).catch(() => {});
+        upsertCadastro('colaborador', novos.cr).catch(() => {});
+        atualizarSugestoesHistorico();
+
+        fecharEdicaoConferencia();
+        conferenciasCache = await listarIndiceConferenciasDB();
+        renderizarHistorico();
+        alert('Checklist corrigido. Use "Baixar PDF" para gerar o documento retificado.');
+      } catch (erro) {
+        console.error('Erro ao salvar correção da conferência:', erro);
+        alert('Não foi possível salvar a correção.');
       }
     }
 
@@ -3329,7 +3500,14 @@
     }
 
     function construirPaginasPDF(dadosPDF = null) {
-      const { campos, registros, regra, geradoEm } = dadosPDF || obterDadosPDF();
+      const { campos, registros, regra, geradoEm, revisao = 0, editadoEm = '' } = dadosPDF || obterDadosPDF();
+      // Um checklist corrigido no histórico mantém o MESMO protocolo, então o rodapé precisa
+      // dizer que houve retificação: sem isso, dois PDFs de mesmo protocolo circulariam com
+      // dados diferentes e nada indicaria qual dos dois é o vigente.
+      const revisaoNum = Number(revisao) || 0;
+      const rodapeVersao = revisaoNum > 0
+        ? `Documento v1.${revisaoNum} • Retificado em ${editadoEm}`
+        : 'Documento v1.0';
       const quantidades = obterQuantidadeRegistrosEsperada(campos);
       const listaLacres = registros.lacres.map(normalizarLacrePDF);
       const listaCarregamentos = registros.carregamentos.map((src, index) => ({
@@ -3434,7 +3612,7 @@
 
             <div class="pdf-footer">
               <span>Relatório de carregamento</span>
-              <span>Emitido em ${escaparHTML(geradoEm)} • Documento v1.0</span>
+              <span>Emitido em ${escaparHTML(geradoEm)} • ${escaparHTML(rodapeVersao)}</span>
               <strong>Dulcini S/A</strong>
             </div>
           </div>
@@ -3467,7 +3645,7 @@
 
             <div class="pdf-footer">
               <span>Registros fotográficos</span>
-              <span>Emitido em ${escaparHTML(geradoEm)} • Documento v1.0</span>
+              <span>Emitido em ${escaparHTML(geradoEm)} • ${escaparHTML(rodapeVersao)}</span>
               <strong>Dulcini S/A</strong>
             </div>
           </div>
