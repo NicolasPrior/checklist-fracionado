@@ -512,7 +512,7 @@
     }
 
     .modal-conteudo{
-      width:min(560px,100%);margin:42px auto 0;padding:28px;border-radius:30px;
+      width:min(560px,100%);margin:42px auto;padding:28px;border-radius:30px;
       border:1px solid rgba(255,255,255,.60);
       background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(243,248,253,.99));
       box-shadow:0 30px 60px rgba(0,0,0,.18);
@@ -1093,7 +1093,7 @@
     </div>
   </div>
 
-  <div id="modal-historico" style="display:none;position:fixed;inset:0;z-index:25;padding:20px;background:rgba(9,17,12,.56);backdrop-filter:blur(10px);">
+  <div id="modal-historico" style="display:none;position:fixed;inset:0;z-index:25;padding:20px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:rgba(9,17,12,.56);backdrop-filter:blur(10px);">
     <div class="modal-conteudo">
       <h3>Histórico de conferências</h3>
       <input type="search" id="busca-historico" placeholder="Buscar por cliente, placa, NF, motorista, protocolo ou data..." autocomplete="off"
@@ -1108,7 +1108,7 @@
     </div>
   </div>
 
-  <div id="modal-editar-conferencia" style="display:none;position:fixed;inset:0;z-index:26;padding:20px;background:rgba(6,20,36,.56);backdrop-filter:blur(10px);">
+  <div id="modal-editar-conferencia" style="display:none;position:fixed;inset:0;z-index:26;padding:20px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:rgba(6,20,36,.56);backdrop-filter:blur(10px);">
     <div class="modal-conteudo">
       <h3>Corrigir checklist do hist&oacute;rico</h3>
       <p style="margin:0 0 14px; font-size:13px; color:var(--texto-suave);">
